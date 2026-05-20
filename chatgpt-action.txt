@@ -1,0 +1,82 @@
+  {
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Intex n8n Connector",
+    "version": "1.1.0",
+    "description": "Invia una query di ricerca al sistema Intex tramite n8n"
+  },
+  "servers": [
+    {
+      "url": "https://arcadianet.app.n8n.cloud"
+    }
+  ],
+  "paths": {
+    "/webhook/intex-alpha": {
+      "post": {
+        "summary": "Invia una query di ricerca al sistema Intex tramite n8n",
+        "operationId": "inviaQuery",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tipologia": {
+                    "type": "string",
+                    "enum": ["bolle", "fatture", "offerte"],
+                    "description": "Tipo di documento: bolle, fatture, offerte"
+                  },
+                  "data_inizio": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "Data di inizio nel formato gg/mm/aaaa"
+                  },
+                  "data_fine": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "Data di fine nel formato gg/mm/aaaa"
+                  },
+                  "codice_cliente": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "Codice cliente"
+                  },
+                  "ragione_sociale": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "Ragione sociale del cliente"
+                  },
+                  "stagione": {
+                    "type": ["string", "null"],
+                    "default": null,
+                    "description": "Stagione moda, es: P/E 2026, A/I 2026"
+                  }
+                },
+                "required": ["tipologia", "data_inizio", "data_fine", "codice_cliente", "ragione_sociale", "stagione"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Risposta da n8n",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Richiesta non valida" },
+          "500": { "description": "Errore del server" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+#	Richiesta attesa dall’utente	Area ERP	Valore pratico
+1	“Mostrami tutte le fatture del cliente X emesse tra gennaio e marzo.”	Fatture	Ricerca rapida senza navigare nel gestionale.
+2	“Quali fatture del cliente X risultano ancora aperte / non pagate?”	Fatture	Controllo amministrativo immediato su scadenze e incassi.
+3	“Dammi il totale fatturato per cliente / periodo / stagione.”	Fatture	Sintesi economica per controllo gestionale e commerciale.
+4	“Mostrami il dettaglio della fattura n. X: imponibile, IVA, totale, data, cliente.”	Fatture	Recupero puntuale di un documento.
+5	“Quali bolle/DDT sono state emesse per il cliente X in un certo periodo?”	Bolle/DDT	Verifica spedizioni, consegne e documenti collegati.
+6	“Trova le bolle collegate a questa fattura / offerta / cliente.”	Bolle + Fatture/Offerte	Collegamento tra documenti, fondamentale per ricostruire una pratica.
+7	“Cerca le offerte fatte al cliente X nella stagione Y o nel periodo Z.”	Offerte	Recupero commerciale veloce; qui la versione Alpha è già allineata.
+8	“Quali offerte sono state accettate, rifiutate o ancora aperte?”	Offerte	Pipeline commerciale basilare, utile anche se non è un CRM vero.
+9	“Confrontami offerta, bolla e fattura per questo cliente/lavorazione: ci sono differenze?”	Offerte + Bolle + Fatture	Use case ad alto valore: intercetta incoerenze tra preventivato, consegnato e fatturato.
+10	“Generami un riepilogo esportabile in tabella delle fatture/bolle/offerte filtrate.”	Reporting	Output operativo per email interna, controllo o riunione. Il progetto cita report personalizzati ed esportazioni tabellari/email .

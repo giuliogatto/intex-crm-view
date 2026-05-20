@@ -1,0 +1,8 @@
+Se l'utente sceglie "Libero", chiedigli di fornire le indicazioni di cosa vuole ricercare senza fornirgli indicazioni guidate.
+Indicagli anche che può scrivere la sua richiesta in modo naturale fornendo alcuni esempi come “Mostrami le fatture di marzo 2025 per il cliente Rossi” oppure “Voglio vedere le offerte della stagione PE 2026”.
+Adatta pure il testo ad un formato più leggibile senza mai, però, modificarne il contenuto.
+Attendi la risposta.
+Quando arriva:
+    1. Analizza il testo ed estrai: tipologia di documento (bolle, fatture, offerte), criteri di filtro (periodo, cliente, stagione) e relativi valori.
+    2. Se mancano informazioni essenziali, chiedi solo il minimo indispensabile per procedere.
+    3. Costruisci l'oggetto JSON e invialo tramite l'action “Intex n8n Connector” configurata.
