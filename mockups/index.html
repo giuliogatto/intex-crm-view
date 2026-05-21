@@ -9,7 +9,7 @@
   <body>
     <div class="app-shell">
       <header class="app-header">
-        <h1 class="app-title">Intex consultazione</h1>
+        <h1 class="app-title"><a href="index.html">Intex consultazione</a></h1>
         <span class="badge badge--mock">Mockup statico</span>
       </header>
 
@@ -36,9 +36,79 @@
             <li><a href="fatture-vuota.html">Fatture — nessun risultato</a></li>
             <li><a href="bolle-lista.html">Bolle — lista risultati</a></li>
             <li><a href="ordini-lista.html">Ordini — lista con stati</a></li>
-            <li><a href="incroci-documenti.html">Incroci — confronto documenti (mock)</a></li>
           </ul>
         </div>
+      </div>
+
+      <div class="domande-mapping" aria-labelledby="domande-heading">
+        <h2 id="domande-heading" class="domande-mapping__title">Collegamenti con domande-risposte</h2>
+        <p class="domande-mapping__intro">
+          Ogni mockup indica sotto quali domande della lista può rispondere. Riepilogo
+          mockup:
+        </p>
+        <ul class="domande-mapping__list">
+          <li><span class="domande-mapping__n">1–2, 4, 10</span> Area Fatture (filtri, lista, dettaglio, export).</li>
+          <li><span class="domande-mapping__n">3</span> Non coperta da un mock dedicato (servirebbe vista “Riepilogo / totali”).</li>
+          <li><span class="domande-mapping__n">5–6</span> <code>bolle-lista.html</code>.</li>
+          <li><span class="domande-mapping__n">7–8, 10</span> <code>ordini-lista.html</code>.</li>
+          <li><span class="domande-mapping__n">9</span> Non rappresentata nei mockup attuali.</li>
+        </ul>
+
+        <p class="domande-mapping__intro" style="margin-top: 1.25rem">
+          Elenco completo delle domande (file <code>domande-risposte.txt</code>):
+        </p>
+        <ul class="domande-mapping__list">
+          <li>
+            <span class="domande-mapping__n">1</span>
+            «Mostrami tutte le fatture del cliente X emesse tra gennaio e marzo.»
+            <span class="meta"> — Fatture</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">2</span>
+            «Quali fatture del cliente X risultano ancora aperte / non pagate?»
+            <span class="meta"> — Fatture</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">3</span>
+            «Dammi il totale fatturato per cliente / periodo / stagione.»
+            <span class="meta"> — Fatture</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">4</span>
+            «Mostrami il dettaglio della fattura n. X: imponibile, IVA, totale, data, cliente.»
+            <span class="meta"> — Fatture</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">5</span>
+            «Quali bolle/DDT sono state emesse per il cliente X in un certo periodo?»
+            <span class="meta"> — Bolle/DDT</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">6</span>
+            «Trova le bolle collegate a questa fattura / offerta / cliente.»
+            <span class="meta"> — Bolle + Fatture/Offerte</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">7</span>
+            «Cerca le offerte fatte al cliente X nella stagione Y o nel periodo Z.»
+            <span class="meta"> — Offerte</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">8</span>
+            «Quali offerte sono state accettate, rifiutate o ancora aperte?»
+            <span class="meta"> — Offerte</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">9</span>
+            «Confrontami offerta, bolla e fattura per questo cliente/lavorazione: ci sono differenze?»
+            <span class="meta"> — Offerte + Bolle + Fatture</span>
+          </li>
+          <li>
+            <span class="domande-mapping__n">10</span>
+            «Generami un riepilogo esportabile in tabella delle fatture/bolle/offerte filtrate.»
+            <span class="meta"> — Reporting</span>
+          </li>
+        </ul>
       </div>
 
       <p class="footer-note">

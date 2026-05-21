@@ -9,7 +9,7 @@
   <body>
     <div class="app-shell">
       <header class="app-header">
-        <h1 class="app-title">Intex consultazione</h1>
+        <h1 class="app-title"><a href="index.html">Intex consultazione</a></h1>
         <span class="badge badge--mock">Mockup</span>
       </header>
 
@@ -67,6 +67,16 @@
             Seleziona un cliente dall’elenco sopra per completare la ricerca.
           </div>
         </div>
+      </div>
+
+      <div class="domande-mapping" aria-labelledby="domande-heading">
+        <h2 id="domande-heading" class="domande-mapping__title">Domande relative</h2>
+        <p class="domande-mapping__intro">Schermata di disambiguazione prima del risultato; abilita ricerche come:</p>
+        <ul class="domande-mapping__list">
+          <li><span class="domande-mapping__n">1</span> Quando «cliente X» corrisponde a più anagrafiche (es. più “Rossi”).</li>
+          <li><span class="domande-mapping__n">2</span> Stesso caso, con filtro fatture aperte.</li>
+        </ul>
+        <p class="domande-mapping__note">Stesso pattern utile anche per bolle (5–6) e offerte (7) se il gestionale restituisce opzioni multiple.</p>
       </div>
 
       <p class="footer-note">Stato: risposta gestionale che richiede scelta utente.</p>

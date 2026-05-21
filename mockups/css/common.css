@@ -61,6 +61,15 @@ a:hover {
   font-weight: 600;
 }
 
+.app-title a {
+  color: inherit;
+  text-decoration: none;
+}
+.app-title a:hover {
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .badge {
   display: inline-block;
   padding: 0.15rem 0.5rem;
@@ -337,4 +346,56 @@ table.data tbody tr:last-child td {
   margin-top: 1.5rem;
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.domande-mapping {
+  margin-top: 2rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  background: #f8fafc;
+}
+
+.domande-mapping__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.domande-mapping__intro {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.domande-mapping__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.85rem;
+}
+
+.domande-mapping__list li {
+  margin-bottom: 0.65rem;
+  padding-left: 0;
+}
+
+.domande-mapping__list li:last-child {
+  margin-bottom: 0;
+}
+
+.domande-mapping__n {
+  display: inline-block;
+  min-width: 1.4rem;
+  margin-right: 0.35rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.domande-mapping__note {
+  margin: 0.75rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-style: italic;
 }

@@ -9,7 +9,7 @@
   <body>
     <div class="app-shell">
       <header class="app-header">
-        <h1 class="app-title">Intex consultazione</h1>
+        <h1 class="app-title"><a href="index.html">Intex consultazione</a></h1>
         <span class="badge badge--mock">Mockup</span>
       </header>
 
@@ -55,6 +55,17 @@
             <span>Interrogazione del gestionale aziendale in corso…</span>
           </div>
         </div>
+      </div>
+
+      <div class="domande-mapping" aria-labelledby="domande-heading">
+        <h2 id="domande-heading" class="domande-mapping__title">Domande relative</h2>
+        <p class="domande-mapping__intro">Stato transitorio durante l’interrogazione del gestionale; precede la risposta per:</p>
+        <ul class="domande-mapping__list">
+          <li><span class="domande-mapping__n">1</span> Ricerca fatture per cliente/periodo.</li>
+          <li><span class="domande-mapping__n">2</span> Ricerca fatture aperte/non pagate.</li>
+          <li><span class="domande-mapping__n">4</span> Ricerca puntuale per numero fattura.</li>
+        </ul>
+        <p class="domande-mapping__note">Non risponde da sola a una domanda: è il feedback tra «Cerca» e lista/dettaglio/vuota/errore.</p>
       </div>
 
       <p class="footer-note">Stato: dopo invio ricerca, prima della risposta JSON.</p>

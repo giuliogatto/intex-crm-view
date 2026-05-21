@@ -9,7 +9,7 @@
   <body>
     <div class="app-shell">
       <header class="app-header">
-        <h1 class="app-title">Intex consultazione</h1>
+        <h1 class="app-title"><a href="index.html">Intex consultazione</a></h1>
         <span class="badge badge--mock">Mockup</span>
       </header>
 
@@ -81,6 +81,17 @@
       <div class="actions" style="padding: 0 0 1rem">
         <button type="button" class="btn">Esporta righe CSV</button>
         <button type="button" class="btn btn--primary">Vedi bolle collegate</button>
+      </div>
+
+      <div class="domande-mapping" aria-labelledby="domande-heading">
+        <h2 id="domande-heading" class="domande-mapping__title">Domande relative</h2>
+        <p class="domande-mapping__intro">Questa schermata può rispondere a:</p>
+        <ul class="domande-mapping__list">
+          <li><span class="domande-mapping__n">4</span> «Mostrami il dettaglio della fattura n. X» — tabella righe (articoli, importi, date, riferimenti bolla).</li>
+          <li><span class="domande-mapping__n">6</span> In parte: «Trova le bolle collegate…» — azione «Vedi bolle collegate» (da implementare verso elenco bolle filtrato).</li>
+          <li><span class="domande-mapping__n">10</span> Export righe del documento (Esporta righe CSV).</li>
+        </ul>
+        <p class="domande-mapping__note">Imponibile/IVA/totale di testata dipendono dai campi restituiti dal gestionale; il mock mostra solo righe da tam-fatture.txt.</p>
       </div>
 
       <p class="footer-note">Stato: dettaglio con tabella scrollabile orizzontalmente su schermi stretti.</p>
