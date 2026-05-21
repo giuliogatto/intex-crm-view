@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Fatture — dettaglio righe</title>
     <link rel="stylesheet" href="css/common.css" />
+    <link rel="stylesheet" href="css/filter-chat.css" />
   </head>
-  <body>
+  <body data-filter-area="fatture">
+    <div class="page-with-chat">
+      <main class="page-main">
     <div class="app-shell">
       <header class="app-header">
         <h1 class="app-title"><a href="index.html">Intex consultazione</a></h1>
@@ -96,5 +99,8 @@
 
       <p class="footer-note">Stato: dettaglio con tabella scrollabile orizzontalmente su schermi stretti.</p>
     </div>
+      </main>
+    </div>
+    <script src="js/filter-chat.js" defer></script>
   </body>
 </html>
