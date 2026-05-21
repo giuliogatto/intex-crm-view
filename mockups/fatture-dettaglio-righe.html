@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fatture — dettaglio righe</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html">Bolle</a>
+        <a href="fatture-lista-risultati.html" class="is-active">Fatture</a>
+        <a href="ordini-lista.html">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary">
+        <a href="index.html">← Indice mockup</a> ·
+        <a href="fatture-lista-risultati.html">← Lista fatture</a>
+      </nav>
+
+      <div class="panel">
+        <div class="panel__head">Documento — righe (dati da tam-fatture.txt)</div>
+        <div class="panel__body">
+          <p class="meta" style="margin-top: 0">
+            Cliente esempio: <strong>TAM &amp; COMPANY S.P.A.</strong> (Codice: XXX) —
+            file <code>clienti.txt</code>. Tabella: 25 righe come nel file sorgente.
+          </p>
+        </div>
+        <div class="table-wrap" style="border-left: none; border-right: none; border-radius: 0">
+          <table class="data">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data bolla</th>
+                <th>N. bolla</th>
+                <th>N. disp.</th>
+                <th>Riga disp.</th>
+                <th>Articolo</th>
+                <th>Colore</th>
+                <th>Kg fatturati</th>
+                <th>Capi fatturati</th>
+                <th>Importo riga</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>03/03/2026</td><td>1756</td><td>1200</td><td>2</td><td>CAPI 80LI20CO</td><td>TORTORA M</td><td>0,8</td><td>2</td><td>60,00€</td></tr>
+              <tr><td>2</td><td>03/03/2026</td><td>1756</td><td>1200</td><td>3</td><td>CAPI 80VI20PA</td><td>MILITE</td><td>0,3</td><td>1</td><td>60,00€</td></tr>
+              <tr><td>3</td><td>02/03/2026</td><td>1704</td><td>1207</td><td>7</td><td>CAPI 100VI</td><td>TORTORA (R)</td><td>5,5</td><td>0</td><td>0,00€</td></tr>
+              <tr><td>4</td><td>03/03/2026</td><td>1756</td><td>1207</td><td>3</td><td>CAPI 100PA</td><td>GRIGIO/AVIO</td><td>2,2</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>5</td><td>03/03/2026</td><td>1756</td><td>1207</td><td>6</td><td>CAPI 100%VI</td><td>NERO ***REATT.(+D/T SOLO X CO/NY)</td><td>82,3</td><td>0</td><td>823,00€</td></tr>
+              <tr><td>6</td><td>27/03/2026</td><td>2380</td><td>1018</td><td>4</td><td>CAPI 95PA5CO</td><td>GHIACCIO CAPO CAMP</td><td>2,5</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>7</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>3</td><td>CAPI 100%VI</td><td>VERDE PISELLO</td><td>0,5</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>8</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>2</td><td>CAPI 100%VI</td><td>BEIGE/TORTORA</td><td>0,3</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>9</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>4</td><td>CAPI 100%VI</td><td>TORTORA</td><td>0,5</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>10</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>8</td><td>CAPI 100%VI</td><td>NOCE</td><td>0,3</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>11</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>6</td><td>CAPI 100%VI</td><td>MILITE</td><td>0,5</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>12</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>7</td><td>CAPI 100%VI</td><td>GRIGIO CH CAPO CAMP</td><td>0,7</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>13</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>5</td><td>CAPI 100%VI</td><td>GRIGIO CH (CAPO CAMP.)</td><td>0,6</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>14</td><td>03/03/2026</td><td>1756</td><td>1438</td><td>9</td><td>CAPI 100%VI</td><td>PERLA CHSS</td><td>0,3</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>15</td><td>03/03/2026</td><td>1756</td><td>1532</td><td>8</td><td>CAPI 90%LI10%VI</td><td>GIALLO LIMONE</td><td>0,2</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>16</td><td>03/03/2026</td><td>1756</td><td>1532</td><td>5</td><td>CAPI 65%LI23%CO12%PA</td><td>SABBIA</td><td>2,2</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>17</td><td>03/03/2026</td><td>1756</td><td>1532</td><td>4</td><td>CAPI 65%LI23%CO12%PA</td><td>NERO ***REATT.(+D/T SOLO X CO/NY)</td><td>15,6</td><td>0</td><td>234,00€</td></tr>
+              <tr><td>18</td><td>03/03/2026</td><td>1756</td><td>1532</td><td>3</td><td>CAPI 100%LI</td><td>NEW NERO REATT***(+D/T SOLO X CO/NY)</td><td>2,1</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>19</td><td>03/03/2026</td><td>1756</td><td>1533</td><td>3</td><td>CAPI 50%PELLE30%LI13%VI5%PA2%EA</td><td>FINANZA</td><td>2,2</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>20</td><td>03/03/2026</td><td>1756</td><td>1533</td><td>2</td><td>CAPI 50%PELLE30%LI13%VI5%PA2%EA</td><td>SBAGNATURA+DOPPIA TINTURA OLD</td><td>2,2</td><td>0</td><td>60,00€</td></tr>
+              <tr><td>21</td><td>05/03/2026</td><td>1815</td><td>1909</td><td>2</td><td>CAPI 100%VI</td><td>BEIGE/TORTORA</td><td>26,6</td><td>0</td><td>111,72€</td></tr>
+              <tr><td>22</td><td>10/03/2026</td><td>1915</td><td>1909</td><td>5</td><td>CAPI 100%VI</td><td>GRIGIO CH (CAPO CAMP.)</td><td>73,7</td><td>0</td><td>309,54€</td></tr>
+              <tr><td>23</td><td>10/03/2026</td><td>1915</td><td>1909</td><td>1</td><td>CAPI 100%VI</td><td>PERLA CHSS</td><td>64,7</td><td>0</td><td>271,74€</td></tr>
+              <tr><td>24</td><td>10/03/2026</td><td>1915</td><td>1909</td><td>3</td><td>CAPI 100%VI</td><td>TORTORA</td><td>9,7</td><td>0</td><td>85,00€</td></tr>
+              <tr><td>25</td><td>10/03/2026</td><td>1915</td><td>1909</td><td>4</td><td>CAPI 100%VI</td><td>MILITE</td><td>50,9</td><td>0</td><td>213,78€</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="actions" style="padding: 0 0 1rem">
+        <button type="button" class="btn">Esporta righe CSV</button>
+        <button type="button" class="btn btn--primary">Vedi bolle collegate</button>
+      </div>
+
+      <p class="footer-note">Stato: dettaglio con tabella scrollabile orizzontalmente su schermi stretti.</p>
+    </div>
+  </body>
+</html>

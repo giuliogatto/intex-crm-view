@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fatture — filtri iniziali</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html">Bolle</a>
+        <a href="fatture-filtri-iniziali.html" class="is-active">Fatture</a>
+        <a href="ordini-lista.html">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary"><a href="index.html">← Indice mockup</a></nav>
+
+      <div class="panel">
+        <div class="panel__head">Filtri ricerca fatture</div>
+        <div class="panel__body">
+          <div class="filters">
+            <div class="field">
+              <label for="da">Data da</label>
+              <input id="da" type="date" value="" placeholder="gg/mm/aaaa" />
+            </div>
+            <div class="field">
+              <label for="a">Data a</label>
+              <input id="a" type="date" value="" />
+            </div>
+            <div class="field">
+              <label for="cod">Codice cliente</label>
+              <input id="cod" type="text" placeholder="es. 1439" autocomplete="off" />
+            </div>
+            <div class="field">
+              <label for="rs">Ragione sociale</label>
+              <input id="rs" type="text" placeholder="ricerca parziale" list="clienti-es" />
+              <datalist id="clienti-es">
+                <option value="SERIGRAFIA ROSSI"></option>
+                <option value="TESSITURA ROSSI S.P.A."></option>
+                <option value="MAGLIFICIO ROSSI IDEE MODA SRL"></option>
+                <option value="TAM & COMPANY S.P.A."></option>
+              </datalist>
+            </div>
+            <div class="field">
+              <label for="stag">Stagione</label>
+              <input id="stag" type="text" placeholder="es. PE 2026" />
+            </div>
+            <div class="field">
+              <label for="stato">Stato pagamento</label>
+              <select id="stato">
+                <option value="">Tutte</option>
+                <option>Aperte</option>
+                <option>Pagate</option>
+              </select>
+            </div>
+            <div class="field field--full">
+              <label for="nf">N. fattura (ricerca puntuale)</label>
+              <input id="nf" type="text" placeholder="opzionale" />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn--primary">Cerca</button>
+            <button type="button" class="btn">Reimposta</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head">Risultati</div>
+        <div class="panel__body">
+          <div class="empty-state">
+            <strong>Nessuna ricerca avviata</strong>
+            Imposta i filtri e premi Cerca per visualizzare le fatture.
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">Stato: schermata iniziale area Fatture.</p>
+    </div>
+  </body>
+</html>

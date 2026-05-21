@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fatture — nessun risultato</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html">Bolle</a>
+        <a href="fatture-filtri-iniziali.html" class="is-active">Fatture</a>
+        <a href="ordini-lista.html">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary"><a href="index.html">← Indice mockup</a></nav>
+
+      <div class="panel">
+        <div class="panel__head">Filtri ricerca fatture</div>
+        <div class="panel__body">
+          <div class="filters">
+            <div class="field">
+              <label>Data da</label>
+              <input type="text" value="01/01/2020" readonly />
+            </div>
+            <div class="field">
+              <label>Data a</label>
+              <input type="text" value="31/01/2020" readonly />
+            </div>
+            <div class="field">
+              <label>Codice cliente</label>
+              <input type="text" value="9999" readonly />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn--primary">Cerca</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head">Risultati</div>
+        <div class="panel__body">
+          <div class="empty-state">
+            <strong>Nessuna fattura trovata</strong>
+            Non risultano documenti per i filtri impostati. Modifica periodo o
+            cliente e ripeti la ricerca.
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">Stato: risposta <code>total: 0</code>, <code>data: []</code>.</p>
+    </div>
+  </body>
+</html>

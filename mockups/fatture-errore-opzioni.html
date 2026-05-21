@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fatture — errore con opzioni</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html">Bolle</a>
+        <a href="fatture-filtri-iniziali.html" class="is-active">Fatture</a>
+        <a href="ordini-lista.html">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary"><a href="index.html">← Indice mockup</a></nav>
+
+      <div class="panel">
+        <div class="panel__head">Filtri ricerca fatture</div>
+        <div class="panel__body">
+          <div class="filters">
+            <div class="field">
+              <label>Ragione sociale</label>
+              <input type="text" value="Rossi" readonly />
+            </div>
+            <div class="field">
+              <label>Stagione</label>
+              <input type="text" value="PE 2026" readonly />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn--primary">Cerca</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert alert--warn">
+        <p class="alert__title">Ambiguità sui clienti</p>
+        <p style="margin: 0">
+          Il gestionale ha trovato più anagrafiche compatibili con «Rossi». Scegli
+          quella corretta per procedere (equivalente UI di
+          <code>route</code> / <code>messaggio</code> / <code>opzioni</code>).
+        </p>
+        <ul class="choice-list">
+          <li>
+            <a href="fatture-lista-risultati.html">SERIGRAFIA ROSSI — codice 1439</a>
+          </li>
+          <li>
+            <a href="fatture-lista-risultati.html">TESSITURA ROSSI S.P.A. — codice 1392</a>
+          </li>
+          <li>
+            <a href="fatture-lista-risultati.html">MAGLIFICIO ROSSI IDEE MODA SRL — codice 1283</a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head">Risultati</div>
+        <div class="panel__body">
+          <div class="empty-state">
+            <strong>Nessun elenco ancora caricato</strong>
+            Seleziona un cliente dall’elenco sopra per completare la ricerca.
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">Stato: risposta gestionale che richiede scelta utente.</p>
+    </div>
+  </body>
+</html>

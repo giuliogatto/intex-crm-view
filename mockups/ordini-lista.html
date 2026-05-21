@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ordini / offerte — lista</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html">Bolle</a>
+        <a href="fatture-filtri-iniziali.html">Fatture</a>
+        <a href="ordini-lista.html" class="is-active">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary"><a href="index.html">← Indice mockup</a></nav>
+
+      <div class="panel">
+        <div class="panel__head">Filtri ricerca offerte</div>
+        <div class="panel__body">
+          <div class="filters">
+            <div class="field">
+              <label>Data da</label>
+              <input type="text" value="" placeholder="—" readonly />
+            </div>
+            <div class="field">
+              <label>Data a</label>
+              <input type="text" value="" placeholder="—" readonly />
+            </div>
+            <div class="field">
+              <label>Codice cliente</label>
+              <input type="text" value="1283" readonly />
+            </div>
+            <div class="field">
+              <label>Ragione sociale</label>
+              <input type="text" value="MAGLIFICIO ROSSI IDEE MODA SRL" readonly />
+            </div>
+            <div class="field">
+              <label>Stagione</label>
+              <input type="text" value="PE 2026" readonly />
+            </div>
+            <div class="field">
+              <label>Stato trattativa</label>
+              <select disabled>
+                <option selected>Tutti</option>
+                <option>Accettata</option>
+                <option>Rifiutata</option>
+                <option>Aperta</option>
+              </select>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn--primary">Cerca</button>
+            <button type="button" class="btn">Esporta CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head">Risultati (esempio)</div>
+        <div class="panel__body" style="padding: 0">
+          <div class="table-wrap" style="border: none; border-radius: 0">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>N. offerta</th>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Stagione</th>
+                  <th>Importo</th>
+                  <th>Stato</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>OFF-2026-0142</td>
+                  <td>12/02/2026</td>
+                  <td>MAGLIFICIO ROSSI IDEE MODA SRL</td>
+                  <td>PE 2026</td>
+                  <td>12.450,00€</td>
+                  <td><span class="pill pill--paid">Accettata</span></td>
+                  <td><a href="incroci-documenti.html">Incroci</a></td>
+                </tr>
+                <tr>
+                  <td>OFF-2026-0155</td>
+                  <td>18/02/2026</td>
+                  <td>MAGLIFICIO ROSSI IDEE MODA SRL</td>
+                  <td>PE 2026 LAB</td>
+                  <td>3.200,00€</td>
+                  <td><span class="pill pill--open">Aperta</span></td>
+                  <td><a href="incroci-documenti.html">Incroci</a></td>
+                </tr>
+                <tr>
+                  <td>OFF-2025-0891</td>
+                  <td>05/11/2025</td>
+                  <td>MAGLIFICIO ROSSI IDEE MODA SRL</td>
+                  <td>AI 25-26</td>
+                  <td>890,00€</td>
+                  <td><span class="pill pill--draft">Rifiutata</span></td>
+                  <td><a href="incroci-documenti.html">Incroci</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">
+        Stato: lista offerte con filtri stagione/cliente. Dati offerta fittizi;
+        clienti da <code>clienti.txt</code>.
+      </p>
+    </div>
+  </body>
+</html>

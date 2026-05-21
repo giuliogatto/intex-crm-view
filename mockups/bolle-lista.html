@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bolle — lista risultati</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html" class="is-active">Bolle</a>
+        <a href="fatture-filtri-iniziali.html">Fatture</a>
+        <a href="ordini-lista.html">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary"><a href="index.html">← Indice mockup</a></nav>
+
+      <div class="panel">
+        <div class="panel__head">Filtri ricerca bolle / DDT</div>
+        <div class="panel__body">
+          <div class="filters">
+            <div class="field">
+              <label>Data da</label>
+              <input type="text" value="01/03/2026" readonly />
+            </div>
+            <div class="field">
+              <label>Data a</label>
+              <input type="text" value="31/03/2026" readonly />
+            </div>
+            <div class="field">
+              <label>Codice cliente</label>
+              <input type="text" value="" placeholder="—" readonly />
+            </div>
+            <div class="field">
+              <label>Ragione sociale</label>
+              <input type="text" value="TAM & COMPANY S.P.A." readonly />
+            </div>
+            <div class="field">
+              <label>Stagione</label>
+              <input type="text" value="" placeholder="—" readonly />
+            </div>
+            <div class="field field--full">
+              <label>Collegamento documento</label>
+              <input type="text" value="" placeholder="N. fattura / offerta (opzionale)" readonly />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn--primary">Cerca</button>
+            <button type="button" class="btn">Esporta CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="meta">
+        Numeri bolla coerenti con le righe in <code>tam-fatture.txt</code>; clienti
+        di esempio da <code>clienti.txt</code>.
+      </p>
+
+      <div class="panel">
+        <div class="panel__head">Risultati (5 bolle)</div>
+        <div class="panel__body" style="padding: 0">
+          <div class="table-wrap" style="border: none; border-radius: 0">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>N. bolla</th>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Righe collegate</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1756</td>
+                  <td>03/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>multiple disp.</td>
+                  <td><a href="fatture-dettaglio-righe.html">Righe / collegamenti</a></td>
+                </tr>
+                <tr>
+                  <td>1704</td>
+                  <td>02/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>disp. 1207</td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>2380</td>
+                  <td>27/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>disp. 1018</td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1815</td>
+                  <td>05/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>disp. 1909</td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1915</td>
+                  <td>10/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>disp. 1909</td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">Stato: elenco bolle dopo ricerca con filtri applicati.</p>
+    </div>
+  </body>
+</html>

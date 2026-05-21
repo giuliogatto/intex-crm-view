@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fatture — lista risultati</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html">Bolle</a>
+        <a href="fatture-filtri-iniziali.html" class="is-active">Fatture</a>
+        <a href="ordini-lista.html">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary"><a href="index.html">← Indice mockup</a></nav>
+
+      <div class="panel">
+        <div class="panel__head">Filtri ricerca fatture</div>
+        <div class="panel__body">
+          <div class="filters">
+            <div class="field">
+              <label>Data da</label>
+              <input type="text" value="01/03/2026" readonly />
+            </div>
+            <div class="field">
+              <label>Data a</label>
+              <input type="text" value="31/03/2026" readonly />
+            </div>
+            <div class="field">
+              <label>Codice cliente</label>
+              <input type="text" value="XXX" readonly />
+            </div>
+            <div class="field">
+              <label>Ragione sociale</label>
+              <input type="text" value="TAM & COMPANY S.P.A." readonly />
+            </div>
+            <div class="field">
+              <label>Stagione</label>
+              <input type="text" value="" placeholder="—" readonly />
+            </div>
+            <div class="field">
+              <label>Stato pagamento</label>
+              <input type="text" value="Tutte" readonly />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn--primary">Cerca</button>
+            <button type="button" class="btn">Esporta CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <p class="meta">
+        Esempio: elenco sintetico derivato dai documenti collegati ai dati di
+        <code>tam-fatture.txt</code> (raggruppamento per N. disp.). Cliente:
+        file <code>clienti.txt</code>.
+      </p>
+
+      <div class="panel">
+        <div class="panel__head">Risultati (7 documenti)</div>
+        <div class="panel__body" style="padding: 0">
+          <div class="table-wrap" style="border: none; border-radius: 0">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>N. disp.</th>
+                  <th>Periodo riferimento</th>
+                  <th>Cliente</th>
+                  <th>Importo documento</th>
+                  <th>Stato</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1200</td>
+                  <td>03/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>120,00€</td>
+                  <td><span class="pill pill--paid">Pagata</span></td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1207</td>
+                  <td>02/03/2026 – 03/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>883,00€</td>
+                  <td><span class="pill pill--open">Aperta</span></td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1018</td>
+                  <td>27/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>60,00€</td>
+                  <td><span class="pill pill--paid">Pagata</span></td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1438</td>
+                  <td>03/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>480,00€</td>
+                  <td><span class="pill pill--open">Aperta</span></td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1532</td>
+                  <td>03/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>414,00€</td>
+                  <td><span class="pill pill--paid">Pagata</span></td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1533</td>
+                  <td>03/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>120,00€</td>
+                  <td><span class="pill pill--open">Aperta</span></td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+                <tr>
+                  <td>1909</td>
+                  <td>05/03/2026 – 10/03/2026</td>
+                  <td>TAM &amp; COMPANY S.P.A. <span class="meta">(XXX)</span></td>
+                  <td>991,78€</td>
+                  <td><span class="pill pill--open">Aperta</span></td>
+                  <td><a href="fatture-dettaglio-righe.html">Dettaglio</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">
+        Nota mock: importi di lista sono coerenti con la somma delle righe in
+        <code>tam-fatture.txt</code> per N. disp.; in produzione verrebbero solo
+        dal gestionale.
+      </p>
+    </div>
+  </body>
+</html>

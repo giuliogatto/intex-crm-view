@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Fatture — caricamento</title>
+    <link rel="stylesheet" href="css/common.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <h1 class="app-title">Intex consultazione</h1>
+        <span class="badge badge--mock">Mockup</span>
+      </header>
+
+      <nav class="nav-primary" aria-label="Aree">
+        <a href="bolle-lista.html">Bolle</a>
+        <a href="fatture-filtri-iniziali.html" class="is-active">Fatture</a>
+        <a href="ordini-lista.html">Ordini / offerte</a>
+      </nav>
+      <nav class="nav-secondary"><a href="index.html">← Indice mockup</a></nav>
+
+      <div class="panel">
+        <div class="panel__head">Filtri ricerca fatture</div>
+        <div class="panel__body">
+          <div class="filters">
+            <div class="field">
+              <label>Data da</label>
+              <input type="text" value="01/03/2026" readonly />
+            </div>
+            <div class="field">
+              <label>Data a</label>
+              <input type="text" value="31/03/2026" readonly />
+            </div>
+            <div class="field">
+              <label>Codice cliente</label>
+              <input type="text" value="1392" readonly />
+            </div>
+            <div class="field">
+              <label>Ragione sociale</label>
+              <input type="text" value="TESSITURA ROSSI S.P.A." readonly />
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn btn--primary" disabled>Cerca in corso…</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel__head">Risultati</div>
+        <div class="panel__body">
+          <div class="loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <span>Interrogazione del gestionale aziendale in corso…</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="footer-note">Stato: dopo invio ricerca, prima della risposta JSON.</p>
+    </div>
+  </body>
+</html>
