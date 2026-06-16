@@ -1,0 +1,912 @@
+<mxGraphModel dx="0" dy="0" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" background="none" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+    <mxCell id="node20" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C01_CODICI_IVA&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C01_ST_RECORD: varchar2(1)&lt;br/&gt; C01_ST_MODIFICA: number(5)&lt;br/&gt; C01_DS_IVA: varchar2(40)&lt;br/&gt; C01_PERC_IMPONIBILE: number(5,2)&lt;br/&gt; C01_PERC_INDETRAIBILE: number(5,2)&lt;br/&gt; C01_FLAG_INTRACEE: varchar2(1)&lt;br/&gt; C01_IMPORTO_BOLLO: number(11,2)&lt;br/&gt; C01_IMPORTO_MINIMO_BOLLO: number(15,2)&lt;br/&gt; C01_CCONT_BOLLO: varchar2(10)&lt;br/&gt; C01_CD_IVA_BOLLO: varchar2(3)&lt;br/&gt; C01_CONTO_CONTABILE: varchar2(10)&lt;br/&gt; C01_FE_NATURA: varchar2(4)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C01_CD_IVA: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="2000" y="356" width="312" height="352" as="geometry" />
+    </mxCell>
+    <mxCell id="node21" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C02_ZONE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C02_ST_RECORD: varchar2(1)&lt;br/&gt; C02_ST_MODIFICA: number(5)&lt;br/&gt; C02_DS_ZONA: varchar2(40)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C02_CD_ZONA: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="967" y="-816" width="218" height="147" as="geometry" />
+    </mxCell>
+    <mxCell id="node3" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C03_LINGUE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C03_ST_RECORD: varchar2(1)&lt;br/&gt; C03_ST_MODIFICA: number(5)&lt;br/&gt; C03_DS_LINGUA: varchar2(40)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C03_CD_LINGUA: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="287" y="-1076" width="219" height="147" as="geometry" />
+    </mxCell>
+    <mxCell id="node9" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C04_MODALITA_CONSEGNA&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C04_ST_RECORD: varchar2(1)&lt;br/&gt; C04_ST_MODIFICA: number(5)&lt;br/&gt; C04_DS_MOD_CONSEGNA: varchar2(40)&lt;br/&gt; C04_CD_INTRA: varchar2(2)&lt;br/&gt; C04_CODICE_ICC: varchar2(3)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C04_CD_MOD_CONSEGNA: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1096" y="440" width="281" height="184" as="geometry" />
+    </mxCell>
+    <mxCell id="node19" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C05_VETTORI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C05_ST_RECORD: varchar2(1)&lt;br/&gt; C05_ST_MODIFICA: number(5)&lt;br/&gt; C05_RAG_SOC_VETTORE: varchar2(40)&lt;br/&gt; C05_INDIRIZZO: varchar2(40)&lt;br/&gt; C05_ESTENSIONE_INDIRIZZO: varchar2(40)&lt;br/&gt; C05_CITTA: varchar2(40)&lt;br/&gt; C05_CAP: varchar2(5)&lt;br/&gt; C05_PROVINCIA: varchar2(2)&lt;br/&gt; C05_STATO: varchar2(30)&lt;br/&gt; C05_TELEFONO: varchar2(20)&lt;br/&gt; C05_FAX: varchar2(20)&lt;br/&gt; C05_TELEX: varchar2(20)&lt;br/&gt; C05_EMAIL_ADDRESS: varchar2(40)&lt;br/&gt; C05_HTTP: varchar2(256)&lt;br/&gt; C05_TRASP_A_CURA: varchar2(20)&lt;br/&gt; C05_SERIE_PATENTE: varchar2(3)&lt;br/&gt; C05_NR_PATENTE: varchar2(10)&lt;br/&gt; C05_CITTA_RILASCIO: varchar2(20)&lt;br/&gt; C05_TIPO_MEZZO: varchar2(10)&lt;br/&gt; C05_TARGA: varchar2(20)&lt;br/&gt; C05_PARTITA_IVA: varchar2(20)&lt;br/&gt; C05_ISCR_ALBO: varchar2(40)&lt;br/&gt; C05_REA: varchar2(20)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C05_CD_VETTORE: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1568" y="224" width="296" height="616" as="geometry" />
+    </mxCell>
+    <mxCell id="node10" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C06_BANCHE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C06_ST_RECORD: char(1)&lt;br/&gt; C06_ST_MODIFICA: number(5)&lt;br/&gt; C06_DENOMINAZIONE_BANCA: varchar2(42)&lt;br/&gt; C06_DENOMINAZIONE_BREVE: varchar2(45)&lt;br/&gt; C06_SEDE: varchar2(40)&lt;br/&gt; C06_AGENZIA: varchar2(40)&lt;br/&gt; C06_INDIRIZZO: varchar2(80)&lt;br/&gt; C06_ESTENSIONE_INDIRIZZO: varchar2(40)&lt;br/&gt; C06_CITTA: varchar2(40)&lt;br/&gt; C06_FRAZIONE: varchar2(40)&lt;br/&gt; C06_CAP: varchar2(5)&lt;br/&gt; C06_PROVINCIA: varchar2(2)&lt;br/&gt; C06_STATO: varchar2(40)&lt;br/&gt; C06_CD_TP: varchar2(4)&lt;br/&gt; C06_CD_PR: varchar2(3)&lt;br/&gt; C06_CD_BANCA_ITALIA: varchar2(16)&lt;br/&gt; C06_TELEFONO: varchar2(20)&lt;br/&gt; C06_FAX: varchar2(20)&lt;br/&gt; C06_TELEX: varchar2(20)&lt;br/&gt; C06_EMAIL_ADDRESS: varchar2(40)&lt;br/&gt; C06_HTTP: varchar2(256)&lt;br/&gt; C06_CD_CAB_SEDE: varchar2(5)&lt;br/&gt; C06_IBAN: varchar2(40)&lt;br/&gt; C06_SWIFT: varchar2(20)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C06_CD_ABI: varchar2(5)&lt;br/&gt; C06_CD_CAB: varchar2(5)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="442" y="-460" width="308" height="664" as="geometry" />
+    </mxCell>
+    <mxCell id="node1" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C07_AGENTI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C07_ST_RECORD: varchar2(1)&lt;br/&gt; C07_ST_MODIFICA: number(5)&lt;br/&gt; C07_RAG_SOC_AGENTE: varchar2(40)&lt;br/&gt; C07_INDIRIZZO: varchar2(40)&lt;br/&gt; C07_ESTENSIONE_INDIRIZZO: varchar2(40)&lt;br/&gt; C07_CITTA: varchar2(40)&lt;br/&gt; C07_CAP: varchar2(5)&lt;br/&gt; C07_PROVINCIA: varchar2(2)&lt;br/&gt; C07_STATO: varchar2(30)&lt;br/&gt; C07_TELEFONO: varchar2(20)&lt;br/&gt; C07_FAX: varchar2(20)&lt;br/&gt; C07_TELEX: varchar2(20)&lt;br/&gt; C07_EMAIL_ADDRESS: varchar2(40)&lt;br/&gt; C07_HTTP: varchar2(256)&lt;br/&gt; C07_FLAG_SUBAGENTE: varchar2(1)&lt;br/&gt; C07_CD_AGENTE_PRINCIPALE: varchar2(3)&lt;br/&gt; C07_PROVVIGIONE1: number(5,2)&lt;br/&gt; C07_PROVVIGIONE2: number(5,2)&lt;br/&gt; C07_CD_ZONA: varchar2(3)&lt;br/&gt; C07_CD_LINGUA: varchar2(3)&lt;br/&gt; C07_CD_NAZIONE: varchar2(3)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C07_CD_AGENTE: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="9" y="248" width="295" height="568" as="geometry" />
+    </mxCell>
+    <mxCell id="node28" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;C08_DESCRIZIONI_TRASPORTO&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C08_ST_RECORD: varchar2(1)&lt;br/&gt; C08_ST_MODIFICA: number(5)&lt;br/&gt; C08_DS_TRASPORTO: varchar2(40)&lt;br/&gt; C08_CD_INTRACEE: varchar2(2)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; C08_CD_TRASPORTO: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1325" y="-208" width="302" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="node26" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;CW0_LINEA_TINTORIA&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW0_ST_RECORD: varchar2(1)&lt;br/&gt; CW0_ST_MODIFICA: number(5)&lt;br/&gt; CW0_DS_LINEA: varchar2(40)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW0_CD_LINEA: varchar2(6)&lt;br/&gt; CW0_CD_CLIENTE: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="2144" y="3132" width="224" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="node4" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;CW1_ARTICOLI_FISCALI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW1_ST_RECORD: varchar2(1)&lt;br/&gt; CW1_ST_MODIFICA: number(5)&lt;br/&gt; CW1_DS_ARTICOLO_FISCALE: varchar2(40)&lt;br/&gt; CW1_CD_FIBRA: varchar2(6)&lt;br/&gt; CW1_TIPO_ARTICOLO: varchar2(1)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW1_CD_ARTICOLO_FISCALE: varchar2(13)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="809" y="6060" width="294" height="184" as="geometry" />
+    </mxCell>
+    <mxCell id="node16" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;CW4_COMPOSIZIONI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW4_ST_RECORD: varchar2(1)&lt;br/&gt; CW4_ST_MODIFICA: number(5)&lt;br/&gt; CW4_DS_COMPOSIZIONE: varchar2(60)&lt;br/&gt; CW4_CD_GRUPPO_COMPOSIZIONE: varchar2(6)&lt;br/&gt; CW4_FLAG_ST_LISTINI: varchar2(1)&lt;br/&gt; CW4_CD_SIGLA: varchar2(10)&lt;br/&gt; CW4_TIPO: varchar2(1)&lt;br/&gt; SD_DT_MOD: timestamp(6)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW4_CD_COMPOSIZIONE: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="973" y="7164" width="326" height="256" as="geometry" />
+    </mxCell>
+    <mxCell id="node15" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;CW8_PROVEN_DESTINAZ&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW8_ST_RECORD: char(1)&lt;br/&gt; CW8_ST_MODIFICA: number(5)&lt;br/&gt; CW8_RAGIONE_SOC: varchar2(40)&lt;br/&gt; CW8_INDIRIZZO: varchar2(60)&lt;br/&gt; CW8_CAP: varchar2(5)&lt;br/&gt; CW8_CITTA: varchar2(40)&lt;br/&gt; CW8_PROVINCIA: varchar2(4)&lt;br/&gt; CW8_STATO: varchar2(30)&lt;br/&gt; CW8_TELEFONO: varchar2(30)&lt;br/&gt; CW8_FAX: varchar2(30)&lt;br/&gt; CW8_EMAIL_ADDRES: varchar2(50)&lt;br/&gt; CW8_PERSONA_DA_CONTATTARE: varchar2(50)&lt;br/&gt; CW8_PARTITA_IVA: varchar2(20)&lt;br/&gt; CW8_CODICE_FISC: varchar2(20)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CW8_CD_PROVEN_DESTINAZ: varchar2(13)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1852" y="4212" width="329" height="400" as="geometry" />
+    </mxCell>
+    <mxCell id="node29" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;CWA_ARTICOLI_CLIENTE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CWA_ST_RECORD: varchar2(1)&lt;br/&gt; CWA_ST_MODIFICA: number(5)&lt;br/&gt; CWA_DS_ARTICOLO_CLIENTE: varchar2(40)&lt;br/&gt; SD_DT_MOD: timestamp(6)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; CWA_CD_CLIENTE: varchar2(6)&lt;br/&gt; CWA_CD_ARTICOLO_CLIENTE: varchar2(13)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1347" y="7200" width="298" height="184" as="geometry" />
+    </mxCell>
+    <mxCell id="node24" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;D02_DDT_TESTATA&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; D02_ST_RECORD: varchar2(1)&lt;br/&gt; D02_ST_MODIFICA: number(5)&lt;br/&gt; D02_DT_CREAZIONE: date&lt;br/&gt; D02_CD_TIPO_BOLLA: varchar2(3)&lt;br/&gt; D02_DT_BOLLA: date&lt;br/&gt; D02_ANNO_BOLLA: number(4)&lt;br/&gt; D02_NR_BOLLA: number(7)&lt;br/&gt; D02_CD_CLIENTE: varchar2(6)&lt;br/&gt; D02_CD_FORNITORE: varchar2(6)&lt;br/&gt; D02_CD_PAGAMENTO: varchar2(3)&lt;br/&gt; D02_CD_CAUSALE_TRASP: varchar2(6)&lt;br/&gt; D02_CD_TRASPORTO: varchar2(3)&lt;br/&gt; D02_CD_MOD_CONSEGNA: varchar2(3)&lt;br/&gt; D02_CD_ASPETTO: varchar2(6)&lt;br/&gt; D02_CD_IMBALLO: varchar2(6)&lt;br/&gt; D02_CD_CLIE_CONSEGNA: varchar2(6)&lt;br/&gt; D02_CD_FORN_CONSEGNA: varchar2(6)&lt;br/&gt; D02_CD_CLIENTE_FATT: varchar2(6)&lt;br/&gt; D02_CD_DESTINAZIONE: varchar2(13)&lt;br/&gt; D02_NR_COLLI: number(7)&lt;br/&gt; D02_PESO_LORDO: number(15,3)&lt;br/&gt; D02_PESO_NETTO: number(15,3)&lt;br/&gt; D02_DATA_ORA_TRASPORTO: date&lt;br/&gt; D02_FLAG_STAMPATA: varchar2(1)&lt;br/&gt; D02_FLAG_FATTURATA: varchar2(1)&lt;br/&gt; D02_FLAG_CHIUSA: varchar2(1)&lt;br/&gt; D02_CD_VETTORE: varchar2(3)&lt;br/&gt; D02_CD_OPERATORE: varchar2(6)&lt;br/&gt; D02_F03_KEY: number(10)&lt;br/&gt; D02_CD_VALUTA: varchar2(3)&lt;br/&gt; D02_CD_ASS_FISC: varchar2(3)&lt;br/&gt; D02_CD_ABI: varchar2(5)&lt;br/&gt; D02_CD_CAB: varchar2(5)&lt;br/&gt; D02_LETTERA_CREDITO: varchar2(4000)&lt;br/&gt; D02_CD_AGENTE: varchar2(3)&lt;br/&gt; D02_CD_AGENTE_2: varchar2(3)&lt;br/&gt; D02_CD_AGENTE_3: varchar2(3)&lt;br/&gt; D02_CD_AGENTE_4: varchar2(3)&lt;br/&gt; D02_CD_TIMBRO_01: varchar2(3)&lt;br/&gt; D02_CD_TIMBRO_02: varchar2(3)&lt;br/&gt; D02_CD_TIMBRO_03: varchar2(3)&lt;br/&gt; D02_CD_TIMBRO_04: varchar2(3)&lt;br/&gt; D02_CD_TIMBRO_05: varchar2(3)&lt;br/&gt; D02_CD_DESTINAZIONE_FORNITORE: varchar2(13)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; D02_KEY: number(10)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1585" y="5592" width="342" height="1120" as="geometry" />
+    </mxCell>
+    <mxCell id="node30" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;D03_DDT_RIGHE_ART&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; D03_ST_RECORD: varchar2(1)&lt;br/&gt; D03_ST_MODIFICA: number(5)&lt;br/&gt; D03_ANNO_DISP_CLI: number(4)&lt;br/&gt; D03_NR_DISP_CLI: number(7)&lt;br/&gt; D03_RIGA_DISP_CLI: number(5)&lt;br/&gt; D03_ANNO_CARTELLINO: number(4)&lt;br/&gt; D03_NR_CARTELLINO: number(7)&lt;br/&gt; D03_CAPI_IN_USCITA: number(9)&lt;br/&gt; D03_KG_IN_USCITA: number(15,3)&lt;br/&gt; D03_NR_COLLI: number(7)&lt;br/&gt; D03_FLAG_CHIUSA: varchar2(1)&lt;br/&gt; D03_NOTE: varchar2(4000)&lt;br/&gt; D03_CD_IVA: varchar2(3)&lt;br/&gt; D03_CD_ARTICOLO: varchar2(13)&lt;br/&gt; D03_DS_ARTICOLO: varchar2(40)&lt;br/&gt; D03_CD_UNITA_MIS: varchar2(6)&lt;br/&gt; D03_QTA_IN_USCITA: number(15,3)&lt;br/&gt; D03_PREZZO_UNI: number(17,5)&lt;br/&gt; D03_PREZZO_UNI_LIRE: number(15,3)&lt;br/&gt; D03_PREZZO_UNI_EURO: number(17,5)&lt;br/&gt; D03_PROVV_AGENTE: number(13,3)&lt;br/&gt; D03_PROVV_AGENTE_2: number(13,3)&lt;br/&gt; D03_PROVV_AGENTE_3: number(13,3)&lt;br/&gt; D03_PROVV_AGENTE_4: number(13,3)&lt;br/&gt; D03_SCONTO_01: number(5,2)&lt;br/&gt; D03_SCONTO_02: number(5,2)&lt;br/&gt; D03_COLORI_IN_USCITA: number(9)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; D03_KEY_D02: number(10)&lt;br/&gt; D03_RIGA: number(5)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="2181" y="7924" width="271" height="736" as="geometry" />
+    </mxCell>
+    <mxCell id="node27" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;EW1_TESTATA_DISPOSIZIONI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; EW1_ST_RECORD: varchar2(1)&lt;br/&gt; EW1_ST_MODIFICA: number(5)&lt;br/&gt; EW1_DATA_IMMISSIONE: date&lt;br/&gt; EW1_DATA_BOLLA_CLI: date&lt;br/&gt; EW1_NR_BOLLA_CLI: varchar2(20)&lt;br/&gt; EW1_CD_CLIENTE: varchar2(6)&lt;br/&gt; EW1_RIFER_CLIENTE: varchar2(30)&lt;br/&gt; EW1_CD_LINEA: varchar2(6)&lt;br/&gt; EW1_CD_STAGIONE: varchar2(6)&lt;br/&gt; EW1_FLAG_CHIUSO: varchar2(1)&lt;br/&gt; EW1_CD_PROVENIENZA: varchar2(13)&lt;br/&gt; EW1_FLAG_MAIL: varchar2(1)&lt;br/&gt; EW1_FLAG_ESENTE: varchar2(1)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; EW1_ANNO_DISPOSIZIONE: number(4)&lt;br/&gt; EW1_NR_DISPOSIZIONE: number(7)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="2015" y="7092" width="282" height="400" as="geometry" />
+    </mxCell>
+    <mxCell id="node8" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;EW2_RIGHE_DISPOSIZIONI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; EW2_ST_RECORD: varchar2(1)&lt;br/&gt; EW2_ST_MODIFICA: number(5)&lt;br/&gt; EW2_NR_CAPI_CARICATI: number(9)&lt;br/&gt; EW2_KG_CARICATI: number(15,3)&lt;br/&gt; EW2_SCATOLA: varchar2(20)&lt;br/&gt; EW2_DS_ARTICOLO: varchar2(40)&lt;br/&gt; EW2_CD_ARTICOLO_FISCALE: varchar2(13)&lt;br/&gt; EW2_CD_ARTICOLO_FATTURA: varchar2(13)&lt;br/&gt; EW2_CD_COMPOSIZIONE: varchar2(6)&lt;br/&gt; EW2_CD_CICLO: varchar2(13)&lt;br/&gt; EW2_CD_CARTELLA: varchar2(10)&lt;br/&gt; EW2_CD_COLORE: varchar2(10)&lt;br/&gt; EW2_DS_COLORE: varchar2(40)&lt;br/&gt; EW2_RIF_DISP_CLIENTE: varchar2(40)&lt;br/&gt; EW2_NOTE: varchar2(200)&lt;br/&gt; EW2_NOTE_RICETTA: varchar2(60)&lt;br/&gt; EW2_FLAG_STAMPA_NOTE: char(1)&lt;br/&gt; EW2_CD_VASCA: varchar2(13)&lt;br/&gt; EW2_SERIE_VASCA: number(2)&lt;br/&gt; EW2_CD_PROVENIENZA: varchar2(13)&lt;br/&gt; EW2_CD_DESTINAZIONE: varchar2(13)&lt;br/&gt; EW2_NR_CAMP_NUOVI_COL: number(15,3)&lt;br/&gt; EW2_FLAG_BOLLE_APERTE: char(1)&lt;br/&gt; EW2_QUALITA: varchar2(20)&lt;br/&gt; EW2_MODELLO: varchar2(20)&lt;br/&gt; EW2_NR_COTTA: number(13)&lt;br/&gt; EW2_DATA_CONS_RICHIESTA: date&lt;br/&gt; EW2_ANNO_CONS_RICHIESTA: number(4)&lt;br/&gt; EW2_SETT_CONS_RICHIESTA: number(2)&lt;br/&gt; EW2_DATA_CONS_CONFERMATA: date&lt;br/&gt; EW2_ANNO_CONS_CONFERMATA: number(4)&lt;br/&gt; EW2_SETT_CONS_CONFERMATA: number(2)&lt;br/&gt; EW2_FLAG_STATO: char(1)&lt;br/&gt; EW2_NR_RIPRESO: number(2)&lt;br/&gt; EW2_FLAG_STAMPA_ENTRATE: char(1)&lt;br/&gt; EW2_DEF_COLORE: varchar2(12)&lt;br/&gt; EW2_CD_REPARTO: varchar2(6)&lt;br/&gt; EW2_CD_RAGGRUPP_VASCHE: varchar2(6)&lt;br/&gt; EW2_FLAG_CHIUSO: char(1)&lt;br/&gt; EW2_CD_CLIENTE: varchar2(6)&lt;br/&gt; EW2_NR_CAPI_DDT: number(9)&lt;br/&gt; EW2_KG_DDT: number(15,3)&lt;br/&gt; EW2_FLAG_TP_PROD  /* T=Prototipi C=Campionari P=Produzione B=Ceste/bancali L=Campi... */: varchar2(1)&lt;br/&gt; EW2_FLAG_TP_DDT: varchar2(1)&lt;br/&gt; EW2_CD_LINEA: varchar2(6)&lt;br/&gt; EW2_CD_STAGIONE: varchar2(6)&lt;br/&gt; EW2_RIF_ADDEBITO_CAPI_MANCANTI: varchar2(60)&lt;br/&gt; EW2_AMMANCO: number(9)&lt;br/&gt; EW2_CD_RICETTA: varchar2(6)&lt;br/&gt; EW2_FLAG_TIPO_RICETTA: char(1)&lt;br/&gt; EW2_NR_CAPI_PROD: number(9)&lt;br/&gt; EW2_KG_PROD: number(11,2)&lt;br/&gt; EW2_FLAG_LABORATORIO: varchar2(1)&lt;br/&gt; EW2_NR_COLORI_DDT: number(9)&lt;br/&gt; EW2_NR_SACCHI: number(9)&lt;br/&gt; EW2_CD_SCONTO_MAGGIORAZ: varchar2(6)&lt;br/&gt; EW2_STATO_RICETTA: varchar2(20)&lt;br/&gt; EW2_CD_CICLO_CLI: varchar2(13)&lt;br/&gt; EW2_CD_STAGIONE_PROD: varchar2(6)&lt;br/&gt; EW2_PRZ_UNITARIO: number(17,5)&lt;br/&gt; EW2_FLAG_TIPO_PREZZO: char(1)&lt;br/&gt; EW2_PRZ_UNITARIO_KG: number(17,5)&lt;br/&gt; EW2_FLAG_TIPO_PREZZO_KG: char(1)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; EW2_ANNO_DISPOSIZIONE: number(4)&lt;br/&gt; EW2_NR_DISPOSIZIONE: number(7)&lt;br/&gt; EW2_RIGA_DISPOSIZIONE: number(5)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1741" y="8700" width="430" height="1624" as="geometry" />
+    </mxCell>
+    <mxCell id="node0" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;F01_TIPO_DOCUMENTO&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; F01_ST_RECORD: varchar2(1)&lt;br/&gt; F01_ST_MODIFICA: number(5)&lt;br/&gt; F01_DS_TIPO_DOCUMENTO: varchar2(40)&lt;br/&gt; F01_FLAG_FATTURA: number(1)&lt;br/&gt; F01_FLAG_FATT_IMM: varchar2(1)&lt;br/&gt; F01_CD_CAUS_CONT: varchar2(3)&lt;br/&gt; F01_TIPO_REGISTRO_IVA: varchar2(1)&lt;br/&gt; F01_NR_REGISTRO_IVA: varchar2(1)&lt;br/&gt; F01_MODULO_REPORT: varchar2(9)&lt;br/&gt; F01_CD_TIPO_DOCUMENTO_NUM: varchar2(6)&lt;br/&gt; F01_FLAG_BOLLO: varchar2(1)&lt;br/&gt; F01_LIBRERIA_AS400: varchar2(20)&lt;br/&gt; F01_FILE_AS400: varchar2(20)&lt;br/&gt; F01_SPESE_BOLLO: number(5,2)&lt;br/&gt; F01_FLAG_FATTURA_PROFORMA: varchar2(1)&lt;br/&gt; F01_CCONT_ITALY: varchar2(10)&lt;br/&gt; F01_CCONT_EXTRACEE: varchar2(10)&lt;br/&gt; F01_CCONT_CEE: varchar2(10)&lt;br/&gt; F01_FE_TIPODOCUMENTO: varchar2(4)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; F01_CD_TIPO_DOCUMENTO: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="577" y="4152" width="319" height="520" as="geometry" />
+    </mxCell>
+    <mxCell id="node7" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;F03_TESTATE_FATTURE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; F03_ST_RECORD: varchar2(1)&lt;br/&gt; F03_ST_MODIFICA: number(5)&lt;br/&gt; F03_CD_TIPO_DOCUMENTO: varchar2(6)&lt;br/&gt; F03_DT_DOCUMENTO: date&lt;br/&gt; F03_ANNO_DOCUMENTO: number(4)&lt;br/&gt; F03_NR_DOCUMENTO: number(7)&lt;br/&gt; F03_CD_CLIENTE: varchar2(6)&lt;br/&gt; F03_CD_PAGAMENTO: varchar2(3)&lt;br/&gt; F03_CD_ADDEBITO_SPESE: varchar2(3)&lt;br/&gt; F03_CD_VALUTA: varchar2(3)&lt;br/&gt; F03_CD_ABI: varchar2(5)&lt;br/&gt; F03_CD_CAB: varchar2(5)&lt;br/&gt; F03_CD_ASS_FISC: varchar2(3)&lt;br/&gt; F03_CD_AGENTE: varchar2(3)&lt;br/&gt; F03_CD_AGENTE_2: varchar2(3)&lt;br/&gt; F03_CD_AGENTE_3: varchar2(3)&lt;br/&gt; F03_CD_AGENTE_4: varchar2(3)&lt;br/&gt; F03_NOTE: varchar2(4000)&lt;br/&gt; F03_DT_CAMBIO: date&lt;br/&gt; F03_IMPORTO_CAMBIO: number(13,6)&lt;br/&gt; F03_IMP_LORDO: number(13,3)&lt;br/&gt; F03_IMP_LORDO_EURO: number(13,3)&lt;br/&gt; F03_TOT_IMPONIBILE: number(13,3)&lt;br/&gt; F03_TOT_IMPONIBILE_EURO: number(13,3)&lt;br/&gt; F03_TOT_IMPOSTE: number(13,3)&lt;br/&gt; F03_TOT_IMPOSTE_EURO: number(13,3)&lt;br/&gt; F03_SPESE_BOLLO: number(5,3)&lt;br/&gt; F03_FLAG_STAMPATA: varchar2(1)&lt;br/&gt; F03_FLAG_CONTABILIZZATA: varchar2(1)&lt;br/&gt; F03_DT_INSERIMENTO: date&lt;br/&gt; F03_UTENTE_INSERIMENTO: varchar2(10)&lt;br/&gt; F03_CD_MOD_CONSEGNA: varchar2(3)&lt;br/&gt; F03_CD_OPERATORE: varchar2(6)&lt;br/&gt; F03_CD_TIMBRO_01: varchar2(3)&lt;br/&gt; F03_CD_TIMBRO_02: varchar2(3)&lt;br/&gt; F03_CD_TIMBRO_03: varchar2(3)&lt;br/&gt; F03_CD_TIMBRO_04: varchar2(3)&lt;br/&gt; F03_CD_TIMBRO_05: varchar2(3)&lt;br/&gt; F03_CD_VETTORE: varchar2(3)&lt;br/&gt; F03_FLAG_DEFINITIVA: varchar2(1)&lt;br/&gt; F03_FLAG_FATTURA_ANTICIPO: varchar2(1)&lt;br/&gt; F03_FLAG_MAN: varchar2(1)&lt;br/&gt; F03_IMPORTO_CAMBIO_EURO: number(13,6)&lt;br/&gt; F03_LETTERA_CREDITO: varchar2(4000)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; F03_KEY: number(10)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="102" y="6732" width="308" height="1120" as="geometry" />
+    </mxCell>
+    <mxCell id="node5" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;F07_RIGHE_FATTURE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; F07_ST_RECORD: varchar2(1)&lt;br/&gt; F07_D02_KEY: number(10)&lt;br/&gt; F07_D03_RIGA: number(5)&lt;br/&gt; F07_ANNO_DISP_CLI: number(4)&lt;br/&gt; F07_NR_DISP_CLI: number(7)&lt;br/&gt; F07_RIGA_DISP_CLI: number(5)&lt;br/&gt; F07_NR_CAPI_FATTURATI: number(9)&lt;br/&gt; F07_KG_FATTURATI: number(11,2)&lt;br/&gt; F07_CD_ARTICOLO: varchar2(13)&lt;br/&gt; F07_DS_ARTICOLO: varchar2(40)&lt;br/&gt; F07_CD_UNITA_MIS: varchar2(6)&lt;br/&gt; F07_QTA_FATTURATA: number(12,3)&lt;br/&gt; F07_PREZZO_UNITARIO: number(17,5)&lt;br/&gt; F07_PREZZO_UNITARIO_EURO: number(17,5)&lt;br/&gt; F07_PREZZO_UN_CAPI: number(17,5)&lt;br/&gt; F07_PREZZO_UN_CAPI_EURO: number(17,5)&lt;br/&gt; F07_PREZZO_UN_KG: number(17,5)&lt;br/&gt; F07_PREZZO_UN_KG_EURO: number(17,5)&lt;br/&gt; F07_PREZZO_FORFAIT: number(17,5)&lt;br/&gt; F07_PREZZO_FORFAIT_EURO: number(17,5)&lt;br/&gt; F07_IMPORTO_RIGA: number(17,5)&lt;br/&gt; F07_IMPORTO_RIGA_EURO: number(17,5)&lt;br/&gt; F07_CD_IVA: varchar2(3)&lt;br/&gt; F07_SCONTO_01: number(5,2)&lt;br/&gt; F07_SCONTO_02: number(5,2)&lt;br/&gt; F07_NOTE: varchar2(4000)&lt;br/&gt; F07_PROVV_AGENTE: number(13,3)&lt;br/&gt; F07_PROVV_AGENTE_2: number(13,3)&lt;br/&gt; F07_PROVV_AGENTE_3: number(13,3)&lt;br/&gt; F07_PROVV_AGENTE_4: number(13,3)&lt;br/&gt; F07_CAMBIO_LISTINO: number(18,5)&lt;br/&gt; F07_CD_CICLO: varchar2(13)&lt;br/&gt; F07_CD_FASE: varchar2(6)&lt;br/&gt; F07_CD_LINEA: varchar2(6)&lt;br/&gt; F07_CD_TIPO_RIGA: varchar2(6)&lt;br/&gt; F07_CD_TRATTAMENTO: varchar2(13)&lt;br/&gt; F07_DS_LAVORAZIONE: varchar2(60)&lt;br/&gt; F07_DS_MAGGIORAZIONE: varchar2(40)&lt;br/&gt; F07_FLAG_CHIUSA: varchar2(1)&lt;br/&gt; F07_IMPORTO_IVA: number(18,5)&lt;br/&gt; F07_IMPORTO_IVA_EURO: number(18,5)&lt;br/&gt; F07_MAGG_PZO: number(18,5)&lt;br/&gt; F07_MAGG_PZO_FORFAIT: number(18,5)&lt;br/&gt; F07_NR_CAMP_NUOVI_COL: number(15,3)&lt;br/&gt; F07_PREZZO_CAMP: number(18,5)&lt;br/&gt; F07_PREZZO_UNI_LISTINO: number(18,5)&lt;br/&gt; F07_PZO_SOST_FORFAIT: number(18,5)&lt;br/&gt; F07_PZO_SOSTITUTIVO: number(18,5)&lt;br/&gt; F07_SEQUENZA_CART: number(5)&lt;br/&gt; F07_SEQUENZA_DISP: number(5)&lt;br/&gt; F07_VALUTA_LISTINO: varchar2(3)&lt;br/&gt; F07_FLAG_PREZZO_FORFAIT_DA: char(1)&lt;br/&gt; F07_PREZZO_FORFAIT_KG: number(13,3)&lt;br/&gt; F07_PREZZO_FORFAIT_KG_EURO: number(13,3)&lt;br/&gt; F07_NR_COLORI_FATTURATI: number(9)&lt;br/&gt; F07_PREZZO_UN_COLORI: number(17,5)&lt;br/&gt; F07_PREZZO_UN_COLORI_EURO: number(17,5)&lt;br/&gt; F07_PREZZO_FORFAIT_NR: number(13,3)&lt;br/&gt; F07_PREZZO_FORFAIT_NR_EURO: number(13,3)&lt;br/&gt; F07_F03_KEY_RIFERIMENTO: number(10)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; F07_KEY: number(10)&lt;br/&gt; F07_RIGA: number(5)&lt;br/&gt; F07_ST_MODIFICA: number(5)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1834" y="10416" width="325" height="1552" as="geometry" />
+    </mxCell>
+    <mxCell id="node14" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;G01_UNITA_PROD&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G01_ST_RECORD: varchar2(1)&lt;br/&gt; G01_ST_MODIFICA: number(5)&lt;br/&gt; G01_DS_UNITA: varchar2(40)&lt;br/&gt; G01_CD_FORNITORE: varchar2(6)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G01_CD_UNITA: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1219" y="2432" width="235" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="node22" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;G04_UNITA_MISURA&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G04_ST_RECORD: varchar2(1)&lt;br/&gt; G04_ST_MODIFICA: number(5)&lt;br/&gt; G04_DS_UNITA_MIS: varchar2(40)&lt;br/&gt; G04_TP_GRANDEZZA: varchar2(1)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G04_CD_UNITA_MIS: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="2376" y="2772" width="240" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="node6" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;G25_OPERATORI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G25_ST_RECORD: varchar2(1)&lt;br/&gt; G25_ST_MODIFICA: number(5)&lt;br/&gt; G25_DS_OPERATORE: varchar2(40)&lt;br/&gt; G25_CD_UNITA: varchar2(6)&lt;br/&gt; G25_FL_ABIL_PROD: varchar2(1)&lt;br/&gt; G25_FL_ABIL_COMM: varchar2(1)&lt;br/&gt; G25_FL_ABIL_FATT: varchar2(1)&lt;br/&gt; G25_CD_QUALITA: varchar2(6)&lt;br/&gt; G25_RUOLO_QUALITA: varchar2(40)&lt;br/&gt; G25_UTENTE_CONTABILE: varchar2(8)&lt;br/&gt; G25_COSTO_ORA_EURO: number(17,5)&lt;br/&gt; G25_BARCODE: varchar2(20)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G25_CD_OPERATORE: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1141" y="2676" width="271" height="352" as="geometry" />
+    </mxCell>
+    <mxCell id="node18" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;G36_CAT_CLIFOR&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G36_ST_RECORD: varchar2(1)&lt;br/&gt; G36_ST_MODIFICA: number(5)&lt;br/&gt; G36_DS_CAT_CLIFOR: varchar2(40)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; G36_CD_CAT_CLIFOR: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="732" y="464" width="248" height="147" as="geometry" />
+    </mxCell>
+    <mxCell id="node17" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;R01_FORNITORI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R01_ST_RECORD: char(1)&lt;br/&gt; R01_ST_MODIFICA: number(5)&lt;br/&gt; R01_RAGIONE_SOC: varchar2(40)&lt;br/&gt; R01_INDIRIZZO: varchar2(55)&lt;br/&gt; R01_ESTENSIONE_IND: varchar2(40)&lt;br/&gt; R01_CAP: varchar2(9)&lt;br/&gt; R01_CITTA: varchar2(35)&lt;br/&gt; R01_PROVINCIA: varchar2(2)&lt;br/&gt; R01_STATO: varchar2(30)&lt;br/&gt; R01_PARTITA_IVA: varchar2(20)&lt;br/&gt; R01_CODICE_FISC: varchar2(16)&lt;br/&gt; R01_TELEFONO: varchar2(20)&lt;br/&gt; R01_TELEX: varchar2(20)&lt;br/&gt; R01_FAX: varchar2(20)&lt;br/&gt; R01_EMAIL_ADDDRES: varchar2(40)&lt;br/&gt; R01_CD_PAGAMENTO: varchar2(3)&lt;br/&gt; R01_CD_NAZIONE: varchar2(3)&lt;br/&gt; R01_CD_LINGUA: varchar2(3)&lt;br/&gt; R01_CD_ZONA: varchar2(3)&lt;br/&gt; R01_HTTP: varchar2(60)&lt;br/&gt; R01_AGENTE: varchar2(40)&lt;br/&gt; R01_CD_VALUTA: varchar2(3)&lt;br/&gt; R01_CD_MOD_CONSEGNA: varchar2(3)&lt;br/&gt; R01_CD_VETTORE: varchar2(3)&lt;br/&gt; R01_CD_IVA: varchar2(3)&lt;br/&gt; R01_CD_ABI: varchar2(5)&lt;br/&gt; R01_CD_CAB: varchar2(5)&lt;br/&gt; R01_CONTO_CORRENTE: varchar2(35)&lt;br/&gt; R01_PERSONA_DA_CONTATTARE: varchar2(40)&lt;br/&gt; R01_FLAG_FITTIZIO: varchar2(1)&lt;br/&gt; R01_CD_TRASPORTO: varchar2(3)&lt;br/&gt; R01_CONTO_CONTABILE: varchar2(20)&lt;br/&gt; R01_CD_OPERATORE: varchar2(6)&lt;br/&gt; R01_CD_CAT_CLIFOR: varchar2(6)&lt;br/&gt; R01_CD_IMBALLO: varchar2(3)&lt;br/&gt; R01_FIDO: number(11)&lt;br/&gt; R01_CD_UNITA: varchar2(6)&lt;br/&gt; R01_FLAG_ORDINI_ACQUISTO: varchar2(1)&lt;br/&gt; R01_CODICE_RICERCA: varchar2(15)&lt;br/&gt; R01_FORMA_GIURIDICA: varchar2(10)&lt;br/&gt; R01_GRUPPO_AZ: varchar2(35)&lt;br/&gt; R01_MARCHIO: varchar2(40)&lt;br/&gt; R01_REGIONE: varchar2(35)&lt;br/&gt; R01_FLAG_DISMESSA: varchar2(1)&lt;br/&gt; R01_FLAG_NO_PUBBLICITA: char(1)&lt;br/&gt; R01_SKYPE: varchar2(50)&lt;br/&gt; R01_CD_CAT_MERCEOLOGICA: varchar2(6)&lt;br/&gt; R01_CD_SOTTOCATEGORIA_MERC: varchar2(3)&lt;br/&gt; R01_DATA_RICHIAMO: date&lt;br/&gt; R01_IBAN_NAZ: varchar2(2)&lt;br/&gt; R01_IBAN_CK: varchar2(2)&lt;br/&gt; R01_IBAN_CIN: varchar2(1)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R01_CD_FORNITORE: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1135" y="1036" width="322" height="1312" as="geometry" />
+    </mxCell>
+    <mxCell id="node11" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;R02_NAZIONI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R02_ST_RECORD: varchar2(1)&lt;br/&gt; R02_ST_MODIFICA: number(5)&lt;br/&gt; R02_DS_NAZIONE: varchar2(40)&lt;br/&gt; R02_FL_UE: varchar2(1)&lt;br/&gt; R02_FL_ITALIA: varchar2(1)&lt;br/&gt; R02_ISO_3: varchar2(3)&lt;br/&gt; R02_ISO_CODE: varchar2(3)&lt;br/&gt; R02_FL_BLACKLIST: varchar2(1)&lt;br/&gt; R02_FLAG_PARADISO_FISCALE: varchar2(1)&lt;br/&gt; R02_CD_INTRA: varchar2(3)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R02_CD_NAZIONE: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="7" y="-900" width="298" height="304" as="geometry" />
+    </mxCell>
+    <mxCell id="node2" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;R03_VALUTE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R03_ST_RECORD: varchar2(1)&lt;br/&gt; R03_ST_MODIFICA: number(5)&lt;br/&gt; R03_DS_VALUTA: varchar2(40)&lt;br/&gt; R03_SIGLA_ISO: varchar2(3)&lt;br/&gt; R03_SIMBOLO: varchar2(1)&lt;br/&gt; R03_ARROTONDAMENTO: number(2)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R03_CD_VALUTA: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="266" y="4308" width="261" height="208" as="geometry" />
+    </mxCell>
+    <mxCell id="node23" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;R05_TIPI_PAGAMENTO&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R05_ST_RECORD: varchar2(1)&lt;br/&gt; R05_ST_MODIFICA: number(5)&lt;br/&gt; R05_DS_TIPO_PAGAMENTO: varchar2(40)&lt;br/&gt; R05_FLAG_PAGAMENTO: varchar2(1)&lt;br/&gt; R05_FLAG_SCADENZE: varchar2(1)&lt;br/&gt; R05_FE_PAGAMENTO: varchar2(4)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R05_CD_TIPO_PAGAMENTO: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="-208" y="2748" width="288" height="208" as="geometry" />
+    </mxCell>
+    <mxCell id="node25" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;R06_CODICI_PAGAMENTO&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R06_ST_RECORD: varchar2(1)&lt;br/&gt; R06_ST_MODIFICA: number(5)&lt;br/&gt; R06_DS_PAGAMENTO: varchar2(40)&lt;br/&gt; R06_CD_TIPO_PAGAMENTO: varchar2(3)&lt;br/&gt; R06_NUMERO_RATE: number(4)&lt;br/&gt; R06_FLAG_RATE_REGOLARI: varchar2(1)&lt;br/&gt; R06_DISTANZA_TRA_RATE: number(3)&lt;br/&gt; R06_FLAG_FINE_MESE: varchar2(1)&lt;br/&gt; R06_FLAG_MESE_COMM: varchar2(1)&lt;br/&gt; R06_GIORNI_PRIMA_RATA: number(3)&lt;br/&gt; R06_CD_SCONTO_MAGGIORAZ: varchar2(6)&lt;br/&gt; R06_GIORNI_AGGIUNTIVI: number(2)&lt;br/&gt; R06_CD_PAGAMENTO_CONT: varchar2(4)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R06_CD_PAGAMENTO: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="-215" y="4224" width="302" height="376" as="geometry" />
+    </mxCell>
+    <mxCell id="node13" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;R07_CLIENTI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R07_ST_RECORD: char(1)&lt;br/&gt; R07_ST_MODIFICA: number(5)&lt;br/&gt; R07_RAGIONE_SOC: varchar2(40)&lt;br/&gt; R07_INDIRIZZO: varchar2(55)&lt;br/&gt; R07_ESTENSIONE_IND: varchar2(40)&lt;br/&gt; R07_CAP: varchar2(9)&lt;br/&gt; R07_CITTA: varchar2(35)&lt;br/&gt; R07_PROVINCIA: varchar2(2)&lt;br/&gt; R07_STATO: varchar2(30)&lt;br/&gt; R07_PARTITA_IVA: varchar2(28)&lt;br/&gt; R07_CODICE_FISC: varchar2(16)&lt;br/&gt; R07_TELEFONO: varchar2(20)&lt;br/&gt; R07_TELEX: varchar2(20)&lt;br/&gt; R07_FAX: varchar2(20)&lt;br/&gt; R07_EMAIL_ADDDRES: varchar2(40)&lt;br/&gt; R07_CD_PAGAMENTO: varchar2(3)&lt;br/&gt; R07_CD_NAZIONE: varchar2(3)&lt;br/&gt; R07_CD_LINGUA: varchar2(3)&lt;br/&gt; R07_CD_ZONA: varchar2(3)&lt;br/&gt; R07_HTTP: varchar2(60)&lt;br/&gt; R07_CD_AGENTE: varchar2(6)&lt;br/&gt; R07_CD_VALUTA: varchar2(3)&lt;br/&gt; R07_CD_MOD_CONSEGNA: varchar2(3)&lt;br/&gt; R07_CD_VETTORE: varchar2(3)&lt;br/&gt; R07_CD_IVA: varchar2(3)&lt;br/&gt; R07_CD_ABI: varchar2(5)&lt;br/&gt; R07_CD_CAB: varchar2(5)&lt;br/&gt; R07_CONTO_CORRENTE: varchar2(35)&lt;br/&gt; R07_PERSONA_DA_CONTATTARE: varchar2(40)&lt;br/&gt; R07_FLAG_FITTIZIO: varchar2(1)&lt;br/&gt; R07_CD_TRASPORTO: varchar2(3)&lt;br/&gt; R07_CONTO_CONTABILE: varchar2(20)&lt;br/&gt; R07_CD_OPERATORE: varchar2(6)&lt;br/&gt; R07_CD_CAT_CLIFOR: varchar2(6)&lt;br/&gt; R07_CD_IMBALLO: varchar2(3)&lt;br/&gt; R07_FIDO: number(11)&lt;br/&gt; R07_CD_MODULO_DDT: varchar2(9)&lt;br/&gt; R07_CD_MODULO_FAT: varchar2(9)&lt;br/&gt; R07_CD_UNITA_MIS_FAT: varchar2(6)&lt;br/&gt; R07_COEFF_CONV_FAT: number(10,4)&lt;br/&gt; R07_NR_LETT_DIC_INT: varchar2(10)&lt;br/&gt; R07_DATA_LETT_DIC_INT: date&lt;br/&gt; R07_NR_PROT_DIC_INT: varchar2(10)&lt;br/&gt; R07_DATA_PROT_DIC_INT: date&lt;br/&gt; R07_DATA_DEC_DIC_INT: date&lt;br/&gt; R07_DATA_FINE_DIC_INT: date&lt;br/&gt; R07_CD_SCONTO_MAGGIORAZ: varchar2(6)&lt;br/&gt; R07_FLAG_FATT_IMMED: varchar2(1)&lt;br/&gt; R07_CD_AGENTE_02: varchar2(6)&lt;br/&gt; R07_CD_AGENTE_03: varchar2(6)&lt;br/&gt; R07_CD_AGENTE_04: varchar2(6)&lt;br/&gt; R07_CODICE_RICERCA: varchar2(15)&lt;br/&gt; R07_FORMA_GIURIDICA: varchar2(10)&lt;br/&gt; R07_GRUPPO_AZ: varchar2(35)&lt;br/&gt; R07_MARCHIO: varchar2(40)&lt;br/&gt; R07_REGIONE: varchar2(35)&lt;br/&gt; R07_SKYPE: varchar2(50)&lt;br/&gt; R07_FLAG_NO_PUBBLICITA: char(1)&lt;br/&gt; R07_CD_CAT_MERCEOLOGICA: varchar2(6)&lt;br/&gt; R07_CD_SOTTOCATEGORIA_MERC: varchar2(3)&lt;br/&gt; R07_DATA_ACQUISTO: date&lt;br/&gt; R07_NR_CLIENTS: number(2)&lt;br/&gt; R07_DATA_RICHIAMO: date&lt;br/&gt; R07_FLAG_DISMESSA: varchar2(1)&lt;br/&gt; R07_FLAG_CONTRATTO: char(1)&lt;br/&gt; R07_FLAG_BLOCCO_AMMINISTRATIVO: char(1)&lt;br/&gt; R07_DISTANZA_KM: number(6,2)&lt;br/&gt; R07_FLAG_PAGA_TRASFERTE: char(1)&lt;br/&gt; R07_FLAG_MARCATO: char(1)&lt;br/&gt; R07_IBAN_NAZ: varchar2(2)&lt;br/&gt; R07_IBAN_CK: varchar2(2)&lt;br/&gt; R07_IBAN_CIN: varchar2(1)&lt;br/&gt; R07_TP_RAG_BOL_FAT: varchar2(10)&lt;br/&gt; R07_DEF_PZ_FASCIA_C: number(18,5)&lt;br/&gt; R07_DEF_PZ_FASCIA_C_MIN: number(18,5)&lt;br/&gt; R07_DEF_PZ_FASCIA_P: number(18,5)&lt;br/&gt; R07_DEF_TP_FASCIA_C: varchar2(1)&lt;br/&gt; R07_DEF_TP_FASCIA_P: varchar2(1)&lt;br/&gt; R07_ADDEBITO_BOLLO: varchar2(1)&lt;br/&gt; R07_CD_IVA_DIC_INT: varchar2(3)&lt;br/&gt; R07_FE_CODDEST: varchar2(7)&lt;br/&gt; R07_FE_PEC: varchar2(255)&lt;br/&gt; R07_NOME: varchar2(60)&lt;br/&gt; R07_COGNOME: varchar2(60)&lt;br/&gt; R07_PRG_AG_ENTRATE: varchar2(40)&lt;br/&gt; SD_DT_MOD: timestamp(6)&lt;br/&gt; R07_CD_BRAND: varchar2(6)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R07_CD_CLIENTE: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="1415" y="3336" width="323" height="2152" as="geometry" />
+    </mxCell>
+    <mxCell id="node31" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;R08_ADDEBITI_SPESE&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R08_ST_RECORD: varchar2(1)&lt;br/&gt; R08_ST_MODIFICA: number(5)&lt;br/&gt; R08_DS_ADDEBITO: varchar2(40)&lt;br/&gt; R08_FLAG_SPESE_BOLLI: varchar2(1)&lt;br/&gt; R08_FLAG_SPESE_BANCARIE: varchar2(1)&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; R08_CD_ADDEBITO_SPESE: varchar2(3)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="413" y="3120" width="286" height="184" as="geometry" />
+    </mxCell>
+    <mxCell id="node12" parent="1" vertex="1" value="&lt;p style=&quot;margin:0px;margin-top:4px;text-align:center;&quot;&gt;&lt;b&gt;Z11_STAGIONI&lt;/b&gt;&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; Z11_ST_RECORD: varchar2(1)&lt;br/&gt; Z11_ST_MODIFICA: number(5)&lt;br/&gt; Z11_DS_STAGIONE: varchar2(40)&lt;br/&gt; Z11_DT_INIZIO: date&lt;br/&gt; Z11_DT_FINE: date&lt;br/&gt; Z11_FLAG_STORICIZZATO: varchar2(1)&lt;br/&gt; Z11_DT_INS: date&lt;/p&gt;&lt;hr size=&quot;1&quot;/&gt;&lt;p style=&quot;margin:0 0 0 4px;line-height:1.6;&quot;&gt; Z11_CD_STAGIONE: varchar2(6)&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=14;fontFamily=Helvetica;html=1;rounded=0;shadow=0;comic=0;labelBackgroundColor=none;strokeWidth=1;">
+      <mxGeometry x="2344" y="4296" width="264" height="232" as="geometry" />
+    </mxCell>
+    <mxCell id="edge17" edge="1" value="" parent="1" source="node1" target="node21" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.833;exitY=0.000;exitDx=0;exitDy=0;entryX=0.167;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="254" y="-508" />
+          <mxPoint x="1003" y="-508" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label104" parent="edge17" vertex="1" connectable="0" value="C07_CD_ZONA:C02_CD_ZONA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="538" y="-528" as="geometry" />
+    </mxCell>
+    <mxCell id="edge2" edge="1" value="" parent="1" source="node1" target="node3" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.500;exitY=0.000;exitDx=0;exitDy=0;entryX=0.167;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="156" y="-528" />
+          <mxPoint x="323" y="-528" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label14" parent="edge2" vertex="1" connectable="0" value="C07_CD_LINGUA:C03_CD_LINGUA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="118" y="-538" as="geometry" />
+    </mxCell>
+    <mxCell id="edge52" edge="1" value="" parent="1" source="node1" target="node1" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.000;exitY=0.500;exitDx=0;exitDy=0;entryX=0.071;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="-24" y="532" />
+          <mxPoint x="-24" y="852" />
+          <mxPoint x="30" y="852" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label314" parent="edge52" vertex="1" connectable="0" value="C07_CD_AGENTE_PRINCIPALE:C07_CD_AGENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-261" y="824" as="geometry" />
+    </mxCell>
+    <mxCell id="edge11" edge="1" value="" parent="1" source="node1" target="node11" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.167;exitY=0.000;exitDx=0;exitDy=0;entryX=0.167;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="58" y="212" />
+          <mxPoint x="57" y="212" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label68" parent="edge11" vertex="1" connectable="0" value="C07_CD_NAZIONE:R02_CD_NAZIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-163" y="202" as="geometry" />
+    </mxCell>
+    <mxCell id="edge60" edge="1" value="" parent="1" source="node29" target="node13" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.500;exitY=0.000;exitDx=0;exitDy=0;entryX=0.417;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1496" y="7172" />
+          <mxPoint x="1549" y="7172" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label362" parent="edge60" vertex="1" connectable="0" value="CWA_CD_CLIENTE:R07_CD_CLIENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1326" y="6994" as="geometry" />
+    </mxCell>
+    <mxCell id="edge28" edge="1" value="" parent="1" source="node24" target="node20" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.875;exitY=0.000;exitDx=0;exitDy=0;entryX=0.583;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1884" y="5572" />
+          <mxPoint x="1836" y="5572" />
+          <mxPoint x="1836" y="1672" />
+          <mxPoint x="2182" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label170" parent="edge28" vertex="1" connectable="0" value="D02_CD_ASS_FISC:C01_CD_IVA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1991" y="1501" as="geometry" />
+    </mxCell>
+    <mxCell id="edge53" edge="1" value="" parent="1" source="node24" target="node10" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.125;exitY=0.000;exitDx=0;exitDy=0;entryX=0.375;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1628" y="5572" />
+          <mxPoint x="956" y="5572" />
+          <mxPoint x="956" y="1672" />
+          <mxPoint x="558" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label320" parent="edge53" vertex="1" connectable="0" value="D02_CD_ABI, D02_CD_CAB:C06_CD_ABI, C06_CD_CAB" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="633" y="3612" as="geometry" />
+    </mxCell>
+    <mxCell id="edge35" edge="1" value="" parent="1" source="node24" target="node13" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.375;exitY=0.000;exitDx=0;exitDy=0;entryX=0.583;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1713" y="5552" />
+          <mxPoint x="1603" y="5552" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label212" parent="edge35" vertex="1" connectable="0" value="D02_CD_CLIENTE:R07_CD_CLIENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1494" y="5542" as="geometry" />
+    </mxCell>
+    <mxCell id="edge54" edge="1" value="" parent="1" source="node24" target="node13" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.625;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1799" y="5532" />
+          <mxPoint x="1657" y="5532" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label326" parent="edge54" vertex="1" connectable="0" value="D02_CD_CLIENTE_FATT:R07_CD_CLIENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1545" y="5522" as="geometry" />
+    </mxCell>
+    <mxCell id="edge37" edge="1" value="" parent="1" source="node30" target="node20" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.750;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2384" y="7892" />
+          <mxPoint x="2636" y="7892" />
+          <mxPoint x="2636" y="1672" />
+          <mxPoint x="2234" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label224" parent="edge37" vertex="1" connectable="0" value="D03_CD_IVA:C01_CD_IVA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="2485" y="4772" as="geometry" />
+    </mxCell>
+    <mxCell id="edge14" edge="1" value="" parent="1" source="node30" target="node24" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.250;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2248" y="7852" />
+          <mxPoint x="1842" y="7852" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label86" parent="edge14" vertex="1" connectable="0" value="D03_KEY_D02:D02_KEY" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1699" y="7728" as="geometry" />
+    </mxCell>
+    <mxCell id="edge30" edge="1" value="" parent="1" source="node27" target="node26" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.625;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2191" y="7072" />
+          <mxPoint x="2200" y="7072" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label182" parent="edge30" vertex="1" connectable="0" value="EW1_CD_CLIENTE, EW1_CD_LINEA:CW0_CD_CLIENTE, CW0_CD_LINEA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1777" y="4038" as="geometry" />
+    </mxCell>
+    <mxCell id="edge21" edge="1" value="" parent="1" source="node27" target="node15" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.375;exitY=0.000;exitDx=0;exitDy=0;entryX=0.833;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2121" y="7072" />
+          <mxPoint x="2126" y="7072" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label128" parent="edge21" vertex="1" connectable="0" value="EW1_CD_PROVENIENZA:CW8_CD_PROVEN_DESTINAZ" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1803" y="6816" as="geometry" />
+    </mxCell>
+    <mxCell id="edge32" edge="1" value="" parent="1" source="node27" target="node13" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.125;exitY=0.000;exitDx=0;exitDy=0;entryX=0.917;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2050" y="5512" />
+          <mxPoint x="1711" y="5512" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label194" parent="edge32" vertex="1" connectable="0" value="EW1_CD_CLIENTE:R07_CD_CLIENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1828" y="5502" as="geometry" />
+    </mxCell>
+    <mxCell id="edge7" edge="1" value="" parent="1" source="node27" target="node12" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.875;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2262" y="7052" />
+          <mxPoint x="2410" y="7052" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label44" parent="edge7" vertex="1" connectable="0" value="EW1_CD_STAGIONE:Z11_CD_STAGIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="2172" y="7042" as="geometry" />
+    </mxCell>
+    <mxCell id="edge62" edge="1" value="" parent="1" source="node8" target="node26" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.833;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2099" y="7892" />
+          <mxPoint x="2316" y="7892" />
+          <mxPoint x="2316" y="7072" />
+          <mxPoint x="2312" y="7072" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label374" parent="edge62" vertex="1" connectable="0" value="EW2_CD_CLIENTE, EW2_CD_LINEA:CW0_CD_CLIENTE, CW0_CD_LINEA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1893" y="7609" as="geometry" />
+    </mxCell>
+    <mxCell id="edge27" edge="1" value="" parent="1" source="node8" target="node4" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.056;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1765" y="8672" />
+          <mxPoint x="956" y="8672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label164" parent="edge27" vertex="1" connectable="0" value="EW2_CD_ARTICOLO_FISCALE:CW1_CD_ARTICOLO_FISCALE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1409" y="8676" as="geometry" />
+    </mxCell>
+    <mxCell id="edge61" edge="1" value="" parent="1" source="node8" target="node16" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.167;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1813" y="8632" />
+          <mxPoint x="1136" y="8632" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label368" parent="edge61" vertex="1" connectable="0" value="EW2_CD_COMPOSIZIONE:CW4_CD_COMPOSIZIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1507" y="8622" as="geometry" />
+    </mxCell>
+    <mxCell id="edge24" edge="1" value="" parent="1" source="node8" target="node15" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.611;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2004" y="8672" />
+          <mxPoint x="1996" y="8672" />
+          <mxPoint x="1996" y="7072" />
+          <mxPoint x="2016" y="7072" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label146" parent="edge24" vertex="1" connectable="0" value="EW2_CD_DESTINAZIONE:CW8_CD_PROVEN_DESTINAZ" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1670" y="7862" as="geometry" />
+    </mxCell>
+    <mxCell id="edge36" edge="1" value="" parent="1" source="node8" target="node15" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.500;exitY=0.000;exitDx=0;exitDy=0;entryX=0.167;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1956" y="5572" />
+          <mxPoint x="1906" y="5572" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label218" parent="edge36" vertex="1" connectable="0" value="EW2_CD_PROVENIENZA:CW8_CD_PROVEN_DESTINAZ" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1633" y="5562" as="geometry" />
+    </mxCell>
+    <mxCell id="edge49" edge="1" value="" parent="1" source="node8" target="node29" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.389;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1908" y="8592" />
+          <mxPoint x="1496" y="8592" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label296" parent="edge49" vertex="1" connectable="0" value="EW2_CD_CLIENTE, EW2_CD_ARTICOLO_FATTURA:CWA_CD_CLIENTE, CWA_CD_ARTICOLO_CLIENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1315" y="8582" as="geometry" />
+    </mxCell>
+    <mxCell id="edge39" edge="1" value="" parent="1" source="node8" target="node27" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.722;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2052" y="7872" />
+          <mxPoint x="2156" y="7872" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label236" parent="edge39" vertex="1" connectable="0" value="EW2_ANNO_DISPOSIZIONE, EW2_NR_DISPOSIZIONE:EW1_ANNO_DISPOSIZIONE, EW1_NR_DISPOSIZIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1433" y="7945" as="geometry" />
+    </mxCell>
+    <mxCell id="edge23" edge="1" value="" parent="1" source="node8" target="node13" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.278;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1860" y="8612" />
+          <mxPoint x="1316" y="8612" />
+          <mxPoint x="1316" y="5552" />
+          <mxPoint x="1495" y="5552" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label140" parent="edge23" vertex="1" connectable="0" value="EW2_CD_CLIENTE:R07_CD_CLIENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1094" y="7072" as="geometry" />
+    </mxCell>
+    <mxCell id="edge64" edge="1" value="" parent="1" source="node8" target="node12" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.944;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2147" y="7912" />
+          <mxPoint x="2356" y="7912" />
+          <mxPoint x="2356" y="7272" />
+          <mxPoint x="2542" y="7272" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label386" parent="edge64" vertex="1" connectable="0" value="EW2_CD_STAGIONE:Z11_CD_STAGIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="2118" y="7582" as="geometry" />
+    </mxCell>
+    <mxCell id="edge58" edge="1" value="" parent="1" source="node7" target="node20" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.955;exitY=0.000;exitDx=0;exitDy=0;entryX=0.083;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="396" y="6032" />
+          <mxPoint x="916" y="6032" />
+          <mxPoint x="916" y="932" />
+          <mxPoint x="2026" y="932" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label350" parent="edge58" vertex="1" connectable="0" value="F03_CD_ASS_FISC:C01_CD_IVA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="727" y="3472" as="geometry" />
+    </mxCell>
+    <mxCell id="edge45" edge="1" value="" parent="1" source="node7" target="node10" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.500;exitY=0.000;exitDx=0;exitDy=0;entryX=0.125;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="256" y="6612" />
+          <mxPoint x="236" y="6612" />
+          <mxPoint x="236" y="1672" />
+          <mxPoint x="481" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label272" parent="edge45" vertex="1" connectable="0" value="F03_CD_ABI, F03_CD_CAB:C06_CD_ABI, C06_CD_CAB" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-83" y="4132" as="geometry" />
+    </mxCell>
+    <mxCell id="edge19" edge="1" value="" parent="1" source="node7" target="node1" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.045;exitY=0.000;exitDx=0;exitDy=0;entryX=0.214;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="116" y="6712" />
+          <mxPoint x="-244" y="6712" />
+          <mxPoint x="-244" y="1672" />
+          <mxPoint x="72" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label116" parent="edge19" vertex="1" connectable="0" value="F03_CD_AGENTE_2:C07_CD_AGENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-469" y="4182" as="geometry" />
+    </mxCell>
+    <mxCell id="edge38" edge="1" value="" parent="1" source="node7" target="node1" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.227;exitY=0.000;exitDx=0;exitDy=0;entryX=0.357;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="172" y="6672" />
+          <mxPoint x="116" y="6672" />
+          <mxPoint x="116" y="1672" />
+          <mxPoint x="114" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label230" parent="edge38" vertex="1" connectable="0" value="F03_CD_AGENTE_3:C07_CD_AGENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-109" y="4162" as="geometry" />
+    </mxCell>
+    <mxCell id="edge40" edge="1" value="" parent="1" source="node7" target="node1" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.409;exitY=0.000;exitDx=0;exitDy=0;entryX=0.643;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="228" y="6632" />
+          <mxPoint x="196" y="6632" />
+          <mxPoint x="196" y="1672" />
+          <mxPoint x="198" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label242" parent="edge40" vertex="1" connectable="0" value="F03_CD_AGENTE:C07_CD_AGENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-15" y="5795" as="geometry" />
+    </mxCell>
+    <mxCell id="edge48" edge="1" value="" parent="1" source="node7" target="node1" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.318;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="200" y="6652" />
+          <mxPoint x="156" y="6652" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label290" parent="edge48" vertex="1" connectable="0" value="F03_CD_AGENTE_4:C07_CD_AGENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-25" y="6642" as="geometry" />
+    </mxCell>
+    <mxCell id="edge44" edge="1" value="" parent="1" source="node7" target="node0" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.773;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="340" y="5512" />
+          <mxPoint x="736" y="5512" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label266" parent="edge44" vertex="1" connectable="0" value="F03_CD_TIPO_DOCUMENTO:F01_CD_TIPO_DOCUMENTO" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="399" y="5502" as="geometry" />
+    </mxCell>
+    <mxCell id="edge31" edge="1" value="" parent="1" source="node7" target="node2" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.591;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="284" y="5472" />
+          <mxPoint x="396" y="5472" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label188" parent="edge31" vertex="1" connectable="0" value="F03_CD_VALUTA:R03_CD_VALUTA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="193" y="5366" as="geometry" />
+    </mxCell>
+    <mxCell id="edge22" edge="1" value="" parent="1" source="node7" target="node25" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.136;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="144" y="6692" />
+          <mxPoint x="-64" y="6692" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label134" parent="edge22" vertex="1" connectable="0" value="F03_CD_PAGAMENTO:R06_CD_PAGAMENTO" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-194" y="6672" as="geometry" />
+    </mxCell>
+    <mxCell id="edge5" edge="1" value="" parent="1" source="node7" target="node13" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.864;exitY=0.000;exitDx=0;exitDy=0;entryX=0.083;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="368" y="5532" />
+          <mxPoint x="1441" y="5532" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label32" parent="edge5" vertex="1" connectable="0" value="F03_CD_CLIENTE:R07_CD_CLIENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1224" y="5500" as="geometry" />
+    </mxCell>
+    <mxCell id="edge56" edge="1" value="" parent="1" source="node7" target="node31" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.682;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="312" y="5492" />
+          <mxPoint x="556" y="5492" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label338" parent="edge56" vertex="1" connectable="0" value="F03_CD_ADDEBITO_SPESE:R08_CD_ADDEBITO_SPESE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="227" y="5482" as="geometry" />
+    </mxCell>
+    <mxCell id="edge8" edge="1" value="" parent="1" source="node5" target="node20" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.917;exitY=0.000;exitDx=0;exitDy=0;entryX=0.917;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2131" y="10392" />
+          <mxPoint x="2716" y="10392" />
+          <mxPoint x="2716" y="1652" />
+          <mxPoint x="2286" y="1652" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label50" parent="edge8" vertex="1" connectable="0" value="F07_CD_IVA:C01_CD_IVA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="2567" y="6012" as="geometry" />
+    </mxCell>
+    <mxCell id="edge66" edge="1" value="" parent="1" source="node5" target="node24" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.250;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1915" y="10372" />
+          <mxPoint x="1716" y="10372" />
+          <mxPoint x="1716" y="8652" />
+          <mxPoint x="1671" y="8652" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label398" parent="edge66" vertex="1" connectable="0" value="F07_D02_KEY:D02_KEY" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1575" y="9502" as="geometry" />
+    </mxCell>
+    <mxCell id="edge0" edge="1" value="" parent="1" source="node5" target="node30" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.583;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2023" y="10352" />
+          <mxPoint x="2316" y="10352" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label2" parent="edge0" vertex="1" connectable="0" value="F07_D02_KEY, F07_D03_RIGA:D03_KEY_D02, D03_RIGA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1989" y="10342" as="geometry" />
+    </mxCell>
+    <mxCell id="edge63" edge="1" value="" parent="1" source="node5" target="node8" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.417;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1969" y="10392" />
+          <mxPoint x="1956" y="10392" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label380" parent="edge63" vertex="1" connectable="0" value="F07_ANNO_DISP_CLI, F07_NR_DISP_CLI, F07_RIGA_DISP_CLI:EW2_ANNO_DISPOSIZIONE, EW2_NR_DISPOSIZIONE, EW2_RIGA_DISPOSIZIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1139" y="10394" as="geometry" />
+    </mxCell>
+    <mxCell id="edge13" edge="1" value="" parent="1" source="node5" target="node7" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.083;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1861" y="10392" />
+          <mxPoint x="1676" y="10392" />
+          <mxPoint x="1676" y="9492" />
+          <mxPoint x="256" y="9492" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label80" parent="edge13" vertex="1" connectable="0" value="F07_KEY:F03_KEY" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1567" y="9932" as="geometry" />
+    </mxCell>
+    <mxCell id="edge42" edge="1" value="" parent="1" source="node5" target="node22" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.750;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="2077" y="10372" />
+          <mxPoint x="2676" y="10372" />
+          <mxPoint x="2676" y="4272" />
+          <mxPoint x="2556" y="4272" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label254" parent="edge42" vertex="1" connectable="0" value="F07_CD_UNITA_MIS:G04_CD_UNITA_MIS" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="2437" y="7312" as="geometry" />
+    </mxCell>
+    <mxCell id="edge16" edge="1" value="" parent="1" source="node14" target="node17" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.750;exitY=0.000;exitDx=0;exitDy=0;entryX=0.833;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1395" y="2412" />
+          <mxPoint x="1403" y="2412" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label98" parent="edge16" vertex="1" connectable="0" value="G01_CD_FORNITORE:R01_CD_FORNITORE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1146" y="2402" as="geometry" />
+    </mxCell>
+    <mxCell id="edge55" edge="1" value="" parent="1" source="node6" target="node14" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.750;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1344" y="2652" />
+          <mxPoint x="1336" y="2652" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label332" parent="edge55" vertex="1" connectable="0" value="G25_CD_UNITA:G01_CD_UNITA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1149" y="2612" as="geometry" />
+    </mxCell>
+    <mxCell id="edge34" edge="1" value="" parent="1" source="node17" target="node20" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.950;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1441" y="1012" />
+          <mxPoint x="2078" y="1012" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label206" parent="edge34" vertex="1" connectable="0" value="R01_CD_IVA:C01_CD_IVA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1927" y="1002" as="geometry" />
+    </mxCell>
+    <mxCell id="edge29" edge="1" value="" parent="1" source="node17" target="node21" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.550;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1312" y="852" />
+          <mxPoint x="1076" y="852" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label176" parent="edge29" vertex="1" connectable="0" value="R01_CD_ZONA:C02_CD_ZONA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1131" y="842" as="geometry" />
+    </mxCell>
+    <mxCell id="edge57" edge="1" value="" parent="1" source="node17" target="node3" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.350;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1248" y="892" />
+          <mxPoint x="996" y="892" />
+          <mxPoint x="996" y="-488" />
+          <mxPoint x="396" y="-488" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label344" parent="edge57" vertex="1" connectable="0" value="R01_CD_LINGUA:C03_CD_LINGUA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="791" y="192" as="geometry" />
+    </mxCell>
+    <mxCell id="edge10" edge="1" value="" parent="1" source="node17" target="node9" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.650;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1344" y="832" />
+          <mxPoint x="1166" y="832" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label62" parent="edge10" vertex="1" connectable="0" value="R01_CD_MOD_CONSEGNA:C04_CD_MOD_CONSEGNA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1023" y="822" as="geometry" />
+    </mxCell>
+    <mxCell id="edge47" edge="1" value="" parent="1" source="node17" target="node19" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.850;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1409" y="872" />
+          <mxPoint x="1642" y="872" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label284" parent="edge47" vertex="1" connectable="0" value="R01_CD_VETTORE:C05_CD_VETTORE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1415" y="862" as="geometry" />
+    </mxCell>
+    <mxCell id="edge41" edge="1" value="" parent="1" source="node17" target="node10" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.150;exitY=0.000;exitDx=0;exitDy=0;entryX=0.875;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1183" y="952" />
+          <mxPoint x="712" y="952" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label248" parent="edge41" vertex="1" connectable="0" value="R01_CD_ABI, R01_CD_CAB:C06_CD_ABI, C06_CD_CAB" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="860" y="942" as="geometry" />
+    </mxCell>
+    <mxCell id="edge33" edge="1" value="" parent="1" source="node17" target="node1" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.050;exitY=0.000;exitDx=0;exitDy=0;entryX=0.929;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1151" y="1012" />
+          <mxPoint x="282" y="1012" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label200" parent="edge33" vertex="1" connectable="0" value="R01_AGENTE:C07_CD_AGENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="623" y="992" as="geometry" />
+    </mxCell>
+    <mxCell id="edge3" edge="1" value="" parent="1" source="node17" target="node28" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.750;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1377" y="852" />
+          <mxPoint x="1401" y="852" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label20" parent="edge3" vertex="1" connectable="0" value="R01_CD_TRASPORTO:C08_CD_TRASPORTO" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1138" y="752" as="geometry" />
+    </mxCell>
+    <mxCell id="edge67" edge="1" value="" parent="1" source="node17" target="node14" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.500;exitY=1.000;exitDx=0;exitDy=0;entryX=0.250;entryY=0.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1296" y="2412" />
+          <mxPoint x="1277" y="2412" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label404" parent="edge67" vertex="1" connectable="0" value="R01_CD_UNITA:G01_CD_UNITA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1109" y="2370" as="geometry" />
+    </mxCell>
+    <mxCell id="edge65" edge="1" value="" parent="1" source="node17" target="node6" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.167;exitY=1.000;exitDx=0;exitDy=0;entryX=0.250;entryY=0.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1189" y="2492" />
+          <mxPoint x="1196" y="2492" />
+          <mxPoint x="1196" y="2652" />
+          <mxPoint x="1208" y="2652" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label392" parent="edge65" vertex="1" connectable="0" value="R01_CD_OPERATORE:G25_CD_OPERATORE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="931" y="2562" as="geometry" />
+    </mxCell>
+    <mxCell id="edge43" edge="1" value="" parent="1" source="node17" target="node18" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.250;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1216" y="912" />
+          <mxPoint x="918" y="912" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label260" parent="edge43" vertex="1" connectable="0" value="R01_CD_CAT_CLIFOR:G36_CD_CAT_CLIFOR" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="951" y="902" as="geometry" />
+    </mxCell>
+    <mxCell id="edge20" edge="1" value="" parent="1" source="node17" target="node11" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.450;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1280" y="872" />
+          <mxPoint x="1036" y="872" />
+          <mxPoint x="1036" y="-548" />
+          <mxPoint x="156" y="-548" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label122" parent="edge20" vertex="1" connectable="0" value="R01_CD_NAZIONE:R02_CD_NAZIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="815" y="152" as="geometry" />
+    </mxCell>
+    <mxCell id="edge15" edge="1" value="" parent="1" source="node25" target="node23" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.500;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points" />
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label92" parent="edge15" vertex="1" connectable="0" value="R06_CD_TIPO_PAGAMENTO:R05_CD_TIPO_PAGAMENTO" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="-395" y="3580" as="geometry" />
+    </mxCell>
+    <mxCell id="edge50" edge="1" value="" parent="1" source="node13" target="node20" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.875;exitY=0.000;exitDx=0;exitDy=0;entryX=0.417;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1697" y="3092" />
+          <mxPoint x="1756" y="3092" />
+          <mxPoint x="1756" y="1652" />
+          <mxPoint x="2130" y="1652" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label302" parent="edge50" vertex="1" connectable="0" value="R07_CD_IVA:C01_CD_IVA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1605" y="2362" as="geometry" />
+    </mxCell>
+    <mxCell id="edge25" edge="1" value="" parent="1" source="node13" target="node21" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.708;exitY=0.000;exitDx=0;exitDy=0;entryX=0.833;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1643" y="3052" />
+          <mxPoint x="1676" y="3052" />
+          <mxPoint x="1676" y="972" />
+          <mxPoint x="1936" y="972" />
+          <mxPoint x="1936" y="-588" />
+          <mxPoint x="1149" y="-588" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label152" parent="edge25" vertex="1" connectable="0" value="R07_CD_ZONA:C02_CD_ZONA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1716" y="952" as="geometry" />
+    </mxCell>
+    <mxCell id="edge59" edge="1" value="" parent="1" source="node13" target="node3" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.792;exitY=0.000;exitDx=0;exitDy=0;entryX=0.833;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1670" y="3072" />
+          <mxPoint x="1716" y="3072" />
+          <mxPoint x="1716" y="992" />
+          <mxPoint x="1976" y="992" />
+          <mxPoint x="1976" y="-608" />
+          <mxPoint x="469" y="-608" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label356" parent="edge59" vertex="1" connectable="0" value="R07_CD_LINGUA:C03_CD_LINGUA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1771" y="982" as="geometry" />
+    </mxCell>
+    <mxCell id="edge6" edge="1" value="" parent="1" source="node13" target="node9" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.375;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1536" y="3232" />
+          <mxPoint x="1516" y="3232" />
+          <mxPoint x="1516" y="812" />
+          <mxPoint x="1306" y="812" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label38" parent="edge6" vertex="1" connectable="0" value="R07_CD_MOD_CONSEGNA:C04_CD_MOD_CONSEGNA" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1215" y="3222" as="geometry" />
+    </mxCell>
+    <mxCell id="edge26" edge="1" value="" parent="1" source="node13" target="node19" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.542;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1589" y="3312" />
+          <mxPoint x="1596" y="3312" />
+          <mxPoint x="1596" y="892" />
+          <mxPoint x="1790" y="892" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label158" parent="edge26" vertex="1" connectable="0" value="R07_CD_VETTORE:C05_CD_VETTORE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1563" y="882" as="geometry" />
+    </mxCell>
+    <mxCell id="edge9" edge="1" value="" parent="1" source="node13" target="node10" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.125;exitY=0.000;exitDx=0;exitDy=0;entryX=0.625;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1455" y="3292" />
+          <mxPoint x="1036" y="3292" />
+          <mxPoint x="1036" y="992" />
+          <mxPoint x="635" y="992" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label56" parent="edge9" vertex="1" connectable="0" value="R07_CD_ABI, R07_CD_CAB:C06_CD_ABI, C06_CD_CAB" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="713" y="2132" as="geometry" />
+    </mxCell>
+    <mxCell id="edge12" edge="1" value="" parent="1" source="node13" target="node1" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.042;exitY=0.000;exitDx=0;exitDy=0;entryX=0.786;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1428" y="3312" />
+          <mxPoint x="996" y="3312" />
+          <mxPoint x="996" y="1652" />
+          <mxPoint x="240" y="1652" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label74" parent="edge12" vertex="1" connectable="0" value="R07_CD_AGENTE:C07_CD_AGENTE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="783" y="2472" as="geometry" />
+    </mxCell>
+    <mxCell id="edge1" edge="1" value="" parent="1" source="node13" target="node28" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.458;exitY=0.000;exitDx=0;exitDy=0;entryX=0.750;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1563" y="3312" />
+          <mxPoint x="1556" y="3312" />
+          <mxPoint x="1556" y="1672" />
+          <mxPoint x="1552" y="1672" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label8" parent="edge1" vertex="1" connectable="0" value="R07_CD_TRASPORTO:C08_CD_TRASPORTO" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1293" y="3029" as="geometry" />
+    </mxCell>
+    <mxCell id="edge18" edge="1" value="" parent="1" source="node13" target="node22" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.958;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1724" y="3112" />
+          <mxPoint x="2436" y="3112" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label110" parent="edge18" vertex="1" connectable="0" value="R07_CD_UNITA_MIS_FAT:G04_CD_UNITA_MIS" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="2167" y="3080" as="geometry" />
+    </mxCell>
+    <mxCell id="edge46" edge="1" value="" parent="1" source="node13" target="node6" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.292;exitY=0.000;exitDx=0;exitDy=0;entryX=0.500;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1509" y="3252" />
+          <mxPoint x="1276" y="3252" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label278" parent="edge46" vertex="1" connectable="0" value="R07_CD_OPERATORE:G25_CD_OPERATORE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1244" y="3242" as="geometry" />
+    </mxCell>
+    <mxCell id="edge51" edge="1" value="" parent="1" source="node13" target="node18" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.208;exitY=0.000;exitDx=0;exitDy=0;entryX=0.250;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1482" y="3272" />
+          <mxPoint x="1076" y="3272" />
+          <mxPoint x="1076" y="972" />
+          <mxPoint x="794" y="972" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label308" parent="edge51" vertex="1" connectable="0" value="R07_CD_CAT_CLIFOR:G36_CD_CAT_CLIFOR" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="811" y="2112" as="geometry" />
+    </mxCell>
+    <mxCell id="edge4" edge="1" value="" parent="1" source="node13" target="node11" style="html=1;rounded=1;edgeStyle=orthogonalEdgeStyle;dashed=0;startArrow=none;endArrow=block;endSize=12;strokeColor=#595959;exitX=0.625;exitY=0.000;exitDx=0;exitDy=0;entryX=0.833;entryY=1.000;entryDx=0;entryDy=0;">
+      <mxGeometry width="50" height="50" relative="1" as="geometry">
+        <Array as="points">
+          <mxPoint x="1616" y="3032" />
+          <mxPoint x="1636" y="3032" />
+          <mxPoint x="1636" y="912" />
+          <mxPoint x="1896" y="912" />
+          <mxPoint x="1896" y="-568" />
+          <mxPoint x="255" y="-568" />
+        </Array>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="label26" parent="edge4" vertex="1" connectable="0" value="R07_CD_NAZIONE:R02_CD_NAZIONE" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=top;strokeColor=default;">
+      <mxGeometry x="1675" y="902" as="geometry" />
+    </mxCell>
+  </root>
+</mxGraphModel>
