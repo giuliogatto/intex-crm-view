@@ -1,0 +1,41 @@
+services:
+  timescaledb:
+    image: timescale/timescaledb-ha:pg16
+    container_name: intexdata
+    ports:
+      - "5444:5432"
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}  # Use environment variable from the shell (.env POSTGRES_PASSWORD=Z12asDfj9EEqT3b)
+      - PGDATA=/custom/data/pgdata
+    volumes:
+      - ./data:/custom/data/pgdata
+      - ./migrations/create-tables.sql:/docker-entrypoint-initdb.d/init.sql:ro  # SQL script for initialization
+    restart: always
+    user: "0:0"
+    networks:
+      - intex_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: intex-pgadmin
+    ports:
+      - "5445:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@intex.com
+      - PGADMIN_DEFAULT_PASSWORD=IAAadmin123PL
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - timescaledb
+    restart: always
+    networks:
+      - intex_network
+
+volumes:
+  pgadmin_data:
+
+networks:
+  intex_network:
+    name: intex_network
+    driver: bridge
+

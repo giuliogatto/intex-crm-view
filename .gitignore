@@ -1,4 +1,4 @@
-data/
+data/data
 backend/__pycache__/
 .env
 supervisord.log

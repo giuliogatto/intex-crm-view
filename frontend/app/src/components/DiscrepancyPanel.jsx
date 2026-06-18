@@ -1,0 +1,186 @@
+import React, { useState, useEffect } from 'react'
+
+export default function DiscrepancyPanel() {
+  const [customers, setCustomers] = useState([])
+  const [selectedCustomer, setSelectedCustomer] = useState('XXX') // Default to TAM & COMPANY
+  const [discrepanze, setDiscrepanze] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  // Fetch customers
+  useEffect(() => {
+    fetch('http://localhost:5446/api/clienti')
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.data) {
+          setCustomers(resData.data)
+        }
+      })
+      .catch((err) => console.error('Error fetching customers:', err))
+  }, [])
+
+  // Fetch discrepancies on customer change
+  useEffect(() => {
+    if (!selectedCustomer) return
+    setLoading(true)
+    fetch(`http://localhost:5446/api/discrepanze?codice_cliente=${selectedCustomer}`)
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.data) {
+          setDiscrepanze(resData.data)
+        }
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error('Error fetching discrepancies:', err)
+        setLoading(false)
+      })
+  }, [selectedCustomer])
+
+  const formatEuro = (num) => {
+    return new Intl.NumberFormat('it-IT', {
+      style: 'currency',
+      currency: 'EUR'
+    }).format(num)
+  }
+
+  const exportCSV = () => {
+    if (discrepanze.length === 0) return
+
+    let csvContent = 'data:text/csv;charset=utf-8,'
+    csvContent += 'Articolo,Colore,Capi Offerti,Valore Offerto,Capi Consegnati,Kg Consegnati,Valore Consegnato,Capi Fatturati,Kg Fatturati,Valore Fatturato,Diff Capi,Diff Valore\n'
+
+    discrepanze.forEach((row) => {
+      csvContent += `"${row.articolo_desc}","${row.colore}",${row.capi_offerti},${row.valore_offerto},${row.capi_consegnati},${row.kg_consegnati},${row.valore_consegnato},${row.capi_fatturati},${row.kg_fatturati},${row.valore_fatturato},${row.diff_capi},${row.diff_valore}\n`
+    })
+
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `discrepanze_audit_${selectedCustomer}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  return (
+    <div className="panel">
+      <div className="panel__head">
+        <span>Auditing Discrepanze (Offerta vs DDT vs Fattura)</span>
+        <button className="btn" onClick={exportCSV} disabled={discrepanze.length === 0}>
+          Esporta Report CSV
+        </button>
+      </div>
+      <div className="panel__body">
+        <div className="filters-grid" style={{ marginBottom: '2rem' }}>
+          <div className="field">
+            <label>Seleziona cliente da controllare</label>
+            <select
+              value={selectedCustomer}
+              onChange={(e) => setSelectedCustomer(e.target.value)}
+              style={{ maxWidth: '400px' }}
+            >
+              <option value="">Seleziona un cliente...</option>
+              {customers.map((c) => (
+                <option key={c.codice} value={c.codice}>
+                  {c.ragione_sociale} ({c.codice})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="loading-indicator">
+            <div className="spinner"></div>
+            <span>Analisi discrepanze in corso...</span>
+          </div>
+        ) : discrepanze.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">⚖️</div>
+            <h3>Nessun dato di confronto</h3>
+            <p>Non sono state trovate lavorazioni registrate per il cliente selezionato.</p>
+          </div>
+        ) : (
+          <div className="table-wrap">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th rowspan="2">Articolo / Colore</th>
+                  <th colspan="2" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.02)' }}>Preventivato (Offerta)</th>
+                  <th colspan="3" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.04)' }}>Consegnato (DDT)</th>
+                  <th colspan="3" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.02)' }}>Fatturato (Fattura)</th>
+                  <th colspan="2" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.04)' }}>Differenze</th>
+                </tr>
+                <tr>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Capi</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Valore</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Capi</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Kg</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Valore</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Capi</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Kg</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Valore</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Capi</th>
+                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Valore</th>
+                </tr>
+              </thead>
+              <tbody>
+                {discrepanze.map((row, idx) => {
+                  const hasDiscrepancy = row.diff_capi !== 0 || row.diff_valore !== 0;
+                  const rowClass = hasDiscrepancy ? 'discrepancy-row--warning' : '';
+
+                  return (
+                    <tr key={idx} className={rowClass}>
+                      <td>
+                        <strong>{row.articolo_desc}</strong>
+                        <div className="text-secondary" style={{ fontSize: '0.8rem' }}>
+                          {row.colore}
+                        </div>
+                      </td>
+                      {/* Offer */}
+                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>{row.capi_offerti || '—'}</td>
+                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>
+                        {row.valore_offerto ? formatEuro(row.valore_offerto) : '—'}
+                      </td>
+                      {/* DDT */}
+                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>{row.capi_consegnati || '—'}</td>
+                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>{row.kg_consegnati || '—'}</td>
+                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
+                        {row.valore_consegnato ? formatEuro(row.valore_consegnato) : '—'}
+                      </td>
+                      {/* Invoice */}
+                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>{row.capi_fatturati || '—'}</td>
+                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>{row.kg_fatturati || '—'}</td>
+                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>
+                        {row.valore_fatturato ? formatEuro(row.valore_fatturato) : '—'}
+                      </td>
+                      {/* Differences */}
+                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
+                        {row.diff_capi === 0 ? (
+                          <span className="text-secondary">—</span>
+                        ) : (
+                          <span className={`discrepancy-tag discrepancy-tag--${row.diff_capi > 0 ? 'pos' : 'neg'}`}>
+                            {row.diff_capi > 0 ? `+${row.diff_capi}` : row.diff_capi}
+                          </span>
+                        )}
+                      </td>
+                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
+                        {row.diff_valore === 0 ? (
+                          <span className="text-secondary">—</span>
+                        ) : (
+                          <span className={`discrepancy-tag discrepancy-tag--${row.diff_valore > 0 ? 'pos' : 'neg'}`}>
+                            {row.diff_valore > 0 ? `+${formatEuro(row.diff_valore)}` : formatEuro(row.diff_valore)}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
