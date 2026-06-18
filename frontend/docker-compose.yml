@@ -1,0 +1,20 @@
+services:
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "5447:5173"
+    volumes:
+      - ./app:/app
+    command: sh -c "export $(cat /app/.env | xargs) && npm install && npm run dev -- --host"
+    env_file:
+      - ./app/.env
+    environment:
+      - NODE_ENV=development
+      - VITE_APP_BACKEND=http://localhost:5446
+    networks:
+      - intex_network
+
+networks:
+  intex_network:
+    external: true
