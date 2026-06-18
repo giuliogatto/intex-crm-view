@@ -14,6 +14,9 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
+      - INTEX_ENDPOINT_USER=${INTEX_ENDPOINT_USER}
+      - INTEX_ENDPOINT_PASSWORD=${INTEX_ENDPOINT_PASSWORD}
+      - INTEX_BASE_URL=${INTEX_BASE_URL}
       - PYTHONUNBUFFERED=1
     networks:
       - intex_network

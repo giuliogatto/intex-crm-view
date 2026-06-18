@@ -85,7 +85,7 @@ CREATE TABLE fatture_righe (
     id SERIAL PRIMARY KEY,
     numero_disposizione VARCHAR(100) NOT NULL REFERENCES fatture_testate(numero_disposizione) ON DELETE CASCADE,
     riga_disposizione INTEGER NOT NULL,
-    numero_bolla VARCHAR(100) REFERENCES ddt_testate(numero_bolla),
+    numero_bolla VARCHAR(100),
     codice_articolo VARCHAR(100) REFERENCES articoli(codice),
     colore VARCHAR(100),
     kg_fatturati NUMERIC(10, 3) NOT NULL DEFAULT 0.000,
