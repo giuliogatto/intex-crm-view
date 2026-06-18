@@ -16,26 +16,23 @@ from database import DatabasePool
 db_pool = DatabasePool()
 
 class OracleSyncProcess:
-    def __init__(self, limit=100, mode="full"):
+    def __init__(self, limit=100, mode="full", start_date=None):
         self.connector = IntexDataConnector()
         self.limit = limit
         self.mode = mode
+        self.start_date = start_date
         
     def fetch_all_paginated(self, endpoint, filters=None, mappings=None):
         """
-        Generic ORDS pagination fetcher. Loop using limit and offset
-        until no items are returned or hasMore is False.
+        Generic ORDS pagination fetcher. Used for smaller tables.
         """
         all_items = []
         offset = 0
-        
-        # Build base ORDS query if filters are passed
         ords_q = None
         if filters and mappings:
             ords_q = self.connector.build_ords_query(filters, mappings)
             
         print(f"  Fetching from {endpoint} (limit={self.limit})...")
-        
         while True:
             params = {"limit": self.limit, "offset": offset}
             if ords_q:
@@ -48,14 +45,24 @@ class OracleSyncProcess:
                     break
                     
                 all_items.extend(items)
-                print(f"    Fetched {len(all_items)} records so far...")
                 
-                # Check ORDS pagination flag
+                # Log date if available
+                latest_date = None
+                for item in items:
+                    date_str = item.get('d02_dt_bolla') or item.get('data_bolla_iso')
+                    if date_str:
+                        date_str = date_str[:10]
+                        if not latest_date or date_str > latest_date:
+                            latest_date = date_str
+                            
+                date_log = f" [Date: {latest_date}]" if latest_date else ""
+                print(f"    Fetched {len(all_items)} records so far...{date_log}")
+                
                 if not data.get('hasMore', False):
                     break
                     
                 offset += self.limit
-                time.sleep(0.3) # Avoid hammering the remote API gateway
+                time.sleep(0.2)
             except Exception as e:
                 print(f"    Error during pagination at offset {offset}: {e}")
                 break
@@ -80,14 +87,23 @@ class OracleSyncProcess:
         """
         
         count = 0
+        uncommitted = 0
         for item in items:
             code = item.get('r07_cd_cliente')
             name = item.get('r07_ragione_soc')
             if code and name:
                 cursor.execute(upsert_query, (str(code).strip(), name.strip()))
                 count += 1
-                
-        conn.commit()
+                uncommitted += 1
+                if uncommitted >= 1000:
+                    conn.commit()
+                    print(f"    [Database] Committed {uncommitted} customers.")
+                    uncommitted = 0
+                    
+        if uncommitted > 0:
+            conn.commit()
+            print(f"    [Database] Final Commit: {uncommitted} customers.")
+            
         cursor.close()
         db_pool.release_conn(conn)
         print(f"  Synced {count} customers.")
@@ -115,7 +131,6 @@ class OracleSyncProcess:
             code = item.get('cw1_cd_articolo_fiscale')
             desc = item.get('cw1_ds_articolo_fiscale')
             if code and desc:
-                # Compositions will be loaded dynamically or left blank
                 cursor.execute(upsert_query, (code.strip(), desc.strip(), desc.strip()))
                 count += 1
                 
@@ -127,122 +142,364 @@ class OracleSyncProcess:
     def sync_fatture_and_seasons(self):
         print("\n--- Syncing Invoices & Seasons ---")
         
-        # Apply filters if incremental mode is requested
         filters = {}
         mappings = {}
-        if self.mode == "incremental":
-            # Sync only invoices from recent years / months
-            filters = {"data_inizio": datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')}
-            mappings = {"date_column": "data_bolla_iso"}
+        
+        # Determine start date filter
+        start_date_val = self.start_date
+        if not start_date_val and self.mode == "incremental":
+            # Default to January 1st of the current year
+            start_date_val = datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
             
-        items = self.fetch_all_paginated("/ords/intex2/F07_003W/", filters, mappings)
-        if not items:
-            print("  No invoices returned.")
-            return
+        if start_date_val:
+            print(f"  Filtering records starting from: {start_date_val}")
+            filters = {"data_inizio": start_date_val}
+            mappings = {"date_column": "D02_DT_BOLLA"}
+            
+        endpoint = "/ords/intex2/F07_003W/"
+        ords_q = None
+        if filters and mappings:
+            ords_q = self.connector.build_ords_query(filters, mappings)
             
         conn = db_pool.get_conn()
         cursor = conn.cursor()
         
-        # 1. First extract and upsert unique seasons
-        seasons = set()
-        for item in items:
-            s_code = item.get('ew2_cd_stagione')
-            if s_code:
-                seasons.add(s_code.strip())
+        offset = 0
+        total_fetched = 0
+        uncommitted_count = 0
+        
+        disposizioni = {} # Keep running totals in memory to prevent overwrite anomalies
+        
+        while True:
+            params = {"limit": self.limit, "offset": offset}
+            if ords_q:
+                params["q"] = ords_q
                 
-        season_query = """
-            INSERT INTO stagioni (codice, descrizione)
-            VALUES (%s, %s)
-            ON CONFLICT (codice) DO NOTHING;
-        """
-        for season in seasons:
-            cursor.execute(season_query, (season, f"Stagione {season}"))
-            
-        # 2. Sync invoice headers (aggregated by disposition number)
-        disposizioni = {}
-        for item in items:
-            disp_num = item.get('ew2_nr_disposizione')
-            if not disp_num:
-                continue
-            disp_num = str(disp_num)
-            
-            # Sum up row amounts to get document total
-            importo = float(item.get('f07_importo_riga_euro') or item.get('f07_importo_riga') or 0.00)
-            
-            if disp_num not in disposizioni:
-                # Extract invoice date from iso fields
-                date_str = item.get('data_bolla_iso') or item.get('d02_dt_bolla')
-                date_val = datetime.now().date()
-                if date_str:
-                    try:
-                        date_val = datetime.strptime(date_str[:10], '%Y-%m-%d').date()
-                    except ValueError:
-                        pass
+            try:
+                data = self.connector.fetch_data(endpoint, params)
+                items = data.get('items', [])
+                if not items:
+                    break
+                    
+                total_fetched += len(items)
                 
-                disposizioni[disp_num] = {
-                    "data": date_val,
-                    "codice_cliente": str(item.get('ew2_cd_cliente') or 'XXX').strip(),
-                    "codice_stagione": (item.get('ew2_cd_stagione') or 'PE 12').strip(),
-                    "importo_totale": 0.0,
-                }
-            disposizioni[disp_num]["importo_totale"] += importo
+                # Find the latest date in this batch
+                latest_date = None
+                for item in items:
+                    date_str = item.get('data_bolla_iso') or item.get('d02_dt_bolla')
+                    if date_str:
+                        date_str = date_str[:10]
+                        if not latest_date or date_str > latest_date:
+                            latest_date = date_str
+                
+                # Log date and progress
+                date_log = f" [Latest date: {latest_date}]" if latest_date else ""
+                print(f"    Fetched {total_fetched} records so far...{date_log}")
+                
+                # 1. Sync unique seasons
+                seasons = set()
+                for item in items:
+                    s_code = item.get('ew2_cd_stagione')
+                    if s_code:
+                        seasons.add(s_code.strip())
+                
+                season_query = """
+                    INSERT INTO stagioni (codice, descrizione)
+                    VALUES (%s, %s)
+                    ON CONFLICT (codice) DO NOTHING;
+                """
+                for season in seasons:
+                    cursor.execute(season_query, (season, f"Stagione {season}"))
+                
+                # 2. Update disposizioni headers running values
+                for item in items:
+                    disp_num = item.get('ew2_nr_disposizione')
+                    if not disp_num:
+                        continue
+                    disp_num = str(disp_num)
+                    importo = float(item.get('f07_importo_riga_euro') or item.get('f07_importo_riga') or 0.00)
+                    
+                    if disp_num not in disposizioni:
+                        date_str = item.get('data_bolla_iso') or item.get('d02_dt_bolla')
+                        date_val = datetime.now().date()
+                        if date_str:
+                            try:
+                                date_val = datetime.strptime(date_str[:10], '%Y-%m-%d').date()
+                            except ValueError:
+                                pass
+                                
+                        disposizioni[disp_num] = {
+                            "data": date_val,
+                            "codice_cliente": str(item.get('ew2_cd_cliente') or 'XXX').strip(),
+                            "codice_stagione": (item.get('ew2_cd_stagione') or 'PE 12').strip(),
+                            "importo_totale": 0.0
+                        }
+                    disposizioni[disp_num]["importo_totale"] += importo
+                
+                # Upsert headers in this batch
+                header_query = """
+                    INSERT INTO fatture_testate (numero_disposizione, data_fattura, codice_cliente, codice_stagione, importo_totale, stato_pagamento)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (numero_disposizione) DO UPDATE SET
+                        data_fattura = EXCLUDED.data_fattura,
+                        codice_cliente = EXCLUDED.codice_cliente,
+                        codice_stagione = EXCLUDED.codice_stagione,
+                        importo_totale = EXCLUDED.importo_totale;
+                """
+                for disp_num in set(str(item.get('ew2_nr_disposizione')) for item in items if item.get('ew2_nr_disposizione')):
+                    h = disposizioni[disp_num]
+                    cursor.execute(header_query, (
+                        disp_num,
+                        h["data"],
+                        h["codice_cliente"],
+                        h["codice_stagione"],
+                        h["importo_totale"],
+                        "Aperta"
+                    ))
+                
+                # 3. Sync invoice lines
+                line_query = """
+                    INSERT INTO fatture_righe (numero_disposizione, riga_disposizione, numero_bolla, codice_articolo, colore, kg_fatturati, capi_fatturati, importo_riga)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (numero_disposizione, riga_disposizione) DO UPDATE SET
+                        numero_bolla = EXCLUDED.numero_bolla,
+                        codice_articolo = EXCLUDED.codice_articolo,
+                        colore = EXCLUDED.colore,
+                        kg_fatturati = EXCLUDED.kg_fatturati,
+                        capi_fatturati = EXCLUDED.capi_fatturati,
+                        importo_riga = EXCLUDED.importo_riga;
+                """
+                for item in items:
+                    disp_num = item.get('ew2_nr_disposizione')
+                    riga_disp = item.get('ew2_riga_disposizione')
+                    if not disp_num or not riga_disp:
+                        continue
+                        
+                    cursor.execute(line_query, (
+                        str(disp_num),
+                        int(riga_disp),
+                        str(item.get('d02_nr_bolla') or '').strip() or None,
+                        (item.get('ew2_cd_articolo_fiscale') or 'CAPI').strip(),
+                        (item.get('ew2_ds_colore') or 'TUTTI').strip(),
+                        float(item.get('f07_kg_fatturati') or 0.0),
+                        int(item.get('f07_nr_capi_fatturati') or 0),
+                        float(item.get('f07_importo_riga_euro') or item.get('f07_importo_riga') or 0.0)
+                    ))
+                
+                uncommitted_count += len(items)
+                
+                # Commit every 1000 records
+                if uncommitted_count >= 1000:
+                    conn.commit()
+                    print(f"      [Database] Committed {uncommitted_count} records to local cache.")
+                    uncommitted_count = 0
+                
+                if not data.get('hasMore', False):
+                    break
+                    
+                offset += self.limit
+                time.sleep(0.2)
+            except Exception as e:
+                print(f"    Error during pagination at offset {offset}: {e}")
+                break
+                
+        # Final commit for remaining rows
+        if uncommitted_count > 0:
+            conn.commit()
+            print(f"      [Database] Final Commit: {uncommitted_count} records committed.")
             
-        header_query = """
-            INSERT INTO fatture_testate (numero_disposizione, data_fattura, codice_cliente, codice_stagione, importo_totale, stato_pagamento)
-            VALUES (%s, %s, %s, %s, %s, %s)
-            ON CONFLICT (numero_disposizione) DO UPDATE SET
-                data_fattura = EXCLUDED.data_fattura,
+        cursor.close()
+        db_pool.release_conn(conn)
+        print(f"  Synced invoice headers and detail lines.")
+
+    def sync_ddts(self):
+        print("\n--- Syncing DDTs (Delivery Notes) ---")
+        
+        # 1. Fetch headers
+        filters_h = {}
+        mappings_h = {}
+        start_date_val = self.start_date
+        if not start_date_val and self.mode == "incremental":
+            start_date_val = datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
+            
+        if start_date_val:
+            print(f"  Filtering DDT Headers starting from: {start_date_val}")
+            filters_h = {"data_inizio": start_date_val}
+            mappings_h = {"date_column": "D02_DT_BOLLA"}
+            
+        header_map = {} # {d02_key: numero_bolla}
+        
+        endpoint_h = "/ords/intex2/D02_DDT_TESTATA_001W/"
+        ords_q_h = None
+        if filters_h and mappings_h:
+            ords_q_h = self.connector.build_ords_query(filters_h, mappings_h)
+            
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        
+        upsert_header = """
+            INSERT INTO ddt_testate (numero_bolla, data_bolla, codice_cliente, codice_stagione)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT (numero_bolla) DO UPDATE SET
+                data_bolla = EXCLUDED.data_bolla,
                 codice_cliente = EXCLUDED.codice_cliente,
-                codice_stagione = EXCLUDED.codice_stagione,
-                importo_totale = EXCLUDED.importo_totale;
+                codice_stagione = EXCLUDED.codice_stagione;
         """
         
-        for disp_num, header in disposizioni.items():
-            cursor.execute(header_query, (
-                disp_num,
-                header["data"],
-                header["codice_cliente"],
-                header["codice_stagione"],
-                header["importo_totale"],
-                "Aperta" # Default status
-            ))
+        offset = 0
+        total_headers = 0
+        uncommitted_h = 0
+        
+        while True:
+            params = {"limit": self.limit, "offset": offset}
+            if ords_q_h:
+                params["q"] = ords_q_h
+                
+            try:
+                data = self.connector.fetch_data(endpoint_h, params)
+                items = data.get('items', [])
+                if not items:
+                    break
+                    
+                total_headers += len(items)
+                print(f"    Fetched {total_headers} DDT headers so far...")
+                
+                for item in items:
+                    key = item.get('d02_key')
+                    nr_bolla = item.get('d02_nr_bolla')
+                    if key is not None and nr_bolla is not None:
+                        nr_bolla_str = str(nr_bolla).strip()
+                        header_map[key] = nr_bolla_str
+                        
+                        date_str = item.get('d02_dt_bolla')
+                        date_val = datetime.now().date()
+                        if date_str:
+                            try:
+                                date_val = datetime.strptime(date_str[:10], '%Y-%m-%d').date()
+                            except ValueError:
+                                pass
+                                
+                        cursor.execute(upsert_header, (
+                            nr_bolla_str,
+                            date_val,
+                            str(item.get('d02_cd_cliente') or 'XXX').strip(),
+                            None
+                        ))
+                        uncommitted_h += 1
+                        if uncommitted_h >= 1000:
+                            conn.commit()
+                            print(f"      [Database] Committed {uncommitted_h} DDT headers to local cache.")
+                            uncommitted_h = 0
+                            
+                if not data.get('hasMore', False):
+                    break
+                offset += self.limit
+                time.sleep(0.2)
+            except Exception as e:
+                print(f"    Error during DDT headers sync at offset {offset}: {e}")
+                break
+                
+        if uncommitted_h > 0:
+            conn.commit()
+            print(f"      [Database] Final Commit: {uncommitted_h} DDT headers.")
             
-        # 3. Sync invoice lines
-        line_query = """
-            INSERT INTO fatture_righe (numero_disposizione, riga_disposizione, numero_bolla, codice_articolo, colore, kg_fatturati, capi_fatturati, importo_riga)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (numero_disposizione, riga_disposizione) DO UPDATE SET
-                numero_bolla = EXCLUDED.numero_bolla,
+        print(f"  Synced {total_headers} DDT headers.")
+        
+        # 2. Fetch lines
+        if not header_map:
+            print("  No DDT headers synced, skipping DDT lines.")
+            cursor.close()
+            db_pool.release_conn(conn)
+            return
+            
+        print("\n  Syncing DDT Detail Lines...")
+        filters_l = {}
+        mappings_l = {}
+        if start_date_val:
+            print(f"  Filtering DDT Lines starting from: {start_date_val}")
+            filters_l = {"data_inizio": start_date_val}
+            mappings_l = {"date_column": "EW1_DATA_BOLLA_CLI"}
+            
+        endpoint_l = "/ords/intex2/D03_DDT_RIGHE_002W/"
+        ords_q_l = None
+        if filters_l and mappings_l:
+            ords_q_l = self.connector.build_ords_query(filters_l, mappings_l)
+            
+        upsert_line = """
+            INSERT INTO ddt_righe (numero_bolla, riga_num, numero_disposizione, riga_disposizione, numero_offerta, codice_articolo, colore, kg_consegnati, capi_consegnati, importo_riga)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (numero_bolla, riga_num) DO UPDATE SET
+                numero_disposizione = EXCLUDED.numero_disposizione,
+                riga_disposizione = EXCLUDED.riga_disposizione,
+                numero_offerta = EXCLUDED.numero_offerta,
                 codice_articolo = EXCLUDED.codice_articolo,
                 colore = EXCLUDED.colore,
-                kg_fatturati = EXCLUDED.kg_fatturati,
-                capi_fatturati = EXCLUDED.capi_fatturati,
+                kg_consegnati = EXCLUDED.kg_consegnati,
+                capi_consegnati = EXCLUDED.capi_consegnati,
                 importo_riga = EXCLUDED.importo_riga;
         """
         
-        line_count = 0
-        for item in items:
-            disp_num = item.get('ew2_nr_disposizione')
-            riga_disp = item.get('ew2_riga_disposizione')
-            if not disp_num or not riga_disp:
-                continue
+        offset = 0
+        total_lines = 0
+        uncommitted_l = 0
+        
+        while True:
+            params = {"limit": self.limit, "offset": offset}
+            if ords_q_l:
+                params["q"] = ords_q_l
                 
-            cursor.execute(line_query, (
-                str(disp_num),
-                int(riga_disp),
-                str(item.get('d02_nr_bolla') or '').strip() or None,
-                (item.get('ew2_cd_articolo_fiscale') or 'CAPI').strip(),
-                (item.get('ew2_ds_colore') or 'TUTTI').strip(),
-                float(item.get('f07_kg_fatturati') or 0.0),
-                int(item.get('f07_nr_capi_fatturati') or 0),
-                float(item.get('f07_importo_riga_euro') or item.get('f07_importo_riga') or 0.0)
-            ))
-            line_count += 1
+            try:
+                data = self.connector.fetch_data(endpoint_l, params)
+                items = data.get('items', [])
+                if not items:
+                    break
+                    
+                total_lines += len(items)
+                print(f"    Fetched {total_lines} DDT lines so far...")
+                
+                for item in items:
+                    key_d02 = item.get('d03_key_d02')
+                    nr_bolla = header_map.get(key_d02)
+                    riga_num = item.get('d03_riga')
+                    
+                    if nr_bolla and riga_num is not None:
+                        price = item.get('d03_prezzo_uni_euro') or item.get('d03_prezzo_uni') or 0.00
+                        qty = item.get('d03_capi_in_uscita') or item.get('d03_kg_in_uscita') or 0
+                        importo = float(price) * float(qty)
+                        
+                        cursor.execute(upsert_line, (
+                            nr_bolla,
+                            int(riga_num),
+                            str(item.get('d03_nr_disp_cli') or '').strip() or None,
+                            item.get('d03_riga_disp_cli'),
+                            None,
+                            (item.get('d03_cd_articolo') or 'CAPI').strip(),
+                            (item.get('ew2_ds_colore') or 'TUTTI').strip(),
+                            float(item.get('d03_kg_in_uscita') or 0.0),
+                            int(item.get('d03_capi_in_uscita') or 0),
+                            importo
+                        ))
+                        uncommitted_l += 1
+                        if uncommitted_l >= 1000:
+                            conn.commit()
+                            print(f"      [Database] Committed {uncommitted_l} DDT lines to local cache.")
+                            uncommitted_l = 0
+                            
+                if not data.get('hasMore', False):
+                    break
+                offset += self.limit
+                time.sleep(0.2)
+            except Exception as e:
+                print(f"    Error during DDT lines sync at offset {offset}: {e}")
+                break
+                
+        if uncommitted_l > 0:
+            conn.commit()
+            print(f"      [Database] Final Commit: {uncommitted_l} DDT lines.")
             
-        conn.commit()
+        print(f"  Synced {total_lines} DDT detail lines.")
         cursor.close()
         db_pool.release_conn(conn)
-        print(f"  Synced {len(seasons)} seasons, {len(disposizioni)} invoice headers, and {line_count} detail lines.")
 
     def run_sync(self):
         print(f"Starting Intex API Database Sync Process (Mode: {self.mode.upper()})...")
@@ -252,7 +509,7 @@ class OracleSyncProcess:
             self.sync_clienti()
             self.sync_articoli()
             self.sync_fatture_and_seasons()
-            # In a full ERP implementation, sync_ddt and sync_offerte would also run here.
+            self.sync_ddts()
             
             elapsed = time.time() - start_time
             print(f"\nDatabase Sync completed successfully in {elapsed:.2f} seconds.")
@@ -273,8 +530,22 @@ if __name__ == "__main__":
         default=100, 
         help="Pagination batch size limit (to avoid remote timeouts)."
     )
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default=None,
+        help="Optional start date (YYYY-MM-DD) to fetch records starting from this date. Overrides incremental default."
+    )
     
     args = parser.parse_args()
     
-    sync_job = OracleSyncProcess(limit=args.limit, mode=args.mode)
+    # Simple validation of start-date format if provided
+    if args.start_date:
+        try:
+            datetime.strptime(args.start_date, '%Y-%m-%d')
+        except ValueError:
+            print("Error: --start-date must be in YYYY-MM-DD format.")
+            sys.exit(1)
+            
+    sync_job = OracleSyncProcess(limit=args.limit, mode=args.mode, start_date=args.start_date)
     sync_job.run_sync()

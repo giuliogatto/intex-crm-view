@@ -44,11 +44,16 @@ class IntexDataConnector:
             start_val = filters.get('data_inizio')
             end_val = filters.get('data_fine')
             if start_val and end_val:
-                query_dict[date_col] = {"$between": [start_val, end_val]}
+                query_dict[date_col] = {
+                    "$between": [
+                        {"$date": f"{start_val}T00:00:00Z"},
+                        {"$date": f"{end_val}T23:59:59Z"}
+                    ]
+                }
             elif start_val:
-                query_dict[date_col] = {"$gte": start_val}
+                query_dict[date_col] = {"$gte": {"$date": f"{start_val}T00:00:00Z"}}
             elif end_val:
-                query_dict[date_col] = {"$lte": end_val}
+                query_dict[date_col] = {"$lte": {"$date": f"{end_val}T23:59:59Z"}}
                 
         # 2. Map standard filter properties to ORDS column filters
         col_mappings = mappings.get('columns', {})
@@ -82,7 +87,7 @@ class IntexDataConnector:
             auth = (self.user, self.password)
             
         try:
-            response = requests.get(url, params=query_params, auth=auth, timeout=15)
+            response = requests.get(url, params=query_params, auth=auth, timeout=60)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
