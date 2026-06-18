@@ -1,22 +1,10 @@
 import React, { useState, useEffect } from 'react'
+import CustomerAutocomplete from './CustomerAutocomplete'
 
 export default function DiscrepancyPanel() {
-  const [customers, setCustomers] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState('XXX') // Default to TAM & COMPANY
   const [discrepanze, setDiscrepanze] = useState([])
   const [loading, setLoading] = useState(false)
-
-  // Fetch customers
-  useEffect(() => {
-    fetch('http://localhost:5446/api/clienti')
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.data) {
-          setCustomers(resData.data)
-        }
-      })
-      .catch((err) => console.error('Error fetching customers:', err))
-  }, [])
 
   // Fetch discrepancies on customer change
   useEffect(() => {
@@ -74,18 +62,11 @@ export default function DiscrepancyPanel() {
         <div className="filters-grid" style={{ marginBottom: '2rem' }}>
           <div className="field">
             <label>Seleziona cliente da controllare</label>
-            <select
+            <CustomerAutocomplete
               value={selectedCustomer}
-              onChange={(e) => setSelectedCustomer(e.target.value)}
-              style={{ maxWidth: '400px' }}
-            >
-              <option value="">Seleziona un cliente...</option>
-              {customers.map((c) => (
-                <option key={c.codice} value={c.codice}>
-                  {c.ragione_sociale} ({c.codice})
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedCustomer}
+              placeholder="Cerca per nome o codice..."
+            />
           </div>
         </div>
 

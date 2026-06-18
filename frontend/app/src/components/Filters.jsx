@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import DateInput from './DateInput'
+import CustomerAutocomplete from './CustomerAutocomplete'
 
 export default function Filters({ activeTab, onSearch, onExport }) {
-  const [customers, setCustomers] = useState([])
   const [filters, setFilters] = useState({
     data_inizio: '',
     data_fine: '',
@@ -10,18 +10,6 @@ export default function Filters({ activeTab, onSearch, onExport }) {
     stagione: '',
     stato: 'Tutte'
   })
-
-  // Fetch customers on mount
-  useEffect(() => {
-    fetch('http://localhost:5446/api/clienti')
-      .then((res) => res.json())
-      .then((resData) => {
-        if (resData.data) {
-          setCustomers(resData.data)
-        }
-      })
-      .catch((err) => console.error('Error fetching customers:', err))
-  }, [])
 
   // Reset status value when activeTab changes
   useEffect(() => {
@@ -76,18 +64,13 @@ export default function Filters({ activeTab, onSearch, onExport }) {
         </div>
         <div className="field">
           <label>Cliente</label>
-          <select
+          <CustomerAutocomplete
             name="codice_cliente"
             value={filters.codice_cliente}
             onChange={handleChange}
-          >
-            <option value="">Tutti i clienti</option>
-            {customers.map((c) => (
-              <option key={c.codice} value={c.codice}>
-                {c.ragione_sociale} ({c.codice})
-              </option>
-            ))}
-          </select>
+            placeholder="Cerca per nome o codice..."
+            allowClear
+          />
         </div>
         <div className="field">
           <label>Stagione</label>
