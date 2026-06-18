@@ -65,6 +65,23 @@ def get_clienti():
         response.status = 500
         return {"error": str(e)}
 
+# 1b. Seasons List
+@app.route('/api/stagioni', method='GET')
+def get_stagioni():
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        cursor.execute("SELECT codice, descrizione FROM stagioni ORDER BY codice DESC;")
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        stagioni = [{"codice": r[0], "descrizione": r[1]} for r in rows]
+        return {"total": len(stagioni), "data": stagioni}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
 # 2. DDT / Bolle List
 @app.route('/api/bolle', method='GET')
 def get_bolle():

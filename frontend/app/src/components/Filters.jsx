@@ -3,6 +3,7 @@ import DateInput from './DateInput'
 import CustomerAutocomplete from './CustomerAutocomplete'
 
 export default function Filters({ activeTab, onSearch, onExport }) {
+  const [stagioni, setStagioni] = useState([])
   const [filters, setFilters] = useState({
     data_inizio: '',
     data_fine: '',
@@ -10,6 +11,15 @@ export default function Filters({ activeTab, onSearch, onExport }) {
     stagione: '',
     stato: 'Tutte'
   })
+
+  useEffect(() => {
+    fetch('http://localhost:5446/api/stagioni')
+      .then((res) => res.json())
+      .then((resData) => {
+        if (resData.data) setStagioni(resData.data)
+      })
+      .catch((err) => console.error('Error fetching seasons:', err))
+  }, [])
 
   // Reset status value when activeTab changes
   useEffect(() => {
@@ -74,13 +84,14 @@ export default function Filters({ activeTab, onSearch, onExport }) {
         </div>
         <div className="field">
           <label>Stagione</label>
-          <input
-            type="text"
-            name="stagione"
-            value={filters.stagione}
-            onChange={handleChange}
-            placeholder="E.g. PE2026"
-          />
+          <select name="stagione" value={filters.stagione} onChange={handleChange}>
+            <option value="">Tutte le stagioni</option>
+            {stagioni.map((s) => (
+              <option key={s.codice} value={s.codice}>
+                {s.codice} — {s.descrizione}
+              </option>
+            ))}
+          </select>
         </div>
 
         {activeTab === 'fatture' && (
