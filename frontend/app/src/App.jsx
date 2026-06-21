@@ -4,7 +4,12 @@ import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
 import ChatPanel from './components/ChatPanel'
 import { API_BASE } from './config'
-import { matchCliente, appendClienteNotFoundMessage, replaceOggiPlaceholder } from './utils/llm'
+import {
+  matchCliente,
+  appendClienteNotFoundMessage,
+  replaceOggiPlaceholder,
+  extractClienteHint
+} from './utils/llm'
 
 function App() {
   const [activeTab, setActiveTab] = useState('bolle')
@@ -155,8 +160,10 @@ function App() {
     return clientiCache.current
   }
 
-  const applyLlmResponse = async (llmJson) => {
-    const { area, filtri = {}, azione = {}, messaggio } = llmJson
+  const applyLlmResponse = async (llmJson, userMessage = '') => {
+    const { area, messaggio } = llmJson || {}
+    const filtri = llmJson?.filtri || {}
+    const azione = llmJson?.azione || {}
     const tab = area || 'bolle'
 
     const newFilters = {
@@ -167,16 +174,28 @@ function App() {
       stato: filtri.stato || (tab === 'offerte' ? 'Tutti' : 'Tutte')
     }
 
+    const llmCliente = filtri.cliente?.trim() || ''
+    const userHint = extractClienteHint(userMessage)
+    const clienti = await getClienti()
+
+    const llmMatch = llmCliente ? matchCliente(llmCliente, clienti) : null
+    const userMatch = userHint ? matchCliente(userHint, clienti) : null
+
     let matchResult = { codice: '', matched: true, ambiguous: false, candidates: [] }
-    if (filtri.cliente) {
-      const clienti = await getClienti()
-      matchResult = matchCliente(filtri.cliente, clienti)
-      newFilters.codice_cliente = matchResult.codice
+    if (userMatch?.ambiguous) {
+      matchResult = userMatch
+    } else if (llmMatch) {
+      matchResult = llmMatch
+    } else if (userMatch) {
+      matchResult = userMatch
     }
 
+    newFilters.codice_cliente = matchResult.codice
+
+    const clienteQuery = userHint || llmCliente
     const finalMessaggio = appendClienteNotFoundMessage(
       messaggio,
-      filtri.cliente,
+      clienteQuery,
       matchResult
     )
 

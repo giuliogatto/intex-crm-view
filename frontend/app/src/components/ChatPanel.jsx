@@ -5,6 +5,7 @@ import { parseLlmJson } from '../utils/llm'
 export default function ChatPanel({ onResponse, onClienteSelect }) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
+  const [chatId, setChatId] = useState(null)
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef(null)
 
@@ -21,16 +22,21 @@ export default function ChatPanel({ onResponse, onClienteSelect }) {
     setSending(true)
 
     try {
+      const payload = { message: text }
+      if (chatId != null) payload.chat_id = chatId
+
       const res = await fetch(`${API_BASE}/llmrequest`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify(payload)
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Errore nella richiesta LLM')
 
+      if (data.chat_id != null) setChatId(data.chat_id)
+
       const parsed = parseLlmJson(data.response)
-      const result = await onResponse(parsed)
+      const result = await onResponse(parsed, text)
       const messaggio = typeof result === 'string' ? result : result.messaggio
 
       setMessages((prev) => [

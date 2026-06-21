@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 
 from prompts import genericPrompt, replace_oggi_placeholder
-from LLMservice import send_prompt
+from LLMservice import send_prompt, get_model_name
 
 app = Bottle()
 db_pool = DatabasePool()
@@ -409,8 +409,58 @@ def get_discrepanze():
         response.status = 500
         return {"error": str(e)}
 
+DEFAULT_USER_ID = "anonymous"
+ROOT_PROVIDER_MESSAGE_ID = "root"
+
+
+def _get_latest_assistant_response_id(cursor, chat_id):
+    cursor.execute(
+        """
+        SELECT provider_message_id
+        FROM messages
+        WHERE chat_id = %(chat_id)s AND role = 'assistant'
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        {"chat_id": chat_id},
+    )
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
+def _get_chat_history(cursor, chat_id):
+    cursor.execute(
+        """
+        SELECT role, content
+        FROM messages
+        WHERE chat_id = %(chat_id)s
+        ORDER BY id ASC
+        """,
+        {"chat_id": chat_id},
+    )
+    return [{"role": row[0], "content": row[1]} for row in cursor.fetchall()]
+
+
+def _insert_message(cursor, chat_id, role, content, provider_message_id):
+    cursor.execute(
+        """
+        INSERT INTO messages (chat_id, role, content, provider_message_id)
+        VALUES (%(chat_id)s, %(role)s, %(content)s, %(provider_message_id)s)
+        RETURNING id
+        """,
+        {
+            "chat_id": chat_id,
+            "role": role,
+            "content": content,
+            "provider_message_id": provider_message_id,
+        },
+    )
+    return cursor.fetchone()[0]
+
+
 @app.route('/llmrequest', method='POST')
 def llmrequest():
+    conn = None
     try:
         data = request.json
         if not data or 'message' not in data:
@@ -422,9 +472,67 @@ def llmrequest():
             response.status = 400
             return {"error": "Field 'message' must be a non-empty string"}
 
-        prompt = replace_oggi_placeholder(genericPrompt + "\n" + user_query)
-        llm_response = send_prompt(prompt)
-        llm_response = replace_oggi_placeholder(llm_response)
+        user_query = user_query.strip()
+        user_id = data.get('user_id') or DEFAULT_USER_ID
+        chat_id = data.get('chat_id')
+        model = get_model_name()
+        instructions = replace_oggi_placeholder(genericPrompt)
+
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        previous_response_id = None
+        history = None
+
+        if chat_id is not None:
+            cursor.execute("SELECT id FROM chats WHERE id = %(chat_id)s", {"chat_id": chat_id})
+            if not cursor.fetchone():
+                cursor.close()
+                db_pool.release_conn(conn)
+                response.status = 404
+                return {"error": f"Chat {chat_id} not found"}
+
+            previous_response_id = _get_latest_assistant_response_id(cursor, chat_id)
+            history = _get_chat_history(cursor, chat_id)
+        else:
+            cursor.execute(
+                """
+                INSERT INTO chats (user_id, model)
+                VALUES (%(user_id)s, %(model)s)
+                RETURNING id
+                """,
+                {"user_id": user_id, "model": model},
+            )
+            chat_id = cursor.fetchone()[0]
+
+        user_provider_message_id = previous_response_id or ROOT_PROVIDER_MESSAGE_ID
+        _insert_message(cursor, chat_id, "user", user_query, user_provider_message_id)
+
+        if previous_response_id or history:
+            llm_result = send_prompt(
+                user_query,
+                instructions=instructions,
+                previous_response_id=previous_response_id,
+                history=history,
+            )
+        else:
+            # First turn: keep the legacy prompt shape so the user query follows
+            # "Ecco la richiesta:" in the same input block.
+            llm_result = send_prompt(replace_oggi_placeholder(genericPrompt + "\n" + user_query))
+        llm_response = replace_oggi_placeholder(llm_result["text"])
+        assistant_provider_message_id = llm_result["response_id"]
+
+        _insert_message(
+            cursor,
+            chat_id,
+            "assistant",
+            llm_response,
+            assistant_provider_message_id,
+        )
+        conn.commit()
+        cursor.close()
+        db_pool.release_conn(conn)
+        conn = None
 
         try:
             response_json = json.loads(llm_response)
@@ -432,8 +540,11 @@ def llmrequest():
         except json.JSONDecodeError:
             print(llm_response)
 
-        return {"response": llm_response}
+        return {"response": llm_response, "chat_id": chat_id}
     except Exception as e:
+        if conn is not None:
+            conn.rollback()
+            db_pool.release_conn(conn)
         response.status = 500
         return {"error": str(e)}
 

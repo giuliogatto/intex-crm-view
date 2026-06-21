@@ -122,6 +122,15 @@ function findClienteCandidates(query, clienti) {
 
 const MAX_DISAMBIGUATION_CANDIDATES = 8
 
+const CLIENTE_HINT_PATTERN =
+  /\b(?:di|del|della|dei|delle|per il cliente|per la cliente|per)\s+([A-Za-z0-9&][A-Za-z0-9&.\s'()-]*?)(?:\s+(?:per|nel|nell|nei|nelle|tra|da|dal|dalla|dai|dalle|emess[ae]|del|dello|della|dei|delle|in|a|ad|al|all|agli|alle|con|e|che|non|stagione|anno|gennaio|febbraio|marzo|aprile|maggio|giugno|luglio|agosto|settembre|ottobre|novembre|dicembre|\d{4})|[?.!]|$)/i
+
+export function extractClienteHint(message) {
+  if (!message?.trim()) return ''
+  const match = message.match(CLIENTE_HINT_PATTERN)
+  return match?.[1]?.trim() || ''
+}
+
 /**
  * Match an LLM-returned cliente string against the local /api/clienti list.
  * Returns a single codice, multiple ambiguous candidates, or no match.
