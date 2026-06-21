@@ -20,6 +20,22 @@ def parse_date(date_str):
             pass
     return None
 
+
+def parse_pagination(default_limit=20, max_limit=100):
+    try:
+        page = int(request.query.get('page', 1))
+    except (TypeError, ValueError):
+        page = 1
+    try:
+        limit = int(request.query.get('limit', default_limit))
+    except (TypeError, ValueError):
+        limit = default_limit
+
+    page = max(page, 1)
+    limit = max(min(limit, max_limit), 1)
+    offset = (page - 1) * limit
+    return page, limit, offset
+
 # CORS Headers Hooks
 @app.hook('after_request')
 def enable_cors():
@@ -408,6 +424,126 @@ def get_discrepanze():
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
+
+# 7. Chats List (paginated)
+@app.route('/api/chats', method='GET')
+def get_chats():
+    page, limit, offset = parse_pagination(default_limit=20, max_limit=100)
+
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT COUNT(*) FROM chats")
+        total = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT c.id, c.user_id, c.model,
+                   TO_CHAR(c.created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at,
+                   (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id) AS message_count
+            FROM chats c
+            ORDER BY c.created_at DESC, c.id DESC
+            LIMIT %(limit)s OFFSET %(offset)s
+            """,
+            {"limit": limit, "offset": offset},
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        pages = max((total + limit - 1) // limit, 1) if total else 1
+        chats = [
+            {
+                "id": r[0],
+                "user_id": r[1],
+                "model": r[2],
+                "created_at": r[3],
+                "message_count": r[4],
+            }
+            for r in rows
+        ]
+        return {"total": total, "page": page, "limit": limit, "pages": pages, "data": chats}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
+# 8. Chat Messages (paginated)
+@app.route('/api/chats/<chat_id>/messages', method='GET')
+def get_chat_messages(chat_id):
+    page, limit, offset = parse_pagination(default_limit=50, max_limit=200)
+
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT id, user_id, model,
+                   TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at
+            FROM chats
+            WHERE id = %(chat_id)s
+            """,
+            {"chat_id": chat_id},
+        )
+        chat_row = cursor.fetchone()
+        if not chat_row:
+            cursor.close()
+            db_pool.release_conn(conn)
+            response.status = 404
+            return {"error": "Chat non trovata"}
+
+        cursor.execute(
+            "SELECT COUNT(*) FROM messages WHERE chat_id = %(chat_id)s",
+            {"chat_id": chat_id},
+        )
+        total = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            SELECT id, role, content, provider_message_id,
+                   TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at
+            FROM messages
+            WHERE chat_id = %(chat_id)s
+            ORDER BY id ASC
+            LIMIT %(limit)s OFFSET %(offset)s
+            """,
+            {"chat_id": chat_id, "limit": limit, "offset": offset},
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        pages = max((total + limit - 1) // limit, 1) if total else 1
+        chat = {
+            "id": chat_row[0],
+            "user_id": chat_row[1],
+            "model": chat_row[2],
+            "created_at": chat_row[3],
+        }
+        messages = [
+            {
+                "id": r[0],
+                "role": r[1],
+                "content": r[2],
+                "provider_message_id": r[3],
+                "created_at": r[4],
+            }
+            for r in rows
+        ]
+        return {
+            "chat": chat,
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages": pages,
+            "data": messages,
+        }
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
 
 DEFAULT_USER_ID = "anonymous"
 ROOT_PROVIDER_MESSAGE_ID = "root"

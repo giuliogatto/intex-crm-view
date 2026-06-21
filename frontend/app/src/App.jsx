@@ -304,8 +304,11 @@ function App() {
           <h1>Intex Consultazione</h1>
           <span className="badge-mock">Database Active</span>
         </div>
-        <div className="badge-mock" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
-          Port: 5447
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <a href="/chats" className="btn">💬 Chats</a>
+          <span className="badge-mock" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+            Port: 5447
+          </span>
         </div>
       </header>
 
