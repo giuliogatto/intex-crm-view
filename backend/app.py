@@ -3,6 +3,9 @@ from database import DatabasePool
 from datetime import datetime
 import json
 
+from prompts import genericPrompt
+from LLMservice import send_prompt
+
 app = Bottle()
 db_pool = DatabasePool()
 
@@ -402,6 +405,32 @@ def get_discrepanze():
             } for r in rows
         ]
         return {"total": len(discrepanze), "data": discrepanze}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+@app.route('/llmrequest', method='POST')
+def llmrequest():
+    try:
+        data = request.json
+        if not data or 'message' not in data:
+            response.status = 400
+            return {"error": "Missing required field: message"}
+
+        user_query = data['message']
+        if not isinstance(user_query, str) or not user_query.strip():
+            response.status = 400
+            return {"error": "Field 'message' must be a non-empty string"}
+
+        llm_response = send_prompt(genericPrompt + "\n" + user_query)
+
+        try:
+            response_json = json.loads(llm_response)
+            print(json.dumps(response_json, ensure_ascii=False, indent=2))
+        except json.JSONDecodeError:
+            print(llm_response)
+
+        return {"response": llm_response}
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
