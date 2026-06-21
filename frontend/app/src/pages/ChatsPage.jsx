@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { API_BASE } from '../config'
+import { authFetch } from '../utils/auth'
+import { useAuth } from '../context/AuthContext'
 
 const CHATS_PAGE_SIZE = 20
 const MESSAGES_PAGE_SIZE = 50
@@ -80,6 +81,7 @@ function ArchiveMessage({ msg, chatDetail }) {
 }
 
 export default function ChatsPage() {
+  const { user, logout } = useAuth()
   const [chats, setChats] = useState([])
   const [chatsPage, setChatsPage] = useState(1)
   const [chatsPages, setChatsPages] = useState(1)
@@ -96,7 +98,7 @@ export default function ChatsPage() {
 
   useEffect(() => {
     setChatsLoading(true)
-    fetch(`${API_BASE}/api/chats?page=${chatsPage}&limit=${CHATS_PAGE_SIZE}`)
+    authFetch(`/api/chats?page=${chatsPage}&limit=${CHATS_PAGE_SIZE}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.data) {
@@ -120,8 +122,8 @@ export default function ChatsPage() {
     }
 
     setMessagesLoading(true)
-    fetch(
-      `${API_BASE}/api/chats/${selectedChatId}/messages?page=${messagesPage}&limit=${MESSAGES_PAGE_SIZE}`
+    authFetch(
+      `/api/chats/${selectedChatId}/messages?page=${messagesPage}&limit=${MESSAGES_PAGE_SIZE}`
     )
       .then((res) => res.json())
       .then((data) => {
@@ -151,9 +153,15 @@ export default function ChatsPage() {
           <h1>Intex Chats</h1>
           <span className="badge-mock">Archivio Conversazioni</span>
         </div>
-        <a href="/" className="btn">
-          ← Torna alla consultazione
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="badge-mock" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+            {user?.username}
+          </span>
+          <a href="/" className="btn">
+            ← Torna alla consultazione
+          </a>
+          <button type="button" className="btn" onClick={logout}>Esci</button>
+        </div>
       </header>
 
       <div className="chats-layout">

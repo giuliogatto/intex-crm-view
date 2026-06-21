@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import CustomerAutocomplete from './CustomerAutocomplete'
-import { API_BASE } from '../config'
+import { authFetch } from '../utils/auth'
 
 export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCustomerChange }) {
   const [internalCustomer, setInternalCustomer] = useState('XXX')
@@ -13,7 +13,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
   useEffect(() => {
     if (!selectedCustomer) return
     setLoading(true)
-    fetch(`${API_BASE}/api/discrepanze?codice_cliente=${selectedCustomer}`)
+    authFetch(`/api/discrepanze?codice_cliente=${selectedCustomer}`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.data) {

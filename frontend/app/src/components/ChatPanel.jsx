@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react'
-import { API_BASE } from '../config'
+import { authFetch } from '../utils/auth'
 import { parseLlmJson } from '../utils/llm'
 
 export default function ChatPanel({ onResponse, onClienteSelect }) {
@@ -25,7 +25,7 @@ export default function ChatPanel({ onResponse, onClienteSelect }) {
       const payload = { message: text }
       if (chatId != null) payload.chat_id = chatId
 
-      const res = await fetch(`${API_BASE}/llmrequest`, {
+      const res = await authFetch('/llmrequest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

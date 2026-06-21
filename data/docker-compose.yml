@@ -9,7 +9,8 @@ services:
       - PGDATA=/custom/data/pgdata
     volumes:
       - ./data:/custom/data/pgdata
-      - ./migrations/create-tables.sql:/docker-entrypoint-initdb.d/init.sql:ro  # SQL script for initialization
+      - ./migrations/create-tables.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+      - ./migrations/create-users.sql:/docker-entrypoint-initdb.d/02-users.sql:ro
     restart: always
     user: "0:0"
     networks:

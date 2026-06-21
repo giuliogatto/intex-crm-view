@@ -3,7 +3,8 @@ import Filters from './components/Filters'
 import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
 import ChatPanel from './components/ChatPanel'
-import { API_BASE } from './config'
+import { authFetch } from './utils/auth'
+import { useAuth } from './context/AuthContext'
 import {
   matchCliente,
   appendClienteNotFoundMessage,
@@ -12,6 +13,7 @@ import {
 } from './utils/llm'
 
 function App() {
+  const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('bolle')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -50,7 +52,7 @@ function App() {
       params.append('stato', filters.stato)
     }
 
-    fetch(`${API_BASE}/api/${tab}?${params.toString()}`)
+    authFetch(`/api/${tab}?${params.toString()}`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.data) {
@@ -97,7 +99,7 @@ function App() {
       return
     }
     setLoading(true)
-    fetch(`${API_BASE}/api/fatture/${selectedInvoiceId}`)
+    authFetch(`/api/fatture/${selectedInvoiceId}`)
       .then((res) => res.json())
       .then((resData) => {
         setInvoiceDetail(resData)
@@ -154,7 +156,7 @@ function App() {
 
   const getClienti = async () => {
     if (clientiCache.current) return clientiCache.current
-    const res = await fetch(`${API_BASE}/api/clienti`)
+    const res = await authFetch('/api/clienti')
     const resData = await res.json()
     clientiCache.current = resData.data || []
     return clientiCache.current
@@ -305,10 +307,11 @@ function App() {
           <span className="badge-mock">Database Active</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <a href="/chats" className="btn">💬 Chats</a>
           <span className="badge-mock" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
-            Port: 5447
+            {user?.username}
           </span>
+          <a href="/chats" className="btn">💬 Chats</a>
+          <button type="button" className="btn" onClick={logout}>Esci</button>
         </div>
       </header>
 

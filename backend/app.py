@@ -3,6 +3,7 @@ from database import DatabasePool
 from datetime import datetime
 import json
 
+from auth import authenticate_user, create_token, get_current_user
 from prompts import genericPrompt, replace_oggi_placeholder
 from LLMservice import send_prompt, get_model_name
 
@@ -36,17 +37,77 @@ def parse_pagination(default_limit=20, max_limit=100):
     offset = (page - 1) * limit
     return page, limit, offset
 
+PUBLIC_PATHS = {'/health', '/api/auth/login'}
+
 # CORS Headers Hooks
 @app.hook('after_request')
 def enable_cors():
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token'
+    response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization'
+
+@app.hook('before_request')
+def require_auth():
+    if request.method == 'OPTIONS':
+        return
+    path = request.path
+    if path in PUBLIC_PATHS:
+        return
+    if path.startswith('/api/') or path == '/llmrequest':
+        user = get_current_user(db_pool)
+        if not user:
+            response.status = 401
+            return {"error": "Authentication required"}
+        request.environ['intex.user'] = user
 
 @app.route('/<:re:.*>', method='OPTIONS')
 def options_handler():
     response.status = 200
     return {}
+
+@app.route('/api/auth/login', method='POST')
+def auth_login():
+    try:
+        data = request.json
+        if not data:
+            response.status = 400
+            return {"error": "Invalid request body"}
+
+        username = (data.get('username') or '').strip()
+        password = data.get('password') or ''
+        if not username or not password:
+            response.status = 400
+            return {"error": "Username and password are required"}
+
+        user = authenticate_user(db_pool, username, password)
+        if not user:
+            response.status = 401
+            return {"error": "Invalid username or password"}
+
+        token = create_token(user['id'], user['username'], user['role'])
+        return {
+            "token": token,
+            "user": {
+                "id": user['id'],
+                "username": user['username'],
+                "role": user['role'],
+            },
+        }
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+@app.route('/api/auth/me', method='GET')
+def auth_me():
+    user = get_current_user(db_pool)
+    if not user:
+        response.status = 401
+        return {"error": "Authentication required"}
+    return {"user": user}
+
+@app.route('/api/auth/logout', method='POST')
+def auth_logout():
+    return {"status": "ok"}
 
 # Health & Database connection check
 @app.route('/health')

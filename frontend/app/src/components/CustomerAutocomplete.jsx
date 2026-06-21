@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { authFetch } from '../utils/auth'
 
 const MAX_RESULTS = 20
 
@@ -60,7 +61,7 @@ export default function CustomerAutocomplete({
   }
 
   useEffect(() => {
-    fetch('http://localhost:5446/api/clienti')
+    authFetch('/api/clienti')
       .then((res) => res.json())
       .then((resData) => {
         if (resData.data) setCustomers(resData.data)
