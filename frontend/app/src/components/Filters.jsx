@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import DateInput from './DateInput'
 import CustomerAutocomplete from './CustomerAutocomplete'
+import { API_BASE } from '../config'
 
-export default function Filters({ activeTab, onSearch, onExport }) {
+export default function Filters({ activeTab, onSearch, onExport, filterValues }) {
   const [stagioni, setStagioni] = useState([])
   const [filters, setFilters] = useState({
     data_inizio: '',
@@ -13,7 +14,13 @@ export default function Filters({ activeTab, onSearch, onExport }) {
   })
 
   useEffect(() => {
-    fetch('http://localhost:5446/api/stagioni')
+    if (filterValues) {
+      setFilters(filterValues)
+    }
+  }, [filterValues])
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/stagioni`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.data) setStagioni(resData.data)

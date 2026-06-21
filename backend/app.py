@@ -3,7 +3,7 @@ from database import DatabasePool
 from datetime import datetime
 import json
 
-from prompts import genericPrompt
+from prompts import genericPrompt, replace_oggi_placeholder
 from LLMservice import send_prompt
 
 app = Bottle()
@@ -422,7 +422,9 @@ def llmrequest():
             response.status = 400
             return {"error": "Field 'message' must be a non-empty string"}
 
-        llm_response = send_prompt(genericPrompt + "\n" + user_query)
+        prompt = replace_oggi_placeholder(genericPrompt + "\n" + user_query)
+        llm_response = send_prompt(prompt)
+        llm_response = replace_oggi_placeholder(llm_response)
 
         try:
             response_json = json.loads(llm_response)

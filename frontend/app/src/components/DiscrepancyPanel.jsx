@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import CustomerAutocomplete from './CustomerAutocomplete'
+import { API_BASE } from '../config'
 
-export default function DiscrepancyPanel() {
-  const [selectedCustomer, setSelectedCustomer] = useState('XXX') // Default to TAM & COMPANY
+export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCustomerChange }) {
+  const [internalCustomer, setInternalCustomer] = useState('XXX')
+  const selectedCustomer = customerProp ?? internalCustomer
+  const setSelectedCustomer = onCustomerChange ?? setInternalCustomer
   const [discrepanze, setDiscrepanze] = useState([])
   const [loading, setLoading] = useState(false)
 
@@ -10,7 +13,7 @@ export default function DiscrepancyPanel() {
   useEffect(() => {
     if (!selectedCustomer) return
     setLoading(true)
-    fetch(`http://localhost:5446/api/discrepanze?codice_cliente=${selectedCustomer}`)
+    fetch(`${API_BASE}/api/discrepanze?codice_cliente=${selectedCustomer}`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.data) {

@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Filters from './components/Filters'
 import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
+import ChatPanel from './components/ChatPanel'
+import { API_BASE } from './config'
+import { matchCliente, appendClienteNotFoundMessage, replaceOggiPlaceholder } from './utils/llm'
 
 function App() {
   const [activeTab, setActiveTab] = useState('bolle')
@@ -16,6 +19,11 @@ function App() {
     stagione: '',
     stato: 'Tutte'
   })
+  const [discrepancyCustomer, setDiscrepancyCustomer] = useState('XXX')
+  const [pendingExport, setPendingExport] = useState(false)
+  const [pendingInvoiceId, setPendingInvoiceId] = useState(null)
+  const clientiCache = useRef(null)
+  const skipNextTabFetch = useRef(false)
 
   // Fetch standard listings based on tab and filters
   const fetchData = (tab, filters = currentFilters) => {
@@ -37,7 +45,7 @@ function App() {
       params.append('stato', filters.stato)
     }
 
-    fetch(`http://localhost:5446/api/${tab}?${params.toString()}`)
+    fetch(`${API_BASE}/api/${tab}?${params.toString()}`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.data) {
@@ -62,9 +70,20 @@ function App() {
   // Fetch list data when activeTab changes
   useEffect(() => {
     if (activeTab !== 'discrepanze') {
+      if (skipNextTabFetch.current) {
+        skipNextTabFetch.current = false
+        return
+      }
       fetchData(activeTab)
     }
   }, [activeTab])
+
+  useEffect(() => {
+    if (pendingInvoiceId && !loading) {
+      setSelectedInvoiceId(pendingInvoiceId)
+      setPendingInvoiceId(null)
+    }
+  }, [pendingInvoiceId, loading])
 
   // Fetch invoice details when selectedInvoiceId changes
   useEffect(() => {
@@ -73,7 +92,7 @@ function App() {
       return
     }
     setLoading(true)
-    fetch(`http://localhost:5446/api/fatture/${selectedInvoiceId}`)
+    fetch(`${API_BASE}/api/fatture/${selectedInvoiceId}`)
       .then((res) => res.json())
       .then((resData) => {
         setInvoiceDetail(resData)
@@ -121,16 +140,132 @@ function App() {
     document.body.removeChild(link)
   }
 
+  useEffect(() => {
+    if (pendingExport && !loading && data.length > 0) {
+      exportCSV()
+      setPendingExport(false)
+    }
+  }, [pendingExport, loading, data])
+
+  const getClienti = async () => {
+    if (clientiCache.current) return clientiCache.current
+    const res = await fetch(`${API_BASE}/api/clienti`)
+    const resData = await res.json()
+    clientiCache.current = resData.data || []
+    return clientiCache.current
+  }
+
+  const applyLlmResponse = async (llmJson) => {
+    const { area, filtri = {}, azione = {}, messaggio } = llmJson
+    const tab = area || 'bolle'
+
+    const newFilters = {
+      data_inizio: replaceOggiPlaceholder(filtri.data_inizio || ''),
+      data_fine: replaceOggiPlaceholder(filtri.data_fine || ''),
+      codice_cliente: '',
+      stagione: filtri.stagione || '',
+      stato: filtri.stato || (tab === 'offerte' ? 'Tutti' : 'Tutte')
+    }
+
+    let matchResult = { codice: '', matched: true, ambiguous: false, candidates: [] }
+    if (filtri.cliente) {
+      const clienti = await getClienti()
+      matchResult = matchCliente(filtri.cliente, clienti)
+      newFilters.codice_cliente = matchResult.codice
+    }
+
+    const finalMessaggio = appendClienteNotFoundMessage(
+      messaggio,
+      filtri.cliente,
+      matchResult
+    )
+
+    const disambiguationContext = { tab, filtri: newFilters, azione }
+
+    if (matchResult.ambiguous) {
+      setData([])
+      setLoading(false)
+      setSelectedInvoiceId(null)
+      setInvoiceDetail(null)
+      skipNextTabFetch.current = true
+      setActiveTab(tab)
+      setCurrentFilters(newFilters)
+
+      return {
+        messaggio: finalMessaggio || 'Richiesta elaborata.',
+        disambiguation: {
+          prompt: 'Molteplici clienti trovati, quale desideri?',
+          candidates: matchResult.candidates,
+          context: disambiguationContext
+        }
+      }
+    }
+
+    if (tab === 'discrepanze') {
+      setDiscrepancyCustomer(matchResult.codice || 'XXX')
+      setData([])
+      setLoading(false)
+      setSelectedInvoiceId(null)
+      setInvoiceDetail(null)
+      setActiveTab('discrepanze')
+      return { messaggio: finalMessaggio || 'Apertura pannello auditing discrepanze.' }
+    }
+
+    setData([])
+    setLoading(true)
+    setSelectedInvoiceId(null)
+    setInvoiceDetail(null)
+    skipNextTabFetch.current = true
+    setActiveTab(tab)
+    setCurrentFilters(newFilters)
+    fetchData(tab, newFilters)
+
+    if (azione.tipo === 'dettaglio_fattura' && azione.numero_documento) {
+      setPendingInvoiceId(azione.numero_documento)
+    } else if (azione.tipo === 'esporta_csv') {
+      setPendingExport(true)
+    }
+
+    return { messaggio: finalMessaggio || 'Richiesta elaborata.' }
+  }
+
+  const applyClienteSelection = (codice, context) => {
+    const { tab, filtri, azione = {} } = context
+    const newFilters = { ...filtri, codice_cliente: codice }
+
+    if (tab === 'discrepanze') {
+      setDiscrepancyCustomer(codice)
+      setCurrentFilters(newFilters)
+      setActiveTab('discrepanze')
+      return
+    }
+
+    setData([])
+    setLoading(true)
+    setSelectedInvoiceId(null)
+    setInvoiceDetail(null)
+    skipNextTabFetch.current = true
+    setActiveTab(tab)
+    setCurrentFilters(newFilters)
+    fetchData(tab, newFilters)
+
+    if (azione.tipo === 'dettaglio_fattura' && azione.numero_documento) {
+      setPendingInvoiceId(azione.numero_documento)
+    } else if (azione.tipo === 'esporta_csv') {
+      setPendingExport(true)
+    }
+  }
+
   // Pre-load filter inputs for interactive Q&A shortcuts
   const applyQuestionShortcut = (tab, qFilters) => {
     setData([])
     setLoading(true)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
+    skipNextTabFetch.current = true
     setActiveTab(tab)
     setCurrentFilters((prev) => {
       const merged = { ...prev, ...qFilters }
-      // Trigger fetch directly since state update is asynchronous
       fetchData(tab, merged)
       return merged
     })
@@ -183,6 +318,10 @@ function App() {
       </nav>
 
       <div className="dashboard-grid">
+        <div className="dashboard-chat">
+          <ChatPanel onResponse={applyLlmResponse} onClienteSelect={applyClienteSelection} />
+        </div>
+
         <div className="dashboard-main">
           {activeTab !== 'discrepanze' && (
             <div className="panel">
@@ -192,6 +331,7 @@ function App() {
                   activeTab={activeTab}
                   onSearch={handleSearch}
                   onExport={exportCSV}
+                  filterValues={currentFilters}
                 />
               </div>
             </div>
@@ -279,7 +419,10 @@ function App() {
               )}
             </div>
           ) : (
-            <DiscrepancyPanel />
+            <DiscrepancyPanel
+              selectedCustomer={discrepancyCustomer}
+              onCustomerChange={setDiscrepancyCustomer}
+            />
           )}
         </div>
 
