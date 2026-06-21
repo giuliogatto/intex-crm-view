@@ -94,6 +94,14 @@ CREATE TABLE fatture_righe (
     CONSTRAINT uq_fatture_righe UNIQUE (numero_disposizione, riga_disposizione)
 );
 
+-- Indexes
+CREATE INDEX idx_clienti_ragione_sociale ON clienti (ragione_sociale);
+CREATE INDEX idx_offerte_testate_search ON offerte_testate (codice_cliente, data_offerta, codice_stagione);
+CREATE INDEX idx_ddt_testate_search ON ddt_testate (codice_cliente, data_bolla, codice_stagione);
+CREATE INDEX idx_ddt_righe_links ON ddt_righe (numero_disposizione, numero_offerta);
+CREATE INDEX idx_fatture_testate_search ON fatture_testate (codice_cliente, data_fattura, codice_stagione);
+CREATE INDEX idx_fatture_righe_bolla ON fatture_righe (numero_bolla);
+
 CREATE TABLE chats (
     id SERIAL PRIMARY KEY,
     user_id VARCHAR(100) NOT NULL,
