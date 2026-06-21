@@ -94,6 +94,28 @@ CREATE TABLE fatture_righe (
     CONSTRAINT uq_fatture_righe UNIQUE (numero_disposizione, riga_disposizione)
 );
 
+CREATE TABLE chats (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(100) NOT NULL,
+    model TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+create index idx_chats_user_id on chats(user_id);
+create index idx_chats_model on chats(model);
+
+create table messages (
+    id SERIAL PRIMARY KEY,
+    chat_id INTEGER NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+    provider_message_id TEXT NOT NULL,
+    role TEXT NOT NULL, -- user or assistant
+    content TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+create index idx_messages_chat_id on messages(chat_id);
+
+
 -- Seed Data
 
 -- 1. Customers
