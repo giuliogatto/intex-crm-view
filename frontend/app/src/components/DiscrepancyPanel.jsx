@@ -68,7 +68,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
   return (
     <div className="panel">
       <div className="panel__head">
-        <span>Auditing Discrepanze (Offerta vs DDT vs Fattura)</span>
+        <span>Auditing Confronto (Offerta vs DDT vs Fattura)</span>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn" onClick={exportCSV} disabled={discrepanze.length === 0}>
             Esporta Report CSV

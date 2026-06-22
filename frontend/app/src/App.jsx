@@ -560,7 +560,7 @@ function App() {
           className={`nav-tab ${activeTab === 'discrepanze' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('discrepanze')}
         >
-          ⚖️ Auditing Discrepanze
+          ⚖️ Auditing Confronto
         </button>
       </nav>
 
