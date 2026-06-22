@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function DocumentTable({ activeTab, data, onViewDetail, onViewBollaDetail }) {
+export default function DocumentTable({ activeTab, data, onViewDetail, onViewBollaDetail, onViewOffertaDetail }) {
   const formatEuro = (num) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -104,6 +104,7 @@ export default function DocumentTable({ activeTab, data, onViewDetail, onViewBol
               <th>Stagione</th>
               <th>Importo</th>
               <th>Stato</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -119,6 +120,14 @@ export default function DocumentTable({ activeTab, data, onViewDetail, onViewBol
                 <td>
                   <span className={`pill pill--${(item.stato ?? '').toLowerCase()}`}>
                     {item.stato ?? '—'}
+                  </span>
+                </td>
+                <td>
+                  <span
+                    className="table-link"
+                    onClick={() => onViewOffertaDetail(item.numero_offerta)}
+                  >
+                    Dettaglio
                   </span>
                 </td>
               </tr>

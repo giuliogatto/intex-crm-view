@@ -10,7 +10,9 @@ import {
   matchCliente,
   appendClienteNotFoundMessage,
   replaceOggiPlaceholder,
-  extractClienteHint
+  extractClienteHint,
+  isDocumentDetailAction,
+  tabForDocumentDetailAction
 } from './utils/llm'
 
 const LIST_PAGE_SIZE = 50
@@ -32,6 +34,8 @@ function App() {
   const [invoiceDetail, setInvoiceDetail] = useState(null)
   const [selectedBollaId, setSelectedBollaId] = useState(null)
   const [bollaDetail, setBollaDetail] = useState(null)
+  const [selectedOffertaId, setSelectedOffertaId] = useState(null)
+  const [offertaDetail, setOffertaDetail] = useState(null)
   const [currentFilters, setCurrentFilters] = useState({
     data_inizio: '',
     data_fine: '',
@@ -42,20 +46,28 @@ function App() {
   const [discrepancyCustomer, setDiscrepancyCustomer] = useState('XXX')
   const [pendingExport, setPendingExport] = useState(false)
   const [pendingInvoiceId, setPendingInvoiceId] = useState(null)
+  const [pendingBollaId, setPendingBollaId] = useState(null)
+  const [pendingOffertaId, setPendingOffertaId] = useState(null)
   const [listPage, setListPage] = useState(1)
   const [listTotal, setListTotal] = useState(0)
   const [listPages, setListPages] = useState(1)
   const clientiCache = useRef(null)
   const skipNextTabFetch = useRef(false)
 
-  // Fetch standard listings based on tab and filters
-  const fetchData = (tab, filters = currentFilters, page = 1) => {
-    if (tab === 'discrepanze') return
-    setLoading(true)
+  const clearDocumentDetails = () => {
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
     setSelectedBollaId(null)
     setBollaDetail(null)
+    setSelectedOffertaId(null)
+    setOffertaDetail(null)
+  }
+
+  // Fetch standard listings based on tab and filters
+  const fetchData = (tab, filters = currentFilters, page = 1) => {
+    if (tab === 'discrepanze') return
+    setLoading(true)
+    clearDocumentDetails()
 
     const params = new URLSearchParams()
     if (filters.data_inizio) params.append('data_inizio', filters.data_inizio)
@@ -99,10 +111,7 @@ function App() {
   }
 
   const handleTabChange = (tab) => {
-    setSelectedInvoiceId(null)
-    setInvoiceDetail(null)
-    setSelectedBollaId(null)
-    setBollaDetail(null)
+    clearDocumentDetails()
 
     if (tab === 'discrepanze') {
       setData([])
@@ -146,6 +155,20 @@ function App() {
     }
   }, [pendingInvoiceId, loading])
 
+  useEffect(() => {
+    if (pendingBollaId && !loading) {
+      setSelectedBollaId(pendingBollaId)
+      setPendingBollaId(null)
+    }
+  }, [pendingBollaId, loading])
+
+  useEffect(() => {
+    if (pendingOffertaId && !loading) {
+      setSelectedOffertaId(pendingOffertaId)
+      setPendingOffertaId(null)
+    }
+  }, [pendingOffertaId, loading])
+
   // Fetch invoice details when selectedInvoiceId changes
   useEffect(() => {
     if (!selectedInvoiceId) {
@@ -154,15 +177,22 @@ function App() {
     }
     setLoading(true)
     authFetch(`/api/fatture/${selectedInvoiceId}`)
-      .then((res) => res.json())
-      .then((resData) => {
+      .then(async (res) => {
+        const resData = await res.json()
+        if (!res.ok || !resData.header) {
+          console.error('Error fetching invoice details:', resData.error || res.status)
+          setSelectedInvoiceId(null)
+          setInvoiceDetail(null)
+          return
+        }
         setInvoiceDetail(resData)
-        setLoading(false)
       })
       .catch((err) => {
         console.error('Error fetching invoice details:', err)
-        setLoading(false)
+        setSelectedInvoiceId(null)
+        setInvoiceDetail(null)
       })
+      .finally(() => setLoading(false))
   }, [selectedInvoiceId])
 
   useEffect(() => {
@@ -172,16 +202,48 @@ function App() {
     }
     setLoading(true)
     authFetch(`/api/bolle/${selectedBollaId}`)
-      .then((res) => res.json())
-      .then((resData) => {
+      .then(async (res) => {
+        const resData = await res.json()
+        if (!res.ok || !resData.header) {
+          console.error('Error fetching bolla details:', resData.error || res.status)
+          setSelectedBollaId(null)
+          setBollaDetail(null)
+          return
+        }
         setBollaDetail(resData)
-        setLoading(false)
       })
       .catch((err) => {
         console.error('Error fetching bolla details:', err)
-        setLoading(false)
+        setSelectedBollaId(null)
+        setBollaDetail(null)
       })
+      .finally(() => setLoading(false))
   }, [selectedBollaId])
+
+  useEffect(() => {
+    if (!selectedOffertaId) {
+      setOffertaDetail(null)
+      return
+    }
+    setLoading(true)
+    authFetch(`/api/offerte/${selectedOffertaId}`)
+      .then(async (res) => {
+        const resData = await res.json()
+        if (!res.ok || !resData.header) {
+          console.error('Error fetching offerta details:', resData.error || res.status)
+          setSelectedOffertaId(null)
+          setOffertaDetail(null)
+          return
+        }
+        setOffertaDetail(resData)
+      })
+      .catch((err) => {
+        console.error('Error fetching offerta details:', err)
+        setSelectedOffertaId(null)
+        setOffertaDetail(null)
+      })
+      .finally(() => setLoading(false))
+  }, [selectedOffertaId])
 
   const handleSearch = (filters) => {
     setCurrentFilters(filters)
@@ -264,6 +326,31 @@ function App() {
     return clientiCache.current
   }
 
+  const applyPendingDocumentDetail = (azione) => {
+    const numero = String(azione.numero_documento || '').trim()
+    if (!numero) return
+
+    if (azione.tipo === 'dettaglio_fattura') {
+      setPendingInvoiceId(numero)
+    } else if (azione.tipo === 'dettaglio_bolla') {
+      setPendingBollaId(numero)
+    } else if (azione.tipo === 'dettaglio_offerta') {
+      setPendingOffertaId(numero)
+    }
+  }
+
+  const openDocumentDetailFromLlm = (tab, filters, azione, messaggio) => {
+    skipNextTabFetch.current = true
+    setActiveTab(tab)
+    setCurrentFilters(filters)
+    setData([])
+    setListPage(1)
+    clearDocumentDetails()
+    setLoading(false)
+    applyPendingDocumentDetail(azione)
+    return { messaggio: messaggio || 'Richiesta elaborata.' }
+  }
+
   const applyLlmResponse = async (llmJson, userMessage = '') => {
     const { area, messaggio } = llmJson || {}
     const filtri = llmJson?.filtri || {}
@@ -305,13 +392,18 @@ function App() {
 
     const disambiguationContext = { tab, filtri: newFilters, azione }
 
+    if (isDocumentDetailAction(azione)) {
+      if (matchResult.ambiguous) {
+        newFilters.codice_cliente = ''
+      }
+      const detailTab = tabForDocumentDetailAction(azione, tab)
+      return openDocumentDetailFromLlm(detailTab, newFilters, azione, finalMessaggio)
+    }
+
     if (matchResult.ambiguous) {
       setData([])
       setLoading(false)
-      setSelectedInvoiceId(null)
-      setInvoiceDetail(null)
-      setSelectedBollaId(null)
-      setBollaDetail(null)
+      clearDocumentDetails()
       skipNextTabFetch.current = true
       setActiveTab(tab)
       setCurrentFilters(newFilters)
@@ -330,10 +422,7 @@ function App() {
       setDiscrepancyCustomer(matchResult.codice || 'XXX')
       setData([])
       setLoading(false)
-      setSelectedInvoiceId(null)
-      setInvoiceDetail(null)
-      setSelectedBollaId(null)
-      setBollaDetail(null)
+      clearDocumentDetails()
       setActiveTab('discrepanze')
       return { messaggio: finalMessaggio || 'Apertura pannello auditing discrepanze.' }
     }
@@ -341,18 +430,13 @@ function App() {
     setData([])
     setLoading(true)
     setListPage(1)
-    setSelectedInvoiceId(null)
-    setInvoiceDetail(null)
-    setSelectedBollaId(null)
-    setBollaDetail(null)
+    clearDocumentDetails()
     skipNextTabFetch.current = true
     setActiveTab(tab)
     setCurrentFilters(newFilters)
     fetchData(tab, newFilters)
 
-    if (azione.tipo === 'dettaglio_fattura' && azione.numero_documento) {
-      setPendingInvoiceId(azione.numero_documento)
-    } else if (azione.tipo === 'esporta_csv') {
+    if (azione.tipo === 'esporta_csv') {
       setPendingExport(true)
     }
 
@@ -373,17 +457,14 @@ function App() {
     setData([])
     setLoading(true)
     setListPage(1)
-    setSelectedInvoiceId(null)
-    setInvoiceDetail(null)
-    setSelectedBollaId(null)
-    setBollaDetail(null)
+    clearDocumentDetails()
     skipNextTabFetch.current = true
     setActiveTab(tab)
     setCurrentFilters(newFilters)
     fetchData(tab, newFilters)
 
-    if (azione.tipo === 'dettaglio_fattura' && azione.numero_documento) {
-      setPendingInvoiceId(azione.numero_documento)
+    if (isDocumentDetailAction(azione)) {
+      applyPendingDocumentDetail(azione)
     } else if (azione.tipo === 'esporta_csv') {
       setPendingExport(true)
     }
@@ -393,10 +474,7 @@ function App() {
   const applyQuestionShortcut = (tab, qFilters) => {
     setData([])
     setListPage(1)
-    setSelectedInvoiceId(null)
-    setInvoiceDetail(null)
-    setSelectedBollaId(null)
-    setBollaDetail(null)
+    clearDocumentDetails()
     skipNextTabFetch.current = true
 
     if (tab === 'discrepanze') {
@@ -419,13 +497,25 @@ function App() {
   const handleViewInvoiceDetail = (id) => {
     setSelectedBollaId(null)
     setBollaDetail(null)
+    setSelectedOffertaId(null)
+    setOffertaDetail(null)
     setSelectedInvoiceId(id)
   }
 
   const handleViewBollaDetail = (id) => {
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
+    setSelectedOffertaId(null)
+    setOffertaDetail(null)
     setSelectedBollaId(id)
+  }
+
+  const handleViewOffertaDetail = (id) => {
+    setSelectedInvoiceId(null)
+    setInvoiceDetail(null)
+    setSelectedBollaId(null)
+    setBollaDetail(null)
+    setSelectedOffertaId(id)
   }
 
   const formatEuro = (num) => {
@@ -496,7 +586,7 @@ function App() {
           )}
 
           {/* Detailed Invoice Rows Panel */}
-          {selectedInvoiceId && invoiceDetail && (
+          {selectedInvoiceId && invoiceDetail?.header && (
             <div className="panel">
               <div className="panel__head">
                 <span>Dettaglio Documento — Riga Disposition N. {invoiceDetail.header.numero_disposizione}</span>
@@ -558,7 +648,7 @@ function App() {
             </div>
           )}
 
-          {selectedBollaId && bollaDetail && (
+          {selectedBollaId && bollaDetail?.header && (
             <div className="panel">
               <div className="panel__head">
                 <span>Dettaglio Bolla — N. {bollaDetail.header.numero_bolla}</span>
@@ -620,6 +710,68 @@ function App() {
             </div>
           )}
 
+          {selectedOffertaId && offertaDetail?.header && (
+            <div className="panel">
+              <div className="panel__head">
+                <span>Dettaglio Offerta — N. {offertaDetail.header.numero_offerta}</span>
+                <button className="btn" onClick={() => setSelectedOffertaId(null)}>Chiudi Dettaglio</button>
+              </div>
+              <div className="panel__body">
+                <div className="detail-header-info">
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Cliente</span>
+                    <span className="detail-info-item__value">{offertaDetail.header.cliente} ({offertaDetail.header.codice_cliente})</span>
+                  </div>
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Data Offerta</span>
+                    <span className="detail-info-item__value">{offertaDetail.header.data}</span>
+                  </div>
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Stagione</span>
+                    <span className="detail-info-item__value">{offertaDetail.header.stagione}</span>
+                  </div>
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Totale Documento</span>
+                    <span className="detail-info-item__value">{formatEuro(offertaDetail.header.importo_totale)}</span>
+                  </div>
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Stato</span>
+                    <span className={`pill pill--${offertaDetail.header.stato.toLowerCase()}`} style={{ marginTop: '0.2rem' }}>
+                      {offertaDetail.header.stato}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Articolo</th>
+                        <th>Colore</th>
+                        <th>Quantità</th>
+                        <th>Prezzo unitario</th>
+                        <th>Importo riga</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {offertaDetail.lines.map((line) => (
+                        <tr key={line.riga_num}>
+                          <td>{line.riga_num}</td>
+                          <td><strong>{line.articolo}</strong></td>
+                          <td>{line.colore}</td>
+                          <td>{line.quantita}</td>
+                          <td>{formatEuro(line.prezzo_unitario)}</td>
+                          <td>{formatEuro(line.importo_riga)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab !== 'discrepanze' ? (
             <div className="panel">
               <div className="panel__head">
@@ -639,6 +791,7 @@ function App() {
                     data={data}
                     onViewDetail={handleViewInvoiceDetail}
                     onViewBollaDetail={handleViewBollaDetail}
+                    onViewOffertaDetail={handleViewOffertaDetail}
                   />
                   {!hasActiveFilters(currentFilters, activeTab) && (
                     <Pagination

@@ -655,6 +655,68 @@ def get_offerte():
         return {"error": str(e)}
 
 
+@app.route('/api/offerte/<id>', method='GET')
+def get_offerta_detail(id):
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        header_query = """
+            SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
+                   c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
+                   COALESCE((SELECT descrizione FROM stagioni WHERE codice = o.codice_stagione), o.codice_stagione) as stagione
+            FROM offerte_testate o
+            JOIN clienti c ON o.codice_cliente = c.codice
+            WHERE o.numero_offerta = %(numero_offerta)s
+        """
+        cursor.execute(header_query, {"numero_offerta": id})
+        header_row = cursor.fetchone()
+
+        if not header_row:
+            cursor.close()
+            db_pool.release_conn(conn)
+            response.status = 404
+            return {"error": "Offerta non trovata"}
+
+        lines_query = """
+            SELECT r.riga_num, r.codice_articolo, r.colore, r.quantita, r.prezzo_unitario, r.importo_riga
+            FROM offerte_righe r
+            WHERE r.numero_offerta = %(numero_offerta)s
+            ORDER BY r.riga_num
+        """
+        cursor.execute(lines_query, {"numero_offerta": id})
+        lines_rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        header = {
+            "numero_offerta": header_row[0],
+            "data": header_row[1],
+            "cliente": header_row[2],
+            "codice_cliente": header_row[3],
+            "importo_totale": float(header_row[4]),
+            "stato": header_row[5],
+            "stagione": header_row[6],
+        }
+
+        lines = [
+            {
+                "riga_num": r[0],
+                "articolo": r[1],
+                "colore": r[2],
+                "quantita": float(r[3]),
+                "prezzo_unitario": float(r[4]),
+                "importo_riga": float(r[5]),
+            }
+            for r in lines_rows
+        ]
+
+        return {"header": header, "lines": lines}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
 @app.route('/api/offerte/export/pdf', method='GET')
 def export_offerte_pdf():
     try:

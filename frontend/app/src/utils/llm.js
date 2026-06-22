@@ -166,6 +166,19 @@ export function matchCliente(query, clienti) {
   return { codice: '', matched: false, ambiguous: false, candidates: [] }
 }
 
+export function isDocumentDetailAction(azione) {
+  const numero = String(azione?.numero_documento || '').trim()
+  const tipo = azione?.tipo || ''
+  return Boolean(numero && tipo.startsWith('dettaglio_'))
+}
+
+export function tabForDocumentDetailAction(azione, fallbackTab = 'bolle') {
+  if (azione?.tipo === 'dettaglio_fattura') return 'fatture'
+  if (azione?.tipo === 'dettaglio_bolla') return 'bolle'
+  if (azione?.tipo === 'dettaglio_offerta') return 'offerte'
+  return fallbackTab
+}
+
 export function appendClienteNotFoundMessage(messaggio, clienteQuery, matchResult) {
   if (!clienteQuery?.trim() || matchResult.matched || matchResult.ambiguous) {
     return messaggio
