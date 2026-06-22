@@ -150,11 +150,11 @@ export default function ChatsPage() {
     <div className="app-container">
       <header className="app-header">
         <div className="app-title-group">
-          <h1>Intex Chats</h1>
+          <img src="/logo.webp" alt="Intex" className="app-logo" />
           <span className="badge-mock">Archivio Conversazioni</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="badge-mock" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+          <span className="badge-user">
             {user?.username}
           </span>
           <a href="/" className="btn">

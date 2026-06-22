@@ -336,11 +336,11 @@ function App() {
     <div className="app-container">
       <header className="app-header">
         <div className="app-title-group">
-          <h1>Intex Consultazione</h1>
+          <img src="/logo.webp" alt="Intex" className="app-logo" />
           <span className="badge-mock">Database Active</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="badge-mock" style={{ background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
+          <span className="badge-user">
             {user?.username}
           </span>
           <a href="/chats" className="btn">💬 Chats</a>
@@ -561,7 +561,7 @@ function App() {
               </div>
             </div>
             
-            <div className="chat-suggestions" style={{ background: 'rgba(255,255,255,0.01)', borderColor: 'var(--border-color)' }}>
+            <div className="chat-suggestions">
               <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Note Tecniche</h4>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
                 La base di dati è popolata dinamicamente con le migrazioni all'avvio. La tabella <strong>Fatture Dettaglio</strong> e il panel <strong>Discrepanze</strong> mostrano le righe reali mappate dal file di produzione.

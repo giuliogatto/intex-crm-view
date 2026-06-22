@@ -28,7 +28,7 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-card__header">
-          <h1>Intex Consultazione</h1>
+          <img src="/logo.webp" alt="Intex" className="login-logo" />
           <p>Accedi per consultare i dati ERP</p>
         </div>
 

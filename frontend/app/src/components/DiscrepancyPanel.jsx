@@ -107,22 +107,22 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
               <thead>
                 <tr>
                   <th rowspan="2">Articolo / Colore</th>
-                  <th colspan="2" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.02)' }}>Preventivato (Offerta)</th>
-                  <th colspan="3" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.04)' }}>Consegnato (DDT)</th>
-                  <th colspan="3" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.02)' }}>Fatturato (Fattura)</th>
-                  <th colspan="2" style={{ textAlign: 'center', background: 'rgba(255, 255, 255, 0.04)' }}>Differenze</th>
+                  <th colspan="2" className="table-col--a" style={{ textAlign: 'center' }}>Preventivato (Offerta)</th>
+                  <th colspan="3" className="table-col--b" style={{ textAlign: 'center' }}>Consegnato (DDT)</th>
+                  <th colspan="3" className="table-col--a" style={{ textAlign: 'center' }}>Fatturato (Fattura)</th>
+                  <th colspan="2" className="table-col--b" style={{ textAlign: 'center' }}>Differenze</th>
                 </tr>
                 <tr>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Capi</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Valore</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Capi</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Kg</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Valore</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Capi</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Kg</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.02)' }}>Valore</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Capi</th>
-                  <th style={{ background: 'rgba(255, 255, 255, 0.04)' }}>Valore</th>
+                  <th className="table-col--a">Capi</th>
+                  <th className="table-col--a">Valore</th>
+                  <th className="table-col--b">Capi</th>
+                  <th className="table-col--b">Kg</th>
+                  <th className="table-col--b">Valore</th>
+                  <th className="table-col--a">Capi</th>
+                  <th className="table-col--a">Kg</th>
+                  <th className="table-col--a">Valore</th>
+                  <th className="table-col--b">Capi</th>
+                  <th className="table-col--b">Valore</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,24 +139,24 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
                         </div>
                       </td>
                       {/* Offer */}
-                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>{row.capi_offerti || '—'}</td>
-                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>
+                      <td className="table-col--a">{row.capi_offerti || '—'}</td>
+                      <td className="table-col--a">
                         {row.valore_offerto ? formatEuro(row.valore_offerto) : '—'}
                       </td>
                       {/* DDT */}
-                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>{row.capi_consegnati || '—'}</td>
-                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>{row.kg_consegnati || '—'}</td>
-                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
+                      <td className="table-col--b">{row.capi_consegnati || '—'}</td>
+                      <td className="table-col--b">{row.kg_consegnati || '—'}</td>
+                      <td className="table-col--b">
                         {row.valore_consegnato ? formatEuro(row.valore_consegnato) : '—'}
                       </td>
                       {/* Invoice */}
-                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>{row.capi_fatturati || '—'}</td>
-                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>{row.kg_fatturati || '—'}</td>
-                      <td style={{ background: 'rgba(255, 255, 255, 0.01)' }}>
+                      <td className="table-col--a">{row.capi_fatturati || '—'}</td>
+                      <td className="table-col--a">{row.kg_fatturati || '—'}</td>
+                      <td className="table-col--a">
                         {row.valore_fatturato ? formatEuro(row.valore_fatturato) : '—'}
                       </td>
                       {/* Differences */}
-                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
+                      <td className="table-col--b">
                         {row.diff_capi === 0 ? (
                           <span className="text-secondary">—</span>
                         ) : (
@@ -165,7 +165,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
                           </span>
                         )}
                       </td>
-                      <td style={{ background: 'rgba(255, 255, 255, 0.02)' }}>
+                      <td className="table-col--b">
                         {row.diff_valore === 0 ? (
                           <span className="text-secondary">—</span>
                         ) : (
