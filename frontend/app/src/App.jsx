@@ -280,10 +280,19 @@ function App() {
   // Pre-load filter inputs for interactive Q&A shortcuts
   const applyQuestionShortcut = (tab, qFilters) => {
     setData([])
-    setLoading(true)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
     skipNextTabFetch.current = true
+
+    if (tab === 'discrepanze') {
+      setLoading(false)
+      setDiscrepancyCustomer(qFilters.codice_cliente || 'XXX')
+      setCurrentFilters((prev) => ({ ...prev, ...qFilters }))
+      setActiveTab('discrepanze')
+      return
+    }
+
+    setLoading(true)
     setActiveTab(tab)
     setCurrentFilters((prev) => {
       const merged = { ...prev, ...qFilters }
@@ -461,20 +470,20 @@ function App() {
                   className="chat-suggestion-btn"
                   onClick={() =>
                     applyQuestionShortcut('fatture', {
-                      codice_cliente: 'XXX',
+                      codice_cliente: '2618',
                       data_inizio: '2026-01-01',
                       data_fine: '2026-03-31'
                     })
                   }
                 >
                   <span className="chat-suggestion-num">1</span>
-                  “Mostrami tutte le fatture del cliente TAM emesse tra gennaio e marzo.”
+                  “Mostrami tutte le fatture del cliente PRIMA SRL emesse tra gennaio e marzo.”
                 </button>
                 <button
                   className="chat-suggestion-btn"
                   onClick={() =>
                     applyQuestionShortcut('fatture', {
-                      codice_cliente: 'XXX',
+                      codice_cliente: '2618',
                       stato: 'Aperta',
                       data_inizio: '',
                       data_fine: ''
@@ -482,20 +491,20 @@ function App() {
                   }
                 >
                   <span className="chat-suggestion-num">2</span>
-                  “Quali fatture di TAM & COMPANY risultano ancora aperte?”
+                  “Quali fatture di PRIMA SRL risultano ancora aperte?”
                 </button>
                 <button
                   className="chat-suggestion-btn"
                   onClick={() =>
                     applyQuestionShortcut('bolle', {
-                      codice_cliente: 'XXX',
+                      codice_cliente: '2618',
                       data_inizio: '2026-03-01',
                       data_fine: '2026-03-31'
                     })
                   }
                 >
                   <span className="chat-suggestion-num">5</span>
-                  “Quali bolle/DDT sono state emesse per TAM nel mese di marzo?”
+                  “Quali bolle/DDT sono state emesse per PRIMA SRL nel mese di marzo?”
                 </button>
                 <button
                   className="chat-suggestion-btn"
@@ -504,7 +513,9 @@ function App() {
                       codice_cliente: '1283',
                       stagione: 'PE2026',
                       data_inizio: '',
-                      data_fine: ''
+                      data_fine: '',
+                      stagione: '',
+                      stato: ''
                     })
                   }
                 >
@@ -513,10 +524,14 @@ function App() {
                 </button>
                 <button
                   className="chat-suggestion-btn"
-                  onClick={() => handleTabChange('discrepanze')}
+                  onClick={() =>
+                    applyQuestionShortcut('discrepanze', {
+                      codice_cliente: '2618'
+                    })
+                  }
                 >
                   <span className="chat-suggestion-num">9</span>
-                  “Confrontami offerta, bolla e fattura per verificare differenze (TAM).”
+                  “Confrontami offerta, bolla e fattura per verificare differenze di Prima Srl.”
                 </button>
               </div>
             </div>
