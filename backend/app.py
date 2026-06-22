@@ -247,6 +247,71 @@ def get_bolle():
         return {"error": str(e)}
 
 
+@app.route('/api/bolle/<id>', method='GET')
+def get_bolla_detail(id):
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        header_query = """
+            SELECT d.numero_bolla, TO_CHAR(d.data_bolla, 'DD/MM/YYYY') as data_bolla,
+                   c.ragione_sociale, c.codice as codice_cliente,
+                   COALESCE((SELECT SUM(dr.importo_riga) FROM ddt_righe dr WHERE dr.numero_bolla = d.numero_bolla), 0) as importo_totale
+            FROM ddt_testate d
+            JOIN clienti c ON d.codice_cliente = c.codice
+            WHERE d.numero_bolla = %(numero_bolla)s
+        """
+        cursor.execute(header_query, {"numero_bolla": id})
+        header_row = cursor.fetchone()
+
+        if not header_row:
+            cursor.close()
+            db_pool.release_conn(conn)
+            response.status = 404
+            return {"error": "Bolla non trovata"}
+
+        lines_query = """
+            SELECT dr.riga_num, dr.numero_disposizione, dr.riga_disposizione,
+                   dr.numero_offerta, dr.codice_articolo, dr.colore,
+                   dr.kg_consegnati, dr.capi_consegnati, dr.importo_riga
+            FROM ddt_righe dr
+            WHERE dr.numero_bolla = %(numero_bolla)s
+            ORDER BY dr.riga_num
+        """
+        cursor.execute(lines_query, {"numero_bolla": id})
+        lines_rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        header = {
+            "numero_bolla": header_row[0],
+            "data": header_row[1],
+            "cliente": header_row[2],
+            "codice_cliente": header_row[3],
+            "importo_totale": float(header_row[4]),
+        }
+
+        lines = [
+            {
+                "riga_num": r[0],
+                "numero_disposizione": r[1] or '—',
+                "riga_disposizione": r[2] if r[2] is not None else '—',
+                "numero_offerta": r[3] or '—',
+                "articolo": r[4],
+                "colore": r[5],
+                "kg_consegnati": float(r[6]),
+                "capi_consegnati": int(r[7]),
+                "importo_riga": float(r[8]),
+            }
+            for r in lines_rows
+        ]
+
+        return {"header": header, "lines": lines}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
 @app.route('/api/bolle/export/pdf', method='GET')
 def export_bolle_pdf():
     try:

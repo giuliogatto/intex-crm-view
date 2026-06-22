@@ -18,6 +18,8 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null)
   const [invoiceDetail, setInvoiceDetail] = useState(null)
+  const [selectedBollaId, setSelectedBollaId] = useState(null)
+  const [bollaDetail, setBollaDetail] = useState(null)
   const [currentFilters, setCurrentFilters] = useState({
     data_inizio: '',
     data_fine: '',
@@ -37,6 +39,8 @@ function App() {
     setLoading(true)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
+    setSelectedBollaId(null)
+    setBollaDetail(null)
 
     const params = new URLSearchParams()
     if (filters.data_inizio) params.append('data_inizio', filters.data_inizio)
@@ -70,6 +74,8 @@ function App() {
     setLoading(tab !== 'discrepanze')
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
+    setSelectedBollaId(null)
+    setBollaDetail(null)
     setActiveTab(tab)
   }
 
@@ -109,6 +115,24 @@ function App() {
         setLoading(false)
       })
   }, [selectedInvoiceId])
+
+  useEffect(() => {
+    if (!selectedBollaId) {
+      setBollaDetail(null)
+      return
+    }
+    setLoading(true)
+    authFetch(`/api/bolle/${selectedBollaId}`)
+      .then((res) => res.json())
+      .then((resData) => {
+        setBollaDetail(resData)
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error('Error fetching bolla details:', err)
+        setLoading(false)
+      })
+  }, [selectedBollaId])
 
   const handleSearch = (filters) => {
     setCurrentFilters(filters)
@@ -231,6 +255,8 @@ function App() {
       setLoading(false)
       setSelectedInvoiceId(null)
       setInvoiceDetail(null)
+      setSelectedBollaId(null)
+      setBollaDetail(null)
       skipNextTabFetch.current = true
       setActiveTab(tab)
       setCurrentFilters(newFilters)
@@ -251,6 +277,8 @@ function App() {
       setLoading(false)
       setSelectedInvoiceId(null)
       setInvoiceDetail(null)
+      setSelectedBollaId(null)
+      setBollaDetail(null)
       setActiveTab('discrepanze')
       return { messaggio: finalMessaggio || 'Apertura pannello auditing discrepanze.' }
     }
@@ -259,6 +287,8 @@ function App() {
     setLoading(true)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
+    setSelectedBollaId(null)
+    setBollaDetail(null)
     skipNextTabFetch.current = true
     setActiveTab(tab)
     setCurrentFilters(newFilters)
@@ -288,6 +318,8 @@ function App() {
     setLoading(true)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
+    setSelectedBollaId(null)
+    setBollaDetail(null)
     skipNextTabFetch.current = true
     setActiveTab(tab)
     setCurrentFilters(newFilters)
@@ -305,6 +337,8 @@ function App() {
     setData([])
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
+    setSelectedBollaId(null)
+    setBollaDetail(null)
     skipNextTabFetch.current = true
 
     if (tab === 'discrepanze') {
@@ -322,6 +356,18 @@ function App() {
       fetchData(tab, merged)
       return merged
     })
+  }
+
+  const handleViewInvoiceDetail = (id) => {
+    setSelectedBollaId(null)
+    setBollaDetail(null)
+    setSelectedInvoiceId(id)
+  }
+
+  const handleViewBollaDetail = (id) => {
+    setSelectedInvoiceId(null)
+    setInvoiceDetail(null)
+    setSelectedBollaId(id)
   }
 
   const formatEuro = (num) => {
@@ -454,6 +500,68 @@ function App() {
             </div>
           )}
 
+          {selectedBollaId && bollaDetail && (
+            <div className="panel">
+              <div className="panel__head">
+                <span>Dettaglio Bolla — N. {bollaDetail.header.numero_bolla}</span>
+                <button className="btn" onClick={() => setSelectedBollaId(null)}>Chiudi Dettaglio</button>
+              </div>
+              <div className="panel__body">
+                <div className="detail-header-info">
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Cliente</span>
+                    <span className="detail-info-item__value">{bollaDetail.header.cliente} ({bollaDetail.header.codice_cliente})</span>
+                  </div>
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Data Bolla</span>
+                    <span className="detail-info-item__value">{bollaDetail.header.data}</span>
+                  </div>
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Totale Documento</span>
+                    <span className="detail-info-item__value">{formatEuro(bollaDetail.header.importo_totale)}</span>
+                  </div>
+                  <div className="detail-info-item">
+                    <span className="detail-info-item__label">Righe</span>
+                    <span className="detail-info-item__value">{bollaDetail.lines.length}</span>
+                  </div>
+                </div>
+
+                <div className="table-wrap">
+                  <table className="data">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>N. disp.</th>
+                        <th>Riga disp.</th>
+                        <th>N. offerta</th>
+                        <th>Articolo</th>
+                        <th>Colore</th>
+                        <th>Kg consegnati</th>
+                        <th>Capi consegnati</th>
+                        <th>Importo riga</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bollaDetail.lines.map((line) => (
+                        <tr key={line.riga_num}>
+                          <td>{line.riga_num}</td>
+                          <td>{line.numero_disposizione}</td>
+                          <td>{line.riga_disposizione}</td>
+                          <td>{line.numero_offerta}</td>
+                          <td><strong>{line.articolo}</strong></td>
+                          <td>{line.colore}</td>
+                          <td>{line.kg_consegnati}</td>
+                          <td>{line.capi_consegnati}</td>
+                          <td>{formatEuro(line.importo_riga)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab !== 'discrepanze' ? (
             <div className="panel">
               <div className="panel__head">
@@ -468,7 +576,8 @@ function App() {
                 <DocumentTable
                   activeTab={activeTab}
                   data={data}
-                  onViewDetail={setSelectedInvoiceId}
+                  onViewDetail={handleViewInvoiceDetail}
+                  onViewBollaDetail={handleViewBollaDetail}
                 />
               )}
             </div>
