@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { authFetch } from '../utils/auth'
-import { useAuth } from '../context/AuthContext'
+import UserMenu from '../components/UserMenu'
 
 const CHATS_PAGE_SIZE = 20
 const MESSAGES_PAGE_SIZE = 50
@@ -81,7 +81,6 @@ function ArchiveMessage({ msg, chatDetail }) {
 }
 
 export default function ChatsPage() {
-  const { user, logout } = useAuth()
   const [chats, setChats] = useState([])
   const [chatsPage, setChatsPage] = useState(1)
   const [chatsPages, setChatsPages] = useState(1)
@@ -154,13 +153,10 @@ export default function ChatsPage() {
           <span className="badge-mock">Archivio Conversazioni</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="badge-user">
-            {user?.username}
-          </span>
+          <UserMenu />
           <a href="/" className="btn">
             ← Torna alla consultazione
           </a>
-          <button type="button" className="btn" onClick={logout}>Esci</button>
         </div>
       </header>
 

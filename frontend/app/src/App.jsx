@@ -3,8 +3,8 @@ import Filters from './components/Filters'
 import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
 import ChatPanel from './components/ChatPanel'
+import UserMenu from './components/UserMenu'
 import { authFetch, downloadAuthFile } from './utils/auth'
-import { useAuth } from './context/AuthContext'
 import {
   matchCliente,
   appendClienteNotFoundMessage,
@@ -13,7 +13,6 @@ import {
 } from './utils/llm'
 
 function App() {
-  const { user, logout } = useAuth()
   const [activeTab, setActiveTab] = useState('bolle')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -337,14 +336,10 @@ function App() {
       <header className="app-header">
         <div className="app-title-group">
           <img src="/logo.webp" alt="Intex" className="app-logo" />
-          <span className="badge-mock">Database Active</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <span className="badge-user">
-            {user?.username}
-          </span>
+          <UserMenu />
           <a href="/chats" className="btn">💬 Chats</a>
-          <button type="button" className="btn" onClick={logout}>Esci</button>
         </div>
       </header>
 
@@ -489,7 +484,7 @@ function App() {
         <div className="dashboard-sidebar">
           <div className="sidebar-panel">
             <div className="chat-suggestions">
-              <h3 className="chat-suggestions__title">💬 Scorciatoie Domande ERP</h3>
+              <h3 className="chat-suggestions__title">💬 Scorciatoie Domande</h3>
               <div className="chat-suggestions__list">
                 <button
                   className="chat-suggestion-btn"
@@ -561,12 +556,6 @@ function App() {
               </div>
             </div>
             
-            <div className="chat-suggestions">
-              <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>Note Tecniche</h4>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                La base di dati è popolata dinamicamente con le migrazioni all'avvio. La tabella <strong>Fatture Dettaglio</strong> e il panel <strong>Discrepanze</strong> mostrano le righe reali mappate dal file di produzione.
-              </p>
-            </div>
           </div>
         </div>
       </div>
