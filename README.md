@@ -78,16 +78,87 @@ docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01 --e
 
 ## 3. Database Backups
 
-To prevent data loss, you can dump the current TimescaleDB cache directly into a SQL file on your host machine.
+To prevent data loss, dump the TimescaleDB cache to a compressed SQL file on your host machine. Use these commands to copy data between environments (e.g. development → production).
 
-### Create Backup
-Run this command from your host terminal to save the database to a compressed file:
+### 3.1. Create Backup
+
+Run from the repository root. The dump excludes TimescaleDB internal schemas (not used by this app) so restores work across different TimescaleDB versions.
+
 ```bash
-docker exec -t intexdata pg_dump -U postgres postgres | gzip > backup.sql.gz
+cd data
+docker compose exec -T timescaledb-intex pg_dump -U postgres \
+  --exclude-schema=_timescaledb_catalog \
+  --exclude-schema=_timescaledb_config \
+  --exclude-schema=_timescaledb_internal \
+  postgres 2>/dev/null | gzip > ../backup.sql.gz
 ```
 
-### Restore Backup
-To restore the compressed SQL backup back to the database:
+> [!IMPORTANT]
+> Do **not** use `-t` / `-it` on `pg_dump`. A TTY causes `pg_dump` warnings to be written into the SQL file and corrupts the backup.
+
+Verify the backup before copying it anywhere:
+
 ```bash
-gunzip -c backup.sql.gz | docker exec -i intexdata psql -U postgres -d postgres
+ls -lh ../backup.sql.gz          # expect ~1–2 MB with a populated cache
+gunzip -c ../backup.sql.gz | head -5   # should start with "-- PostgreSQL database dump"
+gunzip -c ../backup.sql.gz | wc -l     # expect ~140000+ lines
 ```
+
+To copy to a remote server:
+
+```bash
+scp ../backup.sql.gz user@production-host:/opt/intex/intex-crm-view/
+```
+
+### 3.2. Restore Backup
+
+A restore **replaces the entire database**. Stop the backend first, recreate an empty `postgres` database, then load the dump with foreign-key checks disabled.
+
+```bash
+# 1. Stop the API so it releases DB connections
+cd backend
+docker compose stop
+
+# 2. Recreate an empty database (connect via template1 — you cannot drop the DB you are connected to)
+cd ../data
+docker compose exec -T timescaledb-intex psql -U postgres -d template1 <<'EOF'
+SELECT pg_terminate_backend(pid)
+FROM pg_stat_activity
+WHERE datname = 'postgres' AND pid <> pg_backend_pid();
+DROP DATABASE IF EXISTS postgres;
+CREATE DATABASE postgres;
+EOF
+
+# 3. Restore (adjust the path to your backup file)
+cd ..
+(
+  echo "SET session_replication_role = replica;"
+  gunzip -c backup.sql.gz | grep -v '^pg_dump:' | awk '
+{ gsub(/\r$/, "") }
+/^COPY _timescaledb/ { skip=1; next }
+skip && /^\\.$/ { skip=0; next }
+skip { next }
+/SELECT pg_catalog.setval/ && /_timescaledb/ { next }
+{ print }
+'
+  echo "SET session_replication_role = DEFAULT;"
+) | docker compose -f data/docker-compose.yml exec -T timescaledb-intex \
+    psql -U postgres -d postgres -v ON_ERROR_STOP=1
+
+# 4. Verify row counts
+docker compose -f data/docker-compose.yml exec -T timescaledb-intex psql -U postgres -d postgres -c "
+SELECT 'stagioni' AS t, count(*) FROM stagioni
+UNION ALL SELECT 'fatture_testate', count(*) FROM fatture_testate
+UNION ALL SELECT 'fatture_righe', count(*) FROM fatture_righe
+UNION ALL SELECT 'ddt_testate', count(*) FROM ddt_testate
+UNION ALL SELECT 'ddt_righe', count(*) FROM ddt_righe;
+"
+
+# 5. Restart the API
+cd backend
+docker compose up -d
+```
+
+The `awk` step strips any TimescaleDB catalog `COPY` blocks that may still be present in older backups. `session_replication_role = replica` disables foreign-key checks during load so parent/child tables can be restored in any order.
+
+You should see many `COPY` lines with large counts (e.g. `COPY 1799`, `COPY 4765`). If the restore prints only a few `SET` lines, the backup file is empty or corrupt — re-create it using the commands in §3.1 and check `ls -lh` before uploading.
