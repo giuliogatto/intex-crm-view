@@ -1,5 +1,5 @@
 services:
-  timescaledb:
+  timescaledb-intex:
     image: timescale/timescaledb-ha:pg16
     ports:
       - "5444:5432"
@@ -15,7 +15,7 @@ services:
     networks:
       - intex_network
 
-  pgadmin:
+  pgadmin-intex:
     image: dpage/pgadmin4:latest
     ports:
       - "5445:80"
