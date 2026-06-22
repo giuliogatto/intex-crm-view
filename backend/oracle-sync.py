@@ -16,12 +16,300 @@ from database import DatabasePool
 db_pool = DatabasePool()
 
 class OracleSyncProcess:
-    def __init__(self, limit=100, mode="full", start_date=None):
+    FATTURE_LIMIT = 20
+
+    def __init__(self, limit=100, mode="full", start_date=None, end_date=None):
         self.connector = IntexDataConnector()
         self.limit = limit
         self.mode = mode
         self.start_date = start_date
-        
+        self.end_date = end_date
+
+    def _incremental_start_date(self):
+        if self.start_date:
+            return self.start_date
+        if self.mode == "incremental":
+            return datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
+        return None
+
+    def _resolve_end_date(self):
+        if self.end_date:
+            return self.end_date
+        return datetime.now().strftime('%Y-%m-%d')
+
+    def _build_date_filters(self, date_column):
+        start_date_val = self._incremental_start_date()
+        if not start_date_val:
+            return {}, {}
+        end_date_val = self._resolve_end_date()
+        print(f"  Filtering records from {start_date_val} to {end_date_val} ({date_column})")
+        return (
+            {"data_inizio": start_date_val, "data_fine": end_date_val},
+            {"date_column": date_column},
+        )
+
+    @staticmethod
+    def _parse_iso_date(date_str):
+        if not date_str:
+            return datetime.now().date()
+        try:
+            return datetime.strptime(str(date_str)[:10], '%Y-%m-%d').date()
+        except ValueError:
+            return datetime.now().date()
+
+    @staticmethod
+    def _build_numero_offerta(item):
+        anno = item.get('d03_anno_cartellino')
+        nr = item.get('d03_nr_cartellino')
+        if anno is None or nr is None:
+            return None
+        try:
+            anno_i = int(anno)
+            nr_i = int(nr)
+        except (TypeError, ValueError):
+            return None
+        if nr_i <= 0:
+            return None
+        return f"{anno_i}-{nr_i}"
+
+    @staticmethod
+    def _resolve_bolla_number(item, header_map):
+        key_d02 = item.get('d03_key_d02')
+        nr_bolla = header_map.get(key_d02)
+        if nr_bolla:
+            return nr_bolla
+        nr_bolla_cli = str(item.get('ew1_nr_bolla_cli') or '').strip()
+        return nr_bolla_cli or None
+
+    def _upsert_offerte_batch(self, cursor, offerte_headers, offerte_lines):
+        if not offerte_headers and not offerte_lines:
+            return
+
+        header_query = """
+            INSERT INTO offerte_testate (numero_offerta, data_offerta, codice_cliente, codice_stagione, importo_totale, stato)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (numero_offerta) DO UPDATE SET
+                data_offerta = LEAST(offerte_testate.data_offerta, EXCLUDED.data_offerta),
+                codice_cliente = EXCLUDED.codice_cliente,
+                codice_stagione = COALESCE(EXCLUDED.codice_stagione, offerte_testate.codice_stagione),
+                importo_totale = EXCLUDED.importo_totale;
+        """
+        for numero_offerta, header in offerte_headers.items():
+            cursor.execute(header_query, (
+                numero_offerta,
+                header["data_offerta"],
+                header["codice_cliente"],
+                header.get("codice_stagione"),
+                header["importo_totale"],
+                header.get("stato", "Accettata"),
+            ))
+
+        line_query = """
+            INSERT INTO offerte_righe (numero_offerta, riga_num, codice_articolo, colore, quantita, prezzo_unitario, importo_riga)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (numero_offerta, riga_num) DO UPDATE SET
+                codice_articolo = EXCLUDED.codice_articolo,
+                colore = EXCLUDED.colore,
+                quantita = GREATEST(offerte_righe.quantita, EXCLUDED.quantita),
+                prezzo_unitario = EXCLUDED.prezzo_unitario,
+                importo_riga = GREATEST(offerte_righe.importo_riga, EXCLUDED.importo_riga);
+        """
+        for line in offerte_lines.values():
+            cursor.execute(line_query, (
+                line["numero_offerta"],
+                line["riga_num"],
+                line["codice_articolo"],
+                line["colore"],
+                line["quantita"],
+                line["prezzo_unitario"],
+                line["importo_riga"],
+            ))
+
+        touched = list(offerte_headers.keys())
+        if touched:
+            cursor.execute(
+                """
+                UPDATE offerte_testate o
+                SET importo_totale = COALESCE(s.totale, 0)
+                FROM (
+                    SELECT numero_offerta, SUM(importo_riga) AS totale
+                    FROM offerte_righe
+                    WHERE numero_offerta = ANY(%s)
+                    GROUP BY numero_offerta
+                ) s
+                WHERE o.numero_offerta = s.numero_offerta
+                """,
+                (touched,),
+            )
+
+        offerte_headers.clear()
+        offerte_lines.clear()
+
+    def _collect_offerta_from_ddt_line(self, item, offerte_headers, offerte_lines):
+        numero_offerta = self._build_numero_offerta(item)
+        if not numero_offerta:
+            return
+
+        codice_cliente = str(item.get('d02_cd_cliente') or item.get('ew1_cd_cliente') or '').strip()
+        if not codice_cliente:
+            return
+
+        codice_stagione = item.get('ew2_cd_stagione')
+        if codice_stagione:
+            codice_stagione = str(codice_stagione).strip() or None
+
+        data_offerta = self._parse_iso_date(
+            item.get('data_bolla_cli_iso') or item.get('data_bolla_iso') or item.get('ew1_data_bolla_cli')
+        )
+
+        codice_articolo = (item.get('d03_cd_articolo') or 'CAPI').strip()
+        colore = (item.get('ew2_ds_colore') or 'TUTTI').strip()
+        quantita = float(
+            item.get('ew2_nr_capi_caricati')
+            or item.get('ew2_capi_evasi')
+            or item.get('d03_capi_in_uscita')
+            or 0
+        )
+        prezzo_unitario = float(item.get('d03_prezzo_uni_euro') or item.get('d03_prezzo_uni') or 0)
+        importo_riga = float(prezzo_unitario * quantita) if prezzo_unitario else 0.0
+
+        riga_num = item.get('d03_riga_disp_cli') or item.get('d03_riga')
+        if riga_num is None:
+            return
+        riga_num = int(riga_num)
+        line_key = (numero_offerta, riga_num)
+
+        existing_header = offerte_headers.get(numero_offerta)
+        if not existing_header:
+            offerte_headers[numero_offerta] = {
+                "data_offerta": data_offerta,
+                "codice_cliente": codice_cliente,
+                "codice_stagione": codice_stagione,
+                "importo_totale": importo_riga,
+                "stato": "Accettata",
+            }
+        else:
+            if data_offerta < existing_header["data_offerta"]:
+                existing_header["data_offerta"] = data_offerta
+            if codice_stagione and not existing_header.get("codice_stagione"):
+                existing_header["codice_stagione"] = codice_stagione
+            existing_header["importo_totale"] += importo_riga
+
+        existing_line = offerte_lines.get(line_key)
+        if not existing_line:
+            offerte_lines[line_key] = {
+                "numero_offerta": numero_offerta,
+                "riga_num": riga_num,
+                "codice_articolo": codice_articolo,
+                "colore": colore,
+                "quantita": quantita,
+                "prezzo_unitario": prezzo_unitario,
+                "importo_riga": importo_riga,
+            }
+            return
+
+        existing_line["quantita"] = max(existing_line["quantita"], quantita)
+        existing_line["importo_riga"] = max(existing_line["importo_riga"], importo_riga)
+        if prezzo_unitario:
+            existing_line["prezzo_unitario"] = prezzo_unitario
+
+    def _offerte_incremental_filters(self):
+        start_date_val = self._incremental_start_date()
+        if not start_date_val:
+            return None, {}, {}
+        filters, mappings = self._build_date_filters("EW1_DATA_BOLLA_CLI")
+        return start_date_val, filters, mappings
+
+    def sync_offerte(self):
+        """
+        Sync offerte_testate and offerte_righe from Oracle cartellini on DDT lines.
+        In the ERP, commercial offers map to d03_anno_cartellino + d03_nr_cartellino.
+        Uses the same incremental date window as DDT lines (EW1_DATA_BOLLA_CLI).
+        """
+        print("\n--- Syncing Offerte (Cartellini) ---")
+
+        start_date_val, filters, mappings = self._offerte_incremental_filters()
+        endpoint = "/ords/intex2/D03_DDT_RIGHE_002W/"
+        ords_q = None
+        if filters and mappings:
+            ords_q = self.connector.build_ords_query(filters, mappings)
+
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        offerte_headers = {}
+        offerte_lines = {}
+        offset = 0
+        total_cartellini = 0
+        uncommitted = 0
+
+        season_query = """
+            INSERT INTO stagioni (codice, descrizione)
+            VALUES (%s, %s)
+            ON CONFLICT (codice) DO NOTHING;
+        """
+
+        while True:
+            params = {"limit": self.limit, "offset": offset}
+            if ords_q:
+                params["q"] = ords_q
+
+            try:
+                data = self.connector.fetch_data(endpoint, params)
+                items = data.get('items', [])
+                if not items:
+                    break
+
+                latest_date = None
+                for item in items:
+                    if not self._build_numero_offerta(item):
+                        continue
+
+                    total_cartellini += 1
+                    stagione = item.get('ew2_cd_stagione')
+                    if stagione:
+                        stagione = str(stagione).strip()
+                        cursor.execute(season_query, (stagione, f"Stagione {stagione}"))
+
+                    date_str = (
+                        item.get('data_bolla_cli_iso')
+                        or item.get('data_bolla_iso')
+                        or item.get('ew1_data_bolla_cli')
+                    )
+                    if date_str:
+                        date_str = str(date_str)[:10]
+                        if not latest_date or date_str > latest_date:
+                            latest_date = date_str
+
+                    self._collect_offerta_from_ddt_line(item, offerte_headers, offerte_lines)
+                    uncommitted += 1
+                    if uncommitted >= 1000:
+                        self._upsert_offerte_batch(cursor, offerte_headers, offerte_lines)
+                        conn.commit()
+                        print(f"      [Database] Committed {uncommitted} offerte records to local cache.")
+                        uncommitted = 0
+
+                date_log = f" [Latest date: {latest_date}]" if latest_date else ""
+                print(f"    Processed {total_cartellini} cartellino-linked lines so far...{date_log}")
+
+                if not data.get('hasMore', False):
+                    break
+                offset += self.limit
+                time.sleep(0.2)
+            except Exception as e:
+                print(f"    Error during offerte sync at offset {offset}: {e}")
+                break
+
+        if uncommitted > 0 or offerte_headers or offerte_lines:
+            self._upsert_offerte_batch(cursor, offerte_headers, offerte_lines)
+            conn.commit()
+            if uncommitted > 0:
+                print(f"      [Database] Final Commit: {uncommitted} offerte records.")
+
+        cursor.close()
+        db_pool.release_conn(conn)
+        print(f"  Synced offerte from {total_cartellini} cartellino-linked DDT lines.")
+
     def fetch_all_paginated(self, endpoint, filters=None, mappings=None):
         """
         Generic ORDS pagination fetcher. Used for smaller tables.
@@ -141,20 +429,11 @@ class OracleSyncProcess:
 
     def sync_fatture_and_seasons(self):
         print("\n--- Syncing Invoices & Seasons ---")
+        limit = self.FATTURE_LIMIT
+        print(f"  Using page size {limit} for F07_003W (slower endpoint).")
         
-        filters = {}
-        mappings = {}
-        
-        # Determine start date filter
-        start_date_val = self.start_date
-        if not start_date_val and self.mode == "incremental":
-            # Default to January 1st of the current year
-            start_date_val = datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
-            
-        if start_date_val:
-            print(f"  Filtering records starting from: {start_date_val}")
-            filters = {"data_inizio": start_date_val}
-            mappings = {"date_column": "D02_DT_BOLLA"}
+        start_date_val = self._incremental_start_date()
+        filters, mappings = self._build_date_filters("D02_DT_BOLLA") if start_date_val else ({}, {})
             
         endpoint = "/ords/intex2/F07_003W/"
         ords_q = None
@@ -171,7 +450,7 @@ class OracleSyncProcess:
         disposizioni = {} # Keep running totals in memory to prevent overwrite anomalies
         
         while True:
-            params = {"limit": self.limit, "offset": offset}
+            params = {"limit": limit, "offset": offset}
             if ords_q:
                 params["q"] = ords_q
                 
@@ -297,7 +576,7 @@ class OracleSyncProcess:
                 if not data.get('hasMore', False):
                     break
                     
-                offset += self.limit
+                offset += limit
                 time.sleep(0.2)
             except Exception as e:
                 print(f"    Error during pagination at offset {offset}: {e}")
@@ -316,16 +595,8 @@ class OracleSyncProcess:
         print("\n--- Syncing DDTs (Delivery Notes) ---")
         
         # 1. Fetch headers
-        filters_h = {}
-        mappings_h = {}
-        start_date_val = self.start_date
-        if not start_date_val and self.mode == "incremental":
-            start_date_val = datetime.now().replace(month=1, day=1).strftime('%Y-%m-%d')
-            
-        if start_date_val:
-            print(f"  Filtering DDT Headers starting from: {start_date_val}")
-            filters_h = {"data_inizio": start_date_val}
-            mappings_h = {"date_column": "D02_DT_BOLLA"}
+        start_date_val = self._incremental_start_date()
+        filters_h, mappings_h = self._build_date_filters("D02_DT_BOLLA") if start_date_val else ({}, {})
             
         header_map = {} # {d02_key: numero_bolla}
         
@@ -413,12 +684,7 @@ class OracleSyncProcess:
             return
             
         print("\n  Syncing DDT Detail Lines...")
-        filters_l = {}
-        mappings_l = {}
-        if start_date_val:
-            print(f"  Filtering DDT Lines starting from: {start_date_val}")
-            filters_l = {"data_inizio": start_date_val}
-            mappings_l = {"date_column": "EW1_DATA_BOLLA_CLI"}
+        filters_l, mappings_l = self._build_date_filters("EW1_DATA_BOLLA_CLI") if start_date_val else ({}, {})
             
         endpoint_l = "/ords/intex2/D03_DDT_RIGHE_002W/"
         ords_q_l = None
@@ -458,21 +724,21 @@ class OracleSyncProcess:
                 print(f"    Fetched {total_lines} DDT lines so far...")
                 
                 for item in items:
-                    key_d02 = item.get('d03_key_d02')
-                    nr_bolla = header_map.get(key_d02)
+                    nr_bolla = self._resolve_bolla_number(item, header_map)
                     riga_num = item.get('d03_riga')
                     
                     if nr_bolla and riga_num is not None:
                         price = item.get('d03_prezzo_uni_euro') or item.get('d03_prezzo_uni') or 0.00
                         qty = item.get('d03_capi_in_uscita') or item.get('d03_kg_in_uscita') or 0
                         importo = float(price) * float(qty)
+                        numero_offerta = self._build_numero_offerta(item)
                         
                         cursor.execute(upsert_line, (
                             nr_bolla,
                             int(riga_num),
                             str(item.get('d03_nr_disp_cli') or '').strip() or None,
                             item.get('d03_riga_disp_cli'),
-                            None,
+                            numero_offerta,
                             (item.get('d03_cd_articolo') or 'CAPI').strip(),
                             (item.get('ew2_ds_colore') or 'TUTTI').strip(),
                             float(item.get('d03_kg_in_uscita') or 0.0),
@@ -510,6 +776,7 @@ class OracleSyncProcess:
             self.sync_articoli()
             self.sync_fatture_and_seasons()
             self.sync_ddts()
+            self.sync_offerte()
             
             elapsed = time.time() - start_time
             print(f"\nDatabase Sync completed successfully in {elapsed:.2f} seconds.")
@@ -536,16 +803,27 @@ if __name__ == "__main__":
         default=None,
         help="Optional start date (YYYY-MM-DD) to fetch records starting from this date. Overrides incremental default."
     )
+    parser.add_argument(
+        "--end-date",
+        type=str,
+        default=None,
+        help="Optional end date (YYYY-MM-DD) to fetch records up to this date. Defaults to today."
+    )
     
     args = parser.parse_args()
     
-    # Simple validation of start-date format if provided
-    if args.start_date:
-        try:
-            datetime.strptime(args.start_date, '%Y-%m-%d')
-        except ValueError:
-            print("Error: --start-date must be in YYYY-MM-DD format.")
-            sys.exit(1)
+    for date_arg, flag in ((args.start_date, "--start-date"), (args.end_date, "--end-date")):
+        if date_arg:
+            try:
+                datetime.strptime(date_arg, '%Y-%m-%d')
+            except ValueError:
+                print(f"Error: {flag} must be in YYYY-MM-DD format.")
+                sys.exit(1)
             
-    sync_job = OracleSyncProcess(limit=args.limit, mode=args.mode, start_date=args.start_date)
+    sync_job = OracleSyncProcess(
+        limit=args.limit,
+        mode=args.mode,
+        start_date=args.start_date,
+        end_date=args.end_date,
+    )
     sync_job.run_sync()

@@ -40,13 +40,27 @@ To run an incremental sync, execute the following command from your host termina
 docker exec -it intex-api python /app/oracle-sync.py --mode incremental
 ```
 
-### 2.2. Syncing from a Custom Date
-If you want to sync records starting from a specific date (e.g., starting from `2026-01-01`), you can use the `--start-date` parameter followed by a date in `YYYY-MM-DD` format. This works with both incremental and full modes, overriding the default behavior:
+### 2.2. Syncing with a Custom Date Range
+When date filtering is active (incremental mode, or whenever `--start-date` is set), records are fetched within a date window. Use `--start-date` and optionally `--end-date`, both in `YYYY-MM-DD` format.
+
+- **`--start-date`**: fetch records from this date onward. In incremental mode without `--start-date`, the default start is January 1 of the current year.
+- **`--end-date`**: fetch records up to and including this date. If omitted, it defaults to **today**.
+
+Examples:
+
 ```bash
+# Incremental sync from Jan 1 through today (default end date)
+docker exec -it intex-api python /app/oracle-sync.py --mode incremental
+
+# Sync from a specific start date through today
 docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01
+
+# Sync an explicit date range
+docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01 --end-date 2026-03-31
 ```
+
 > [!NOTE]
-> Querying the remote server using date filters (`--start-date`) triggers a full table scan on the unindexed remote Oracle view. This operation can take between **20 to 50 seconds** per page. To prevent script failures, the internal HTTP client timeout has been increased to **60 seconds**.
+> Querying the remote server using date filters (`--start-date` / `--end-date`) triggers a full table scan on the unindexed remote Oracle view. This operation can take between **20 to 50 seconds** per page. To prevent script failures, the internal HTTP client timeout has been increased to **60 seconds**.
 
 ### 2.3. Full Sync (Rebuild Cache)
 Full mode pulls the entire historical log from the remote views page-by-page. Use this during initial setup or weekly maintenance.
@@ -57,7 +71,7 @@ docker exec -it intex-api python /app/oracle-sync.py --mode full
 ### 2.4. Batch Size Limit Tuning
 If the remote Oracle server is under heavy load or if pagination takes too long and encounters a gateway/read timeout, you can lower the page batch size (default is 100) using the `--limit` parameter (e.g., to 50 or 20). This reduces the query execution time of each page on the Oracle database:
 ```bash
-docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01 --limit 50
+docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01 --end-date 2026-03-31 --limit 50
 ```
 
 ---
