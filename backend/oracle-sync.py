@@ -16,7 +16,7 @@ from database import DatabasePool
 db_pool = DatabasePool()
 
 class OracleSyncProcess:
-    FATTURE_LIMIT = 20
+    FATTURE_LIMIT = 100
 
     def __init__(self, limit=100, mode="full", start_date=None, end_date=None):
         self.connector = IntexDataConnector()
@@ -37,15 +37,18 @@ class OracleSyncProcess:
             return self.end_date
         return datetime.now().strftime('%Y-%m-%d')
 
-    def _build_date_filters(self, date_column):
+    def _build_date_filters(self, date_column, iso_plain=False):
         start_date_val = self._incremental_start_date()
         if not start_date_val:
             return {}, {}
         end_date_val = self._resolve_end_date()
         print(f"  Filtering records from {start_date_val} to {end_date_val} ({date_column})")
+        mappings = {"date_column": date_column}
+        if iso_plain:
+            mappings["iso_plain_dates"] = True
         return (
             {"data_inizio": start_date_val, "data_fine": end_date_val},
-            {"date_column": date_column},
+            mappings,
         )
 
     @staticmethod
@@ -430,10 +433,10 @@ class OracleSyncProcess:
     def sync_fatture_and_seasons(self):
         print("\n--- Syncing Invoices & Seasons ---")
         limit = self.FATTURE_LIMIT
-        print(f"  Using page size {limit} for F07_003W (slower endpoint).")
+        print(f"  Using page size {limit} for F07_003W (DATA_BOLLA_ISO filter).")
         
         start_date_val = self._incremental_start_date()
-        filters, mappings = self._build_date_filters("D02_DT_BOLLA") if start_date_val else ({}, {})
+        filters, mappings = self._build_date_filters("DATA_BOLLA_ISO", iso_plain=True) if start_date_val else ({}, {})
             
         endpoint = "/ords/intex2/F07_003W/"
         ords_q = None

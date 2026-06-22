@@ -40,20 +40,24 @@ class IntexDataConnector:
         
         # 1. Handle date range filters on the mapped date column
         date_col = mappings.get('date_column')
+        iso_plain = mappings.get('iso_plain_dates', False)
         if date_col:
             start_val = filters.get('data_inizio')
             end_val = filters.get('data_fine')
             if start_val and end_val:
-                query_dict[date_col] = {
-                    "$between": [
-                        {"$date": f"{start_val}T00:00:00Z"},
-                        {"$date": f"{end_val}T23:59:59Z"}
-                    ]
-                }
+                if iso_plain:
+                    query_dict[date_col] = {"$between": [start_val, end_val]}
+                else:
+                    query_dict[date_col] = {
+                        "$between": [
+                            {"$date": f"{start_val}T00:00:00Z"},
+                            {"$date": f"{end_val}T23:59:59Z"}
+                        ]
+                    }
             elif start_val:
-                query_dict[date_col] = {"$gte": {"$date": f"{start_val}T00:00:00Z"}}
+                query_dict[date_col] = {"$gte": start_val} if iso_plain else {"$gte": {"$date": f"{start_val}T00:00:00Z"}}
             elif end_val:
-                query_dict[date_col] = {"$lte": {"$date": f"{end_val}T23:59:59Z"}}
+                query_dict[date_col] = {"$lte": end_val} if iso_plain else {"$lte": {"$date": f"{end_val}T23:59:59Z"}}
                 
         # 2. Map standard filter properties to ORDS column filters
         col_mappings = mappings.get('columns', {})
