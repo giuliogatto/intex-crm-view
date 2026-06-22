@@ -17,7 +17,6 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: intex-pgadmin
     ports:
       - "5445:80"
     environment:
