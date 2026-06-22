@@ -25,7 +25,7 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
-      - timescaledb
+      - timescaledb-intex
     restart: always
     networks:
       - intex_network
