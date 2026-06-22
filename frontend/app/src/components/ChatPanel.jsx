@@ -86,7 +86,7 @@ export default function ChatPanel({ onResponse, onClienteSelect }) {
       <div className="chat-panel__messages">
         {messages.length === 0 && !sending && (
           <div className="chat-panel__placeholder">
-            Scrivi una richiesta in italiano, ad esempio: &ldquo;Mostrami le fatture di TAM per il 2026&rdquo;
+            Scrivi una richiesta in italiano, ad esempio: &ldquo;Mostrami le fatture di PRIMA SRL per il 2026&rdquo;
           </div>
         )}
         {messages.map((msg, idx) => (
