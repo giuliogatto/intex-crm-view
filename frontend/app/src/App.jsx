@@ -99,15 +99,32 @@ function App() {
   }
 
   const handleTabChange = (tab) => {
-    setData([])
-    setListPage(1)
-    setListTotal(0)
-    setListPages(1)
-    setLoading(tab !== 'discrepanze')
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
     setSelectedBollaId(null)
     setBollaDetail(null)
+
+    if (tab === 'discrepanze') {
+      setData([])
+      setListPage(1)
+      setListTotal(0)
+      setListPages(1)
+      setLoading(false)
+      setActiveTab(tab)
+      return
+    }
+
+    const tabFilters = tab !== activeTab
+      ? { ...currentFilters, stato: tab === 'offerte' ? 'Tutti' : 'Tutte' }
+      : currentFilters
+
+    setData([])
+    setListPage(1)
+    if (tab !== activeTab) {
+      setCurrentFilters(tabFilters)
+    }
+    skipNextTabFetch.current = true
+    fetchData(tab, tabFilters, 1)
     setActiveTab(tab)
   }
 
