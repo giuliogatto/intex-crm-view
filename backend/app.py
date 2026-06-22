@@ -6,6 +6,7 @@ import json
 from auth import authenticate_user, create_token, get_current_user
 from prompts import genericPrompt, replace_oggi_placeholder
 from LLMservice import send_prompt, get_model_name
+from pdf_export import build_pdf
 
 app = Bottle()
 db_pool = DatabasePool()
@@ -36,6 +37,32 @@ def parse_pagination(default_limit=20, max_limit=100):
     limit = max(min(limit, max_limit), 1)
     offset = (page - 1) * limit
     return page, limit, offset
+
+
+def _format_euro(value):
+    return f"€ {value:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+
+
+def _pdf_response(pdf_bytes, filename):
+    return HTTPResponse(
+        body=pdf_bytes,
+        status=200,
+        headers={
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': f'attachment; filename="{filename}"',
+        },
+    )
+
+
+def _list_filters():
+    return {
+        'data_inizio': parse_date(request.query.get('data_inizio')),
+        'data_fine': parse_date(request.query.get('data_fine')),
+        'codice_cliente': request.query.get('codice_cliente'),
+        'ragione_sociale': request.query.get('ragione_sociale'),
+        'stagione': request.query.get('stagione'),
+        'stato': request.query.get('stato'),
+    }
 
 PUBLIC_PATHS = {'/health', '/api/auth/login'}
 
@@ -163,126 +190,166 @@ def get_stagioni():
         return {"error": str(e)}
 
 # 2. DDT / Bolle List
+def _fetch_bolle(cursor, filters):
+    query = """
+        SELECT d.numero_bolla, TO_CHAR(d.data_bolla, 'DD/MM/YYYY') as data_bolla,
+               c.ragione_sociale, c.codice as codice_cliente,
+               (SELECT COALESCE(string_agg(DISTINCT dr.numero_disposizione, ', '), '—')
+                FROM ddt_righe dr WHERE dr.numero_bolla = d.numero_bolla) as righe_collegate
+        FROM ddt_testate d
+        JOIN clienti c ON d.codice_cliente = c.codice
+        WHERE 1=1
+    """
+    params = {}
+
+    if filters['data_inizio']:
+        query += " AND d.data_bolla >= %(data_inizio)s"
+        params['data_inizio'] = filters['data_inizio']
+    if filters['data_fine']:
+        query += " AND d.data_bolla <= %(data_fine)s"
+        params['data_fine'] = filters['data_fine']
+    if filters['codice_cliente'] and filters['codice_cliente'] != '':
+        query += " AND d.codice_cliente = %(codice_cliente)s"
+        params['codice_cliente'] = filters['codice_cliente']
+    if filters['ragione_sociale'] and filters['ragione_sociale'] != '':
+        query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
+        params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
+    if filters['stagione'] and filters['stagione'] != '':
+        query += " AND d.codice_stagione ILIKE %(stagione)s"
+        params['stagione'] = f"%{filters['stagione']}%"
+
+    query += " ORDER BY d.data_bolla DESC, d.numero_bolla DESC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    return [
+        {
+            "numero_bolla": r[0],
+            "data": r[1],
+            "cliente": r[2],
+            "codice_cliente": r[3],
+            "righe_collegate": r[4],
+        }
+        for r in rows
+    ]
+
+
 @app.route('/api/bolle', method='GET')
 def get_bolle():
-    data_inizio = parse_date(request.query.get('data_inizio'))
-    data_fine = parse_date(request.query.get('data_fine'))
-    codice_cliente = request.query.get('codice_cliente')
-    ragione_sociale = request.query.get('ragione_sociale')
-    stagione = request.query.get('stagione')
-
     try:
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-
-        query = """
-            SELECT d.numero_bolla, TO_CHAR(d.data_bolla, 'DD/MM/YYYY') as data_bolla, 
-                   c.ragione_sociale, c.codice as codice_cliente,
-                   (SELECT COALESCE(string_agg(DISTINCT dr.numero_disposizione, ', '), '—') 
-                    FROM ddt_righe dr WHERE dr.numero_bolla = d.numero_bolla) as righe_collegate
-            FROM ddt_testate d
-            JOIN clienti c ON d.codice_cliente = c.codice
-            WHERE 1=1
-        """
-        params = {}
-
-        if data_inizio:
-            query += " AND d.data_bolla >= %(data_inizio)s"
-            params['data_inizio'] = data_inizio
-        if data_fine:
-            query += " AND d.data_bolla <= %(data_fine)s"
-            params['data_fine'] = data_fine
-        if codice_cliente and codice_cliente != '':
-            query += " AND d.codice_cliente = %(codice_cliente)s"
-            params['codice_cliente'] = codice_cliente
-        if ragione_sociale and ragione_sociale != '':
-            query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
-            params['ragione_sociale'] = f"%{ragione_sociale}%"
-        if stagione and stagione != '':
-            query += " AND d.codice_stagione ILIKE %(stagione)s"
-            params['stagione'] = f"%{stagione}%"
-
-        query += " ORDER BY d.data_bolla DESC, d.numero_bolla DESC"
-
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
+        bolle = _fetch_bolle(cursor, _list_filters())
         cursor.close()
         db_pool.release_conn(conn)
-
-        bolle = [
-            {
-                "numero_bolla": r[0],
-                "data": r[1],
-                "cliente": r[2],
-                "codice_cliente": r[3],
-                "righe_collegate": r[4]
-            } for r in rows
-        ]
         return {"total": len(bolle), "data": bolle}
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
 
-# 3. Invoices / Fatture List
-@app.route('/api/fatture', method='GET')
-def get_fatture():
-    data_inizio = parse_date(request.query.get('data_inizio'))
-    data_fine = parse_date(request.query.get('data_fine'))
-    codice_cliente = request.query.get('codice_cliente')
-    ragione_sociale = request.query.get('ragione_sociale')
-    stagione = request.query.get('stagione')
-    stato = request.query.get('stato')
 
+@app.route('/api/bolle/export/pdf', method='GET')
+def export_bolle_pdf():
     try:
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-
-        query = """
-            SELECT f.numero_disposizione, TO_CHAR(f.data_fattura, 'DD/MM/YYYY') as data_fattura,
-                   c.ragione_sociale, c.codice as codice_cliente, f.importo_totale, f.stato_pagamento
-            FROM fatture_testate f
-            JOIN clienti c ON f.codice_cliente = c.codice
-            WHERE 1=1
-        """
-        params = {}
-
-        if data_inizio:
-            query += " AND f.data_fattura >= %(data_inizio)s"
-            params['data_inizio'] = data_inizio
-        if data_fine:
-            query += " AND f.data_fattura <= %(data_fine)s"
-            params['data_fine'] = data_fine
-        if codice_cliente and codice_cliente != '':
-            query += " AND f.codice_cliente = %(codice_cliente)s"
-            params['codice_cliente'] = codice_cliente
-        if ragione_sociale and ragione_sociale != '':
-            query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
-            params['ragione_sociale'] = f"%{ragione_sociale}%"
-        if stagione and stagione != '':
-            query += " AND f.codice_stagione ILIKE %(stagione)s"
-            params['stagione'] = f"%{stagione}%"
-        if stato and stato != '' and stato != 'Tutte':
-            query += " AND f.stato_pagamento = %(stato)s"
-            params['stato'] = stato
-
-        query += " ORDER BY f.data_fattura DESC, f.numero_disposizione DESC"
-
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
+        bolle = _fetch_bolle(cursor, _list_filters())
         cursor.close()
         db_pool.release_conn(conn)
 
-        fatture = [
-            {
-                "numero_disposizione": r[0],
-                "data": r[1],
-                "cliente": r[2],
-                "codice_cliente": r[3],
-                "importo_documento": float(r[4]),
-                "stato": r[5]
-            } for r in rows
+        headers = ['N. bolla', 'Data', 'Cliente', 'Codice Cliente', 'Righe collegate']
+        rows = [
+            [b['numero_bolla'], b['data'], b['cliente'], b['codice_cliente'], b['righe_collegate']]
+            for b in bolle
         ]
+        pdf_bytes = build_pdf('Bolle / DDT — Esportazione', headers, rows)
+        return _pdf_response(pdf_bytes, 'bolle_esportazione.pdf')
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+# 3. Invoices / Fatture List
+def _fetch_fatture(cursor, filters):
+    query = """
+        SELECT f.numero_disposizione, TO_CHAR(f.data_fattura, 'DD/MM/YYYY') as data_fattura,
+               c.ragione_sociale, c.codice as codice_cliente, f.importo_totale, f.stato_pagamento
+        FROM fatture_testate f
+        JOIN clienti c ON f.codice_cliente = c.codice
+        WHERE 1=1
+    """
+    params = {}
+
+    if filters['data_inizio']:
+        query += " AND f.data_fattura >= %(data_inizio)s"
+        params['data_inizio'] = filters['data_inizio']
+    if filters['data_fine']:
+        query += " AND f.data_fattura <= %(data_fine)s"
+        params['data_fine'] = filters['data_fine']
+    if filters['codice_cliente'] and filters['codice_cliente'] != '':
+        query += " AND f.codice_cliente = %(codice_cliente)s"
+        params['codice_cliente'] = filters['codice_cliente']
+    if filters['ragione_sociale'] and filters['ragione_sociale'] != '':
+        query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
+        params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
+    if filters['stagione'] and filters['stagione'] != '':
+        query += " AND f.codice_stagione ILIKE %(stagione)s"
+        params['stagione'] = f"%{filters['stagione']}%"
+    if filters['stato'] and filters['stato'] != '' and filters['stato'] != 'Tutte':
+        query += " AND f.stato_pagamento = %(stato)s"
+        params['stato'] = filters['stato']
+
+    query += " ORDER BY f.data_fattura DESC, f.numero_disposizione DESC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    return [
+        {
+            "numero_disposizione": r[0],
+            "data": r[1],
+            "cliente": r[2],
+            "codice_cliente": r[3],
+            "importo_documento": float(r[4]),
+            "stato": r[5],
+        }
+        for r in rows
+    ]
+
+
+@app.route('/api/fatture', method='GET')
+def get_fatture():
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        fatture = _fetch_fatture(cursor, _list_filters())
+        cursor.close()
+        db_pool.release_conn(conn)
         return {"total": len(fatture), "data": fatture}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
+@app.route('/api/fatture/export/pdf', method='GET')
+def export_fatture_pdf():
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        fatture = _fetch_fatture(cursor, _list_filters())
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        headers = ['N. disp.', 'Periodo riferimento', 'Cliente', 'Codice Cliente', 'Importo documento', 'Stato']
+        rows = [
+            [
+                f['numero_disposizione'],
+                f['data'],
+                f['cliente'],
+                f['codice_cliente'],
+                _format_euro(f['importo_documento']),
+                f['stato'],
+            ]
+            for f in fatture
+        ]
+        pdf_bytes = build_pdf('Fatture — Esportazione', headers, rows)
+        return _pdf_response(pdf_bytes, 'fatture_esportazione.pdf')
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
@@ -353,135 +420,202 @@ def get_fattura_detail(id):
         return {"error": str(e)}
 
 # 5. Offers / Ordini List
+def _fetch_offerte(cursor, filters):
+    query = """
+        SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
+               c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
+               COALESCE((SELECT descrizione FROM stagioni WHERE codice = o.codice_stagione), o.codice_stagione) as stagione_desc
+        FROM offerte_testate o
+        JOIN clienti c ON o.codice_cliente = c.codice
+        WHERE 1=1
+    """
+    params = {}
+
+    if filters['data_inizio']:
+        query += " AND o.data_offerta >= %(data_inizio)s"
+        params['data_inizio'] = filters['data_inizio']
+    if filters['data_fine']:
+        query += " AND o.data_offerta <= %(data_fine)s"
+        params['data_fine'] = filters['data_fine']
+    if filters['codice_cliente'] and filters['codice_cliente'] != '':
+        query += " AND o.codice_cliente = %(codice_cliente)s"
+        params['codice_cliente'] = filters['codice_cliente']
+    if filters['ragione_sociale'] and filters['ragione_sociale'] != '':
+        query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
+        params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
+    if filters['stagione'] and filters['stagione'] != '':
+        query += " AND o.codice_stagione ILIKE %(stagione)s"
+        params['stagione'] = f"%{filters['stagione']}%"
+    if filters['stato'] and filters['stato'] != '' and filters['stato'] != 'Tutti':
+        query += " AND o.stato = %(stato)s"
+        params['stato'] = filters['stato']
+
+    query += " ORDER BY o.data_offerta DESC, o.numero_offerta DESC"
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    return [
+        {
+            "numero_offerta": r[0],
+            "data": r[1],
+            "cliente": r[2],
+            "codice_cliente": r[3],
+            "importo": float(r[4]),
+            "stato": r[5],
+            "stagione": r[6],
+        }
+        for r in rows
+    ]
+
+
 @app.route('/api/offerte', method='GET')
 def get_offerte():
-    data_inizio = parse_date(request.query.get('data_inizio'))
-    data_fine = parse_date(request.query.get('data_fine'))
-    codice_cliente = request.query.get('codice_cliente')
-    ragione_sociale = request.query.get('ragione_sociale')
-    stagione = request.query.get('stagione')
-    stato = request.query.get('stato')
-
     try:
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-
-        query = """
-            SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
-                   c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
-                   COALESCE((SELECT descrizione FROM stagioni WHERE codice = o.codice_stagione), o.codice_stagione) as stagione_desc
-            FROM offerte_testate o
-            JOIN clienti c ON o.codice_cliente = c.codice
-            WHERE 1=1
-        """
-        params = {}
-
-        if data_inizio:
-            query += " AND o.data_offerta >= %(data_inizio)s"
-            params['data_inizio'] = data_inizio
-        if data_fine:
-            query += " AND o.data_offerta <= %(data_fine)s"
-            params['data_fine'] = data_fine
-        if codice_cliente and codice_cliente != '':
-            query += " AND o.codice_cliente = %(codice_cliente)s"
-            params['codice_cliente'] = codice_cliente
-        if ragione_sociale and ragione_sociale != '':
-            query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
-            params['ragione_sociale'] = f"%{ragione_sociale}%"
-        if stagione and stagione != '':
-            query += " AND o.codice_stagione ILIKE %(stagione)s"
-            params['stagione'] = f"%{stagione}%"
-        if stato and stato != '' and stato != 'Tutti':
-            query += " AND o.stato = %(stato)s"
-            params['stato'] = stato
-
-        query += " ORDER BY o.data_offerta DESC, o.numero_offerta DESC"
-
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
+        offerte = _fetch_offerte(cursor, _list_filters())
         cursor.close()
         db_pool.release_conn(conn)
-
-        offerte = [
-            {
-                "numero_offerta": r[0],
-                "data": r[1],
-                "cliente": r[2],
-                "codice_cliente": r[3],
-                "importo": float(r[4]),
-                "stato": r[5],
-                "stagione": r[6]
-            } for r in rows
-        ]
         return {"total": len(offerte), "data": offerte}
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
 
+
+@app.route('/api/offerte/export/pdf', method='GET')
+def export_offerte_pdf():
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        offerte = _fetch_offerte(cursor, _list_filters())
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        headers = ['N. offerta', 'Data', 'Cliente', 'Codice Cliente', 'Stagione', 'Importo', 'Stato']
+        rows = [
+            [
+                o['numero_offerta'],
+                o['data'],
+                o['cliente'],
+                o['codice_cliente'],
+                o['stagione'],
+                _format_euro(o['importo']),
+                o['stato'],
+            ]
+            for o in offerte
+        ]
+        pdf_bytes = build_pdf('Offerte / Ordini — Esportazione', headers, rows)
+        return _pdf_response(pdf_bytes, 'offerte_esportazione.pdf')
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
 # 6. Auditing Discrepancies (Compare Offer vs DDT vs Invoice)
+def _fetch_discrepanze(cursor, codice_cliente):
+    query = """
+        SELECT
+            art.codice AS articolo_codice,
+            COALESCE(art.descrizione, dr.codice_articolo) AS articolo_desc,
+            dr.colore,
+            COALESCE(SUM(o_rig.quantita), 0) AS capi_offerti,
+            COALESCE(SUM(o_rig.importo_riga), 0) AS valore_offerto,
+            COALESCE(SUM(dr.capi_consegnati), 0) AS capi_consegnati,
+            COALESCE(SUM(dr.kg_consegnati), 0) AS kg_consegnati,
+            COALESCE(SUM(dr.importo_riga), 0) AS valore_consegnato,
+            COALESCE(SUM(fr.capi_fatturati), 0) AS capi_fatturati,
+            COALESCE(SUM(fr.kg_fatturati), 0) AS kg_fatturati,
+            COALESCE(SUM(fr.importo_riga), 0) AS valore_fatturato,
+            (COALESCE(SUM(dr.capi_consegnati), 0) - COALESCE(SUM(fr.capi_fatturati), 0)) AS diff_capi,
+            (COALESCE(SUM(dr.importo_riga), 0) - COALESCE(SUM(fr.importo_riga), 0)) AS diff_valore
+        FROM ddt_righe dr
+        JOIN ddt_testate dt ON dr.numero_bolla = dt.numero_bolla
+        LEFT JOIN articoli art ON dr.codice_articolo = art.codice
+        LEFT JOIN fatture_righe fr ON dr.numero_disposizione = fr.numero_disposizione
+                                   AND dr.codice_articolo = fr.codice_articolo
+                                   AND dr.colore = fr.colore
+        LEFT JOIN offerte_righe o_rig ON dr.numero_offerta = o_rig.numero_offerta
+                                      AND dr.codice_articolo = o_rig.codice_articolo
+                                      AND dr.colore = o_rig.colore
+        WHERE dt.codice_cliente = %(codice_cliente)s
+        GROUP BY art.codice, art.descrizione, dr.codice_articolo, dr.colore
+        ORDER BY art.codice, dr.colore
+    """
+    cursor.execute(query, {"codice_cliente": codice_cliente})
+    rows = cursor.fetchall()
+    return [
+        {
+            "articolo_codice": r[0],
+            "articolo_desc": r[1],
+            "colore": r[2],
+            "capi_offerti": float(r[3]),
+            "valore_offerto": float(r[4]),
+            "capi_consegnati": float(r[5]),
+            "kg_consegnati": float(r[6]),
+            "valore_consegnato": float(r[7]),
+            "capi_fatturati": float(r[8]),
+            "kg_fatturati": float(r[9]),
+            "valore_fatturato": float(r[10]),
+            "diff_capi": float(r[11]),
+            "diff_valore": float(r[12]),
+        }
+        for r in rows
+    ]
+
+
 @app.route('/api/discrepanze', method='GET')
 def get_discrepanze():
     codice_cliente = request.query.get('codice_cliente')
-
     if not codice_cliente or codice_cliente == '':
-        codice_cliente = 'XXX' # Default to TAM & COMPANY for demonstration
+        codice_cliente = 'XXX'
 
     try:
         conn = db_pool.get_conn()
         cursor = conn.cursor()
+        discrepanze = _fetch_discrepanze(cursor, codice_cliente)
+        cursor.close()
+        db_pool.release_conn(conn)
+        return {"total": len(discrepanze), "data": discrepanze}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
 
-        query = """
-            SELECT 
-                art.codice AS articolo_codice,
-                COALESCE(art.descrizione, dr.codice_articolo) AS articolo_desc,
-                dr.colore,
-                COALESCE(SUM(o_rig.quantita), 0) AS capi_offerti,
-                COALESCE(SUM(o_rig.importo_riga), 0) AS valore_offerto,
-                COALESCE(SUM(dr.capi_consegnati), 0) AS capi_consegnati,
-                COALESCE(SUM(dr.kg_consegnati), 0) AS kg_consegnati,
-                COALESCE(SUM(dr.importo_riga), 0) AS valore_consegnato,
-                COALESCE(SUM(fr.capi_fatturati), 0) AS capi_fatturati,
-                COALESCE(SUM(fr.kg_fatturati), 0) AS kg_fatturati,
-                COALESCE(SUM(fr.importo_riga), 0) AS valore_fatturato,
-                (COALESCE(SUM(dr.capi_consegnati), 0) - COALESCE(SUM(fr.capi_fatturati), 0)) AS diff_capi,
-                (COALESCE(SUM(dr.importo_riga), 0) - COALESCE(SUM(fr.importo_riga), 0)) AS diff_valore
-            FROM ddt_righe dr
-            JOIN ddt_testate dt ON dr.numero_bolla = dt.numero_bolla
-            LEFT JOIN articoli art ON dr.codice_articolo = art.codice
-            LEFT JOIN fatture_righe fr ON dr.numero_disposizione = fr.numero_disposizione 
-                                       AND dr.codice_articolo = fr.codice_articolo 
-                                       AND dr.colore = fr.colore
-            LEFT JOIN offerte_righe o_rig ON dr.numero_offerta = o_rig.numero_offerta 
-                                          AND dr.codice_articolo = o_rig.codice_articolo 
-                                          AND dr.colore = o_rig.colore
-            WHERE dt.codice_cliente = %(codice_cliente)s
-            GROUP BY art.codice, art.descrizione, dr.codice_articolo, dr.colore
-            ORDER BY art.codice, dr.colore
-        """
 
-        cursor.execute(query, {"codice_cliente": codice_cliente})
-        rows = cursor.fetchall()
+@app.route('/api/discrepanze/export/pdf', method='GET')
+def export_discrepanze_pdf():
+    codice_cliente = request.query.get('codice_cliente')
+    if not codice_cliente or codice_cliente == '':
+        codice_cliente = 'XXX'
+
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        discrepanze = _fetch_discrepanze(cursor, codice_cliente)
         cursor.close()
         db_pool.release_conn(conn)
 
-        discrepanze = [
-            {
-                "articolo_codice": r[0],
-                "articolo_desc": r[1],
-                "colore": r[2],
-                "capi_offerti": float(r[3]),
-                "valore_offerto": float(r[4]),
-                "capi_consegnati": float(r[5]),
-                "kg_consegnati": float(r[6]),
-                "valore_consegnato": float(r[7]),
-                "capi_fatturati": float(r[8]),
-                "kg_fatturati": float(r[9]),
-                "valore_fatturato": float(r[10]),
-                "diff_capi": float(r[11]),
-                "diff_valore": float(r[12])
-            } for r in rows
+        headers = [
+            'Articolo', 'Colore', 'Capi Offerti', 'Valore Offerto', 'Capi Consegnati',
+            'Kg Consegnati', 'Valore Consegnato', 'Capi Fatturati', 'Kg Fatturati',
+            'Valore Fatturato', 'Diff Capi', 'Diff Valore',
         ]
-        return {"total": len(discrepanze), "data": discrepanze}
+        rows = [
+            [
+                d['articolo_desc'],
+                d['colore'],
+                d['capi_offerti'],
+                _format_euro(d['valore_offerto']),
+                d['capi_consegnati'],
+                d['kg_consegnati'],
+                _format_euro(d['valore_consegnato']),
+                d['capi_fatturati'],
+                d['kg_fatturati'],
+                _format_euro(d['valore_fatturato']),
+                d['diff_capi'],
+                _format_euro(d['diff_valore']),
+            ]
+            for d in discrepanze
+        ]
+        pdf_bytes = build_pdf(f'Auditing Discrepanze — Cliente {codice_cliente}', headers, rows)
+        return _pdf_response(pdf_bytes, f'discrepanze_audit_{codice_cliente}.pdf')
     except Exception as e:
         response.status = 500
         return {"error": str(e)}

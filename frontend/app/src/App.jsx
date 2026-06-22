@@ -3,7 +3,7 @@ import Filters from './components/Filters'
 import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
 import ChatPanel from './components/ChatPanel'
-import { authFetch } from './utils/auth'
+import { authFetch, downloadAuthFile } from './utils/auth'
 import { useAuth } from './context/AuthContext'
 import {
   matchCliente,
@@ -114,6 +114,30 @@ function App() {
   const handleSearch = (filters) => {
     setCurrentFilters(filters)
     fetchData(activeTab, filters)
+  }
+
+  const buildExportParams = (tab, filters) => {
+    const params = new URLSearchParams()
+    if (filters.data_inizio) params.append('data_inizio', filters.data_inizio)
+    if (filters.data_fine) params.append('data_fine', filters.data_fine)
+    if (filters.codice_cliente) params.append('codice_cliente', filters.codice_cliente)
+    if (filters.stagione) params.append('stagione', filters.stagione)
+    if (tab === 'fatture' && filters.stato && filters.stato !== 'Tutte') {
+      params.append('stato', filters.stato)
+    } else if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') {
+      params.append('stato', filters.stato)
+    }
+    return params
+  }
+
+  const exportPDF = async () => {
+    if (data.length === 0) return
+    try {
+      const params = buildExportParams(activeTab, currentFilters)
+      await downloadAuthFile(`/api/${activeTab}/export/pdf?${params}`, `${activeTab}_esportazione.pdf`)
+    } catch (err) {
+      console.error('Error exporting PDF:', err)
+    }
   }
 
   const exportCSV = () => {
@@ -365,6 +389,7 @@ function App() {
                   activeTab={activeTab}
                   onSearch={handleSearch}
                   onExport={exportCSV}
+                  onExportPDF={exportPDF}
                   filterValues={currentFilters}
                 />
               </div>

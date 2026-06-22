@@ -3,7 +3,7 @@ import DateInput from './DateInput'
 import CustomerAutocomplete from './CustomerAutocomplete'
 import { authFetch } from '../utils/auth'
 
-export default function Filters({ activeTab, onSearch, onExport, filterValues }) {
+export default function Filters({ activeTab, onSearch, onExport, onExportPDF, filterValues }) {
   const [stagioni, setStagioni] = useState([])
   const [filters, setFilters] = useState({
     data_inizio: '',
@@ -134,9 +134,12 @@ export default function Filters({ activeTab, onSearch, onExport, filterValues })
             Azzera filtri
           </button>
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button type="button" onClick={onExport} className="btn">
             Esporta CSV
+          </button>
+          <button type="button" onClick={onExportPDF} className="btn">
+            Esporta PDF
           </button>
         </div>
       </div>

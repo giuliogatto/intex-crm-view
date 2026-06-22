@@ -62,3 +62,20 @@ export function logout() {
   clearToken()
   window.location.reload()
 }
+
+export async function downloadAuthFile(path, filename) {
+  const res = await authFetch(path)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || 'Download failed')
+  }
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}

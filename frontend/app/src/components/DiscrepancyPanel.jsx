@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import CustomerAutocomplete from './CustomerAutocomplete'
-import { authFetch } from '../utils/auth'
+import { authFetch, downloadAuthFile } from '../utils/auth'
 
 export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCustomerChange }) {
   const [internalCustomer, setInternalCustomer] = useState('XXX')
@@ -53,13 +53,30 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
     document.body.removeChild(link)
   }
 
+  const exportPDF = async () => {
+    if (discrepanze.length === 0) return
+    try {
+      await downloadAuthFile(
+        `/api/discrepanze/export/pdf?codice_cliente=${selectedCustomer}`,
+        `discrepanze_audit_${selectedCustomer}.pdf`
+      )
+    } catch (err) {
+      console.error('Error exporting PDF:', err)
+    }
+  }
+
   return (
     <div className="panel">
       <div className="panel__head">
         <span>Auditing Discrepanze (Offerta vs DDT vs Fattura)</span>
-        <button className="btn" onClick={exportCSV} disabled={discrepanze.length === 0}>
-          Esporta Report CSV
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button className="btn" onClick={exportCSV} disabled={discrepanze.length === 0}>
+            Esporta Report CSV
+          </button>
+          <button className="btn" onClick={exportPDF} disabled={discrepanze.length === 0}>
+            Esporta Report PDF
+          </button>
+        </div>
       </div>
       <div className="panel__body">
         <div className="filters-grid" style={{ marginBottom: '2rem' }}>
