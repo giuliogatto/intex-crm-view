@@ -102,8 +102,8 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
             <p>Non sono state trovate lavorazioni registrate per il cliente selezionato.</p>
           </div>
         ) : (
-          <div className="table-wrap">
-            <table className="data">
+          <div className="table-wrap table-wrap--audit">
+            <table className="data data--audit">
               <thead>
                 <tr>
                   <th rowspan="2">Articolo / Colore</th>

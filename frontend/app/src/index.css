@@ -233,9 +233,15 @@ body {
 /* Dashboard Layout */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 300px 1fr 280px;
+  grid-template-columns: 300px minmax(0, 1fr) 280px;
   gap: 1.5rem;
   align-items: start;
+}
+
+.dashboard-main,
+.dashboard-chat,
+.dashboard-sidebar {
+  min-width: 0;
 }
 
 .dashboard-chat {
@@ -272,6 +278,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
   color: var(--text-primary);
 }
 
@@ -652,12 +660,42 @@ body {
 /* Tables */
 .table-wrap {
   overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 table.data {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+}
+
+.table-wrap--audit {
+  width: 100%;
+}
+
+table.data.data--audit {
+  width: max-content;
+  min-width: 100%;
+}
+
+table.data.data--audit th,
+table.data.data--audit td {
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+table.data.data--audit thead th {
+  font-size: 0.7rem;
+  padding: 0.5rem 0.65rem;
+}
+
+table.data.data--audit td:first-child,
+table.data.data--audit th:first-child {
+  white-space: normal;
+  min-width: 8rem;
+  max-width: 12rem;
 }
 
 table.data th {
