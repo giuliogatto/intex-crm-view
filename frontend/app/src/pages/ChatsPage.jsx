@@ -1,39 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { authFetch } from '../utils/auth'
 import UserMenu from '../components/UserMenu'
+import Pagination from '../components/Pagination'
 
 const CHATS_PAGE_SIZE = 20
 const MESSAGES_PAGE_SIZE = 50
-
-function Pagination({ page, pages, total, onPageChange, label }) {
-  if (pages <= 1) return null
-
-  return (
-    <div className="pagination">
-      <span className="pagination__info">
-        {label}: pagina {page} di {pages} ({total} totali)
-      </span>
-      <div className="pagination__controls">
-        <button
-          type="button"
-          className="btn"
-          disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
-        >
-          Precedente
-        </button>
-        <button
-          type="button"
-          className="btn"
-          disabled={page >= pages}
-          onClick={() => onPageChange(page + 1)}
-        >
-          Successiva
-        </button>
-      </div>
-    </div>
-  )
-}
 
 function roleLabel(role, chat) {
   if (role === 'user') return chat?.user_id || 'Utente'

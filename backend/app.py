@@ -64,6 +64,34 @@ def _list_filters():
         'stato': request.query.get('stato'),
     }
 
+
+def _filters_active(filters, tab=None):
+    if filters.get('data_inizio') or filters.get('data_fine'):
+        return True
+    if filters.get('codice_cliente'):
+        return True
+    if filters.get('ragione_sociale'):
+        return True
+    if filters.get('stagione'):
+        return True
+    stato = filters.get('stato')
+    if tab == 'fatture' and stato and stato not in ('Tutte',):
+        return True
+    if tab == 'offerte' and stato and stato not in ('Tutti',):
+        return True
+    return False
+
+
+def _paginated_list_response(items, total, page, limit):
+    pages = max((total + limit - 1) // limit, 1) if total else 1
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": pages,
+        "data": items,
+    }
+
 PUBLIC_PATHS = {'/health', '/api/auth/login'}
 
 # CORS Headers Hooks
@@ -190,12 +218,8 @@ def get_stagioni():
         return {"error": str(e)}
 
 # 2. DDT / Bolle List
-def _fetch_bolle(cursor, filters):
+def _bolle_from_where(filters):
     query = """
-        SELECT d.numero_bolla, TO_CHAR(d.data_bolla, 'DD/MM/YYYY') as data_bolla,
-               c.ragione_sociale, c.codice as codice_cliente,
-               (SELECT COALESCE(string_agg(DISTINCT dr.numero_disposizione, ', '), '—')
-                FROM ddt_righe dr WHERE dr.numero_bolla = d.numero_bolla) as righe_collegate
         FROM ddt_testate d
         JOIN clienti c ON d.codice_cliente = c.codice
         WHERE 1=1
@@ -218,7 +242,29 @@ def _fetch_bolle(cursor, filters):
         query += " AND d.codice_stagione ILIKE %(stagione)s"
         params['stagione'] = f"%{filters['stagione']}%"
 
-    query += " ORDER BY d.data_bolla DESC, d.numero_bolla DESC"
+    return query, params
+
+
+def _count_bolle(cursor, filters):
+    from_where, params = _bolle_from_where(filters)
+    cursor.execute(f"SELECT COUNT(*) {from_where}", params)
+    return cursor.fetchone()[0]
+
+
+def _fetch_bolle(cursor, filters, limit=None, offset=0):
+    from_where, params = _bolle_from_where(filters)
+    query = f"""
+        SELECT d.numero_bolla, TO_CHAR(d.data_bolla, 'DD/MM/YYYY') as data_bolla,
+               c.ragione_sociale, c.codice as codice_cliente,
+               (SELECT COALESCE(string_agg(DISTINCT dr.numero_disposizione, ', '), '—')
+                FROM ddt_righe dr WHERE dr.numero_bolla = d.numero_bolla) as righe_collegate
+        {from_where}
+        ORDER BY d.data_bolla DESC, d.numero_bolla DESC
+    """
+    if limit is not None:
+        query += " LIMIT %(limit)s OFFSET %(offset)s"
+        params = {**params, 'limit': limit, 'offset': offset}
+
     cursor.execute(query, params)
     rows = cursor.fetchall()
     return [
@@ -236,12 +282,21 @@ def _fetch_bolle(cursor, filters):
 @app.route('/api/bolle', method='GET')
 def get_bolle():
     try:
+        filters = _list_filters()
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-        bolle = _fetch_bolle(cursor, _list_filters())
+        if _filters_active(filters, 'bolle'):
+            bolle = _fetch_bolle(cursor, filters)
+            total = len(bolle)
+        else:
+            page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
+            total = _count_bolle(cursor, filters)
+            bolle = _fetch_bolle(cursor, filters, limit=limit, offset=offset)
         cursor.close()
         db_pool.release_conn(conn)
-        return {"total": len(bolle), "data": bolle}
+        if _filters_active(filters, 'bolle'):
+            return {"total": total, "data": bolle}
+        return _paginated_list_response(bolle, total, page, limit)
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
@@ -333,10 +388,8 @@ def export_bolle_pdf():
         return {"error": str(e)}
 
 # 3. Invoices / Fatture List
-def _fetch_fatture(cursor, filters):
+def _fatture_from_where(filters):
     query = """
-        SELECT f.numero_disposizione, TO_CHAR(f.data_fattura, 'DD/MM/YYYY') as data_fattura,
-               c.ragione_sociale, c.codice as codice_cliente, f.importo_totale, f.stato_pagamento
         FROM fatture_testate f
         JOIN clienti c ON f.codice_cliente = c.codice
         WHERE 1=1
@@ -362,7 +415,27 @@ def _fetch_fatture(cursor, filters):
         query += " AND f.stato_pagamento = %(stato)s"
         params['stato'] = filters['stato']
 
-    query += " ORDER BY f.data_fattura DESC, f.numero_disposizione DESC"
+    return query, params
+
+
+def _count_fatture(cursor, filters):
+    from_where, params = _fatture_from_where(filters)
+    cursor.execute(f"SELECT COUNT(*) {from_where}", params)
+    return cursor.fetchone()[0]
+
+
+def _fetch_fatture(cursor, filters, limit=None, offset=0):
+    from_where, params = _fatture_from_where(filters)
+    query = f"""
+        SELECT f.numero_disposizione, TO_CHAR(f.data_fattura, 'DD/MM/YYYY') as data_fattura,
+               c.ragione_sociale, c.codice as codice_cliente, f.importo_totale, f.stato_pagamento
+        {from_where}
+        ORDER BY f.data_fattura DESC, f.numero_disposizione DESC
+    """
+    if limit is not None:
+        query += " LIMIT %(limit)s OFFSET %(offset)s"
+        params = {**params, 'limit': limit, 'offset': offset}
+
     cursor.execute(query, params)
     rows = cursor.fetchall()
     return [
@@ -381,12 +454,21 @@ def _fetch_fatture(cursor, filters):
 @app.route('/api/fatture', method='GET')
 def get_fatture():
     try:
+        filters = _list_filters()
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-        fatture = _fetch_fatture(cursor, _list_filters())
+        if _filters_active(filters, 'fatture'):
+            fatture = _fetch_fatture(cursor, filters)
+            total = len(fatture)
+        else:
+            page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
+            total = _count_fatture(cursor, filters)
+            fatture = _fetch_fatture(cursor, filters, limit=limit, offset=offset)
         cursor.close()
         db_pool.release_conn(conn)
-        return {"total": len(fatture), "data": fatture}
+        if _filters_active(filters, 'fatture'):
+            return {"total": total, "data": fatture}
+        return _paginated_list_response(fatture, total, page, limit)
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
@@ -485,11 +567,8 @@ def get_fattura_detail(id):
         return {"error": str(e)}
 
 # 5. Offers / Ordini List
-def _fetch_offerte(cursor, filters):
+def _offerte_from_where(filters):
     query = """
-        SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
-               c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
-               COALESCE((SELECT descrizione FROM stagioni WHERE codice = o.codice_stagione), o.codice_stagione) as stagione_desc
         FROM offerte_testate o
         JOIN clienti c ON o.codice_cliente = c.codice
         WHERE 1=1
@@ -515,7 +594,28 @@ def _fetch_offerte(cursor, filters):
         query += " AND o.stato = %(stato)s"
         params['stato'] = filters['stato']
 
-    query += " ORDER BY o.data_offerta DESC, o.numero_offerta DESC"
+    return query, params
+
+
+def _count_offerte(cursor, filters):
+    from_where, params = _offerte_from_where(filters)
+    cursor.execute(f"SELECT COUNT(*) {from_where}", params)
+    return cursor.fetchone()[0]
+
+
+def _fetch_offerte(cursor, filters, limit=None, offset=0):
+    from_where, params = _offerte_from_where(filters)
+    query = f"""
+        SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
+               c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
+               COALESCE((SELECT descrizione FROM stagioni WHERE codice = o.codice_stagione), o.codice_stagione) as stagione_desc
+        {from_where}
+        ORDER BY o.data_offerta DESC, o.numero_offerta DESC
+    """
+    if limit is not None:
+        query += " LIMIT %(limit)s OFFSET %(offset)s"
+        params = {**params, 'limit': limit, 'offset': offset}
+
     cursor.execute(query, params)
     rows = cursor.fetchall()
     return [
@@ -535,12 +635,21 @@ def _fetch_offerte(cursor, filters):
 @app.route('/api/offerte', method='GET')
 def get_offerte():
     try:
+        filters = _list_filters()
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-        offerte = _fetch_offerte(cursor, _list_filters())
+        if _filters_active(filters, 'offerte'):
+            offerte = _fetch_offerte(cursor, filters)
+            total = len(offerte)
+        else:
+            page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
+            total = _count_offerte(cursor, filters)
+            offerte = _fetch_offerte(cursor, filters, limit=limit, offset=offset)
         cursor.close()
         db_pool.release_conn(conn)
-        return {"total": len(offerte), "data": offerte}
+        if _filters_active(filters, 'offerte'):
+            return {"total": total, "data": offerte}
+        return _paginated_list_response(offerte, total, page, limit)
     except Exception as e:
         response.status = 500
         return {"error": str(e)}

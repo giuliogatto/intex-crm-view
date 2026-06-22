@@ -4,6 +4,7 @@ import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
 import ChatPanel from './components/ChatPanel'
 import UserMenu from './components/UserMenu'
+import Pagination from './components/Pagination'
 import { authFetch, downloadAuthFile } from './utils/auth'
 import {
   matchCliente,
@@ -11,6 +12,17 @@ import {
   replaceOggiPlaceholder,
   extractClienteHint
 } from './utils/llm'
+
+const LIST_PAGE_SIZE = 50
+
+function hasActiveFilters(filters, tab) {
+  if (filters.data_inizio || filters.data_fine) return true
+  if (filters.codice_cliente) return true
+  if (filters.stagione) return true
+  if (tab === 'fatture' && filters.stato && filters.stato !== 'Tutte') return true
+  if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') return true
+  return false
+}
 
 function App() {
   const [activeTab, setActiveTab] = useState('bolle')
@@ -30,11 +42,14 @@ function App() {
   const [discrepancyCustomer, setDiscrepancyCustomer] = useState('XXX')
   const [pendingExport, setPendingExport] = useState(false)
   const [pendingInvoiceId, setPendingInvoiceId] = useState(null)
+  const [listPage, setListPage] = useState(1)
+  const [listTotal, setListTotal] = useState(0)
+  const [listPages, setListPages] = useState(1)
   const clientiCache = useRef(null)
   const skipNextTabFetch = useRef(false)
 
   // Fetch standard listings based on tab and filters
-  const fetchData = (tab, filters = currentFilters) => {
+  const fetchData = (tab, filters = currentFilters, page = 1) => {
     if (tab === 'discrepanze') return
     setLoading(true)
     setSelectedInvoiceId(null)
@@ -55,11 +70,25 @@ function App() {
       params.append('stato', filters.stato)
     }
 
+    const filtersActive = hasActiveFilters(filters, tab)
+    if (!filtersActive) {
+      params.append('page', page)
+      params.append('limit', LIST_PAGE_SIZE)
+    }
+
     authFetch(`/api/${tab}?${params.toString()}`)
       .then((res) => res.json())
       .then((resData) => {
         if (resData.data) {
           setData(resData.data)
+          setListTotal(resData.total ?? resData.data.length)
+          if (filtersActive) {
+            setListPage(1)
+            setListPages(1)
+          } else {
+            setListPage(resData.page ?? page)
+            setListPages(resData.pages ?? 1)
+          }
         }
         setLoading(false)
       })
@@ -71,6 +100,9 @@ function App() {
 
   const handleTabChange = (tab) => {
     setData([])
+    setListPage(1)
+    setListTotal(0)
+    setListPages(1)
     setLoading(tab !== 'discrepanze')
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
@@ -136,7 +168,13 @@ function App() {
 
   const handleSearch = (filters) => {
     setCurrentFilters(filters)
-    fetchData(activeTab, filters)
+    setListPage(1)
+    fetchData(activeTab, filters, 1)
+  }
+
+  const handleListPageChange = (page) => {
+    setListPage(page)
+    fetchData(activeTab, currentFilters, page)
   }
 
   const buildExportParams = (tab, filters) => {
@@ -285,6 +323,7 @@ function App() {
 
     setData([])
     setLoading(true)
+    setListPage(1)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
     setSelectedBollaId(null)
@@ -316,6 +355,7 @@ function App() {
 
     setData([])
     setLoading(true)
+    setListPage(1)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
     setSelectedBollaId(null)
@@ -335,6 +375,7 @@ function App() {
   // Pre-load filter inputs for interactive Q&A shortcuts
   const applyQuestionShortcut = (tab, qFilters) => {
     setData([])
+    setListPage(1)
     setSelectedInvoiceId(null)
     setInvoiceDetail(null)
     setSelectedBollaId(null)
@@ -565,7 +606,9 @@ function App() {
           {activeTab !== 'discrepanze' ? (
             <div className="panel">
               <div className="panel__head">
-                <span>Risultati ({data.length} record)</span>
+                <span>
+                  Risultati ({hasActiveFilters(currentFilters, activeTab) ? data.length : listTotal} record)
+                </span>
               </div>
               {loading ? (
                 <div className="loading-indicator">
@@ -573,12 +616,23 @@ function App() {
                   <span>Recupero dati in corso...</span>
                 </div>
               ) : (
-                <DocumentTable
-                  activeTab={activeTab}
-                  data={data}
-                  onViewDetail={handleViewInvoiceDetail}
-                  onViewBollaDetail={handleViewBollaDetail}
-                />
+                <>
+                  <DocumentTable
+                    activeTab={activeTab}
+                    data={data}
+                    onViewDetail={handleViewInvoiceDetail}
+                    onViewBollaDetail={handleViewBollaDetail}
+                  />
+                  {!hasActiveFilters(currentFilters, activeTab) && (
+                    <Pagination
+                      page={listPage}
+                      pages={listPages}
+                      total={listTotal}
+                      onPageChange={handleListPageChange}
+                      label="Record"
+                    />
+                  )}
+                </>
               )}
             </div>
           ) : (
