@@ -1,7 +1,6 @@
 services:
   timescaledb:
     image: timescale/timescaledb-ha:pg16
-    container_name: intexdata
     ports:
       - "5444:5432"
     environment:
