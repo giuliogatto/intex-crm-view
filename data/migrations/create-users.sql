@@ -18,3 +18,5 @@ INSERT INTO users (username, password_hash, role) VALUES
     'admin'
 )
 ON CONFLICT (username) DO NOTHING;
+
+-- password (clear text version): dsahj657!45

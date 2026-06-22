@@ -490,25 +490,44 @@ def get_discrepanze():
 @app.route('/api/chats', method='GET')
 def get_chats():
     page, limit, offset = parse_pagination(default_limit=20, max_limit=100)
+    current_user = _get_request_user()
 
     try:
         conn = db_pool.get_conn()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT COUNT(*) FROM chats")
-        total = cursor.fetchone()[0]
-
-        cursor.execute(
-            """
-            SELECT c.id, c.user_id, c.model,
-                   TO_CHAR(c.created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at,
-                   (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id) AS message_count
-            FROM chats c
-            ORDER BY c.created_at DESC, c.id DESC
-            LIMIT %(limit)s OFFSET %(offset)s
-            """,
-            {"limit": limit, "offset": offset},
-        )
+        if current_user.get('role') == 'admin':
+            cursor.execute("SELECT COUNT(*) FROM chats")
+            total = cursor.fetchone()[0]
+            cursor.execute(
+                """
+                SELECT c.id, c.user_id, c.model,
+                       TO_CHAR(c.created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at,
+                       (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id) AS message_count
+                FROM chats c
+                ORDER BY c.created_at DESC, c.id DESC
+                LIMIT %(limit)s OFFSET %(offset)s
+                """,
+                {"limit": limit, "offset": offset},
+            )
+        else:
+            cursor.execute(
+                "SELECT COUNT(*) FROM chats WHERE user_id = %(user_id)s",
+                {"user_id": _chat_user_id(current_user)},
+            )
+            total = cursor.fetchone()[0]
+            cursor.execute(
+                """
+                SELECT c.id, c.user_id, c.model,
+                       TO_CHAR(c.created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at,
+                       (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id) AS message_count
+                FROM chats c
+                WHERE c.user_id = %(user_id)s
+                ORDER BY c.created_at DESC, c.id DESC
+                LIMIT %(limit)s OFFSET %(offset)s
+                """,
+                {"user_id": _chat_user_id(current_user), "limit": limit, "offset": offset},
+            )
         rows = cursor.fetchall()
         cursor.close()
         db_pool.release_conn(conn)
@@ -534,6 +553,7 @@ def get_chats():
 @app.route('/api/chats/<chat_id>/messages', method='GET')
 def get_chat_messages(chat_id):
     page, limit, offset = parse_pagination(default_limit=50, max_limit=200)
+    current_user = _get_request_user()
 
     try:
         conn = db_pool.get_conn()
@@ -554,6 +574,12 @@ def get_chat_messages(chat_id):
             db_pool.release_conn(conn)
             response.status = 404
             return {"error": "Chat non trovata"}
+
+        if not _user_can_access_chat(current_user, chat_row[1]):
+            cursor.close()
+            db_pool.release_conn(conn)
+            response.status = 403
+            return {"error": "Access denied to this chat"}
 
         cursor.execute(
             "SELECT COUNT(*) FROM messages WHERE chat_id = %(chat_id)s",
@@ -606,8 +632,19 @@ def get_chat_messages(chat_id):
         return {"error": str(e)}
 
 
-DEFAULT_USER_ID = "anonymous"
 ROOT_PROVIDER_MESSAGE_ID = "root"
+
+
+def _get_request_user():
+    return request.environ.get('intex.user')
+
+
+def _chat_user_id(user):
+    return user['username']
+
+
+def _user_can_access_chat(user, chat_user_id):
+    return user.get('role') == 'admin' or chat_user_id == _chat_user_id(user)
 
 
 def _get_latest_assistant_response_id(cursor, chat_id):
@@ -670,7 +707,8 @@ def llmrequest():
             return {"error": "Field 'message' must be a non-empty string"}
 
         user_query = user_query.strip()
-        user_id = data.get('user_id') or DEFAULT_USER_ID
+        current_user = _get_request_user()
+        user_id = _chat_user_id(current_user)
         chat_id = data.get('chat_id')
         model = get_model_name()
         instructions = replace_oggi_placeholder(genericPrompt)
@@ -682,12 +720,22 @@ def llmrequest():
         history = None
 
         if chat_id is not None:
-            cursor.execute("SELECT id FROM chats WHERE id = %(chat_id)s", {"chat_id": chat_id})
-            if not cursor.fetchone():
+            cursor.execute(
+                "SELECT id, user_id FROM chats WHERE id = %(chat_id)s",
+                {"chat_id": chat_id},
+            )
+            chat_row = cursor.fetchone()
+            if not chat_row:
                 cursor.close()
                 db_pool.release_conn(conn)
                 response.status = 404
                 return {"error": f"Chat {chat_id} not found"}
+
+            if not _user_can_access_chat(current_user, chat_row[1]):
+                cursor.close()
+                db_pool.release_conn(conn)
+                response.status = 403
+                return {"error": "Access denied to this chat"}
 
             previous_response_id = _get_latest_assistant_response_id(cursor, chat_id)
             history = _get_chat_history(cursor, chat_id)
