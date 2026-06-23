@@ -4,8 +4,10 @@ import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
 import ChatPanel from './components/ChatPanel'
 import UserMenu from './components/UserMenu'
+import AdminNav from './components/AdminNav'
 import Pagination from './components/Pagination'
 import LoadingOverlay from './components/LoadingOverlay'
+import { useAuth } from './context/AuthContext'
 import { authFetch, downloadAuthFile } from './utils/auth'
 import {
   matchCliente,
@@ -19,6 +21,7 @@ import {
 const LIST_PAGE_SIZE = 50
 
 function App() {
+  const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('bolle')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -520,9 +523,9 @@ function App() {
         <div className="app-title-group">
           <img src="/logo.webp" alt="Intex" className="app-logo" />
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="app-header__actions">
           <UserMenu />
-          <a href="/chats" className="btn">💬 Chats</a>
+          {user?.role === 'admin' && <AdminNav />}
         </div>
       </header>
 

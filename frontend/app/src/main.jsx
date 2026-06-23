@@ -3,13 +3,21 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import ChatsPage from './pages/ChatsPage.jsx'
+import UsersPage from './pages/UsersPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
+import AdminGuard from './components/AdminGuard.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
-const isChatsPage = window.location.pathname === '/chats'
+function getAdminPage() {
+  const pathname = window.location.pathname
+  if (pathname === '/chats') return 'chats'
+  if (pathname === '/users') return 'users'
+  return null
+}
 
 function AppRoot() {
   const { user, loading } = useAuth()
+  const adminPage = getAdminPage()
 
   if (loading) {
     return (
@@ -26,7 +34,23 @@ function AppRoot() {
     return <LoginPage />
   }
 
-  return isChatsPage ? <ChatsPage /> : <App />
+  if (adminPage === 'chats') {
+    return (
+      <AdminGuard>
+        <ChatsPage />
+      </AdminGuard>
+    )
+  }
+
+  if (adminPage === 'users') {
+    return (
+      <AdminGuard>
+        <UsersPage />
+      </AdminGuard>
+    )
+  }
+
+  return <App />
 }
 
 createRoot(document.getElementById('root')).render(

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { authFetch } from '../utils/auth'
 import UserMenu from '../components/UserMenu'
+import AdminNav from '../components/AdminNav'
 import Pagination from '../components/Pagination'
 
 const CHATS_PAGE_SIZE = 20
@@ -120,11 +121,14 @@ export default function ChatsPage() {
     <div className="app-container">
       <header className="app-header">
         <div className="app-title-group">
-          <img src="/logo.webp" alt="Intex" className="app-logo" />
+          <a href="/" className="app-logo-link">
+            <img src="/logo.webp" alt="Intex" className="app-logo" />
+          </a>
           <span className="badge-mock">Archivio Conversazioni</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="app-header__actions">
           <UserMenu />
+          <AdminNav />
           <a href="/" className="btn">
             ← Torna alla consultazione
           </a>

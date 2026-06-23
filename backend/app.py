@@ -3,7 +3,7 @@ from database import DatabasePool
 from datetime import datetime
 import json
 
-from auth import authenticate_user, create_token, get_current_user
+from auth import authenticate_user, create_token, get_current_user, hash_password
 from prompts import genericPrompt, replace_oggi_placeholder
 from LLMservice import send_prompt, get_model_name
 from pdf_export import build_pdf
@@ -81,7 +81,7 @@ PUBLIC_PATHS = {'/health', '/api/auth/login'}
 @app.hook('after_request')
 def enable_cors():
     response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization'
 
 @app.hook('before_request')
@@ -821,48 +821,220 @@ def export_discrepanze_pdf():
         response.status = 500
         return {"error": str(e)}
 
-# 7. Chats List (paginated)
+VALID_USER_ROLES = {'admin', 'user'}
+
+
+def _require_admin():
+    current_user = _get_request_user()
+    if not current_user or current_user.get('role') != 'admin':
+        response.status = 403
+        return None, {"error": "Admin access required"}
+    return current_user, None
+
+
+# 7. Users (admin only)
+@app.route('/api/users', method='GET')
+def list_users():
+    denied = _require_admin()
+    if denied[0] is None:
+        return denied[1]
+
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT id, username, role, is_active,
+                   TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at
+            FROM users
+            ORDER BY username
+            """
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        users = [
+            {
+                "id": r[0],
+                "username": r[1],
+                "role": r[2],
+                "is_active": r[3],
+                "created_at": r[4],
+            }
+            for r in rows
+        ]
+        return {"data": users}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
+@app.route('/api/users', method='POST')
+def create_user():
+    denied = _require_admin()
+    if denied[0] is None:
+        return denied[1]
+
+    try:
+        data = request.json
+        if not data:
+            response.status = 400
+            return {"error": "Invalid request body"}
+
+        username = (data.get('username') or '').strip()
+        password = data.get('password') or ''
+        role = (data.get('role') or 'user').strip()
+
+        if not username or not password:
+            response.status = 400
+            return {"error": "Username and password are required"}
+        if role not in VALID_USER_ROLES:
+            response.status = 400
+            return {"error": "Invalid role"}
+
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO users (username, password_hash, role)
+            VALUES (%(username)s, %(password_hash)s, %(role)s)
+            RETURNING id, username, role, is_active,
+                      TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at
+            """,
+            {
+                "username": username,
+                "password_hash": hash_password(password),
+                "role": role,
+            },
+        )
+        row = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        return {
+            "user": {
+                "id": row[0],
+                "username": row[1],
+                "role": row[2],
+                "is_active": row[3],
+                "created_at": row[4],
+            }
+        }
+    except Exception as e:
+        if 'unique' in str(e).lower() or 'duplicate' in str(e).lower():
+            response.status = 409
+            return {"error": "Username already exists"}
+        response.status = 500
+        return {"error": str(e)}
+
+
+@app.route('/api/users/<user_id>', method='PATCH')
+def update_user(user_id):
+    denied = _require_admin()
+    if denied[0] is None:
+        return denied[1]
+
+    try:
+        data = request.json
+        if not data:
+            response.status = 400
+            return {"error": "Invalid request body"}
+
+        password = data.get('password')
+        role = data.get('role')
+        is_active = data.get('is_active')
+
+        if password is None and role is None and is_active is None:
+            response.status = 400
+            return {"error": "No fields to update"}
+
+        if role is not None and role not in VALID_USER_ROLES:
+            response.status = 400
+            return {"error": "Invalid role"}
+
+        updates = []
+        params = {"user_id": user_id}
+
+        if password is not None:
+            if not password:
+                response.status = 400
+                return {"error": "Password cannot be empty"}
+            updates.append("password_hash = %(password_hash)s")
+            params["password_hash"] = hash_password(password)
+
+        if role is not None:
+            updates.append("role = %(role)s")
+            params["role"] = role
+
+        if is_active is not None:
+            updates.append("is_active = %(is_active)s")
+            params["is_active"] = bool(is_active)
+
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            f"""
+            UPDATE users
+            SET {', '.join(updates)}
+            WHERE id = %(user_id)s
+            RETURNING id, username, role, is_active,
+                      TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at
+            """,
+            params,
+        )
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            db_pool.release_conn(conn)
+            response.status = 404
+            return {"error": "User not found"}
+
+        conn.commit()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        return {
+            "user": {
+                "id": row[0],
+                "username": row[1],
+                "role": row[2],
+                "is_active": row[3],
+                "created_at": row[4],
+            }
+        }
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
+# 8. Chats List (paginated, admin only)
 @app.route('/api/chats', method='GET')
 def get_chats():
+    denied = _require_admin()
+    if denied[0] is None:
+        return denied[1]
+
     page, limit, offset = parse_pagination(default_limit=20, max_limit=100)
-    current_user = _get_request_user()
 
     try:
         conn = db_pool.get_conn()
         cursor = conn.cursor()
 
-        if current_user.get('role') == 'admin':
-            cursor.execute("SELECT COUNT(*) FROM chats")
-            total = cursor.fetchone()[0]
-            cursor.execute(
-                """
-                SELECT c.id, c.user_id, c.model,
-                       TO_CHAR(c.created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at,
-                       (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id) AS message_count
-                FROM chats c
-                ORDER BY c.created_at DESC, c.id DESC
-                LIMIT %(limit)s OFFSET %(offset)s
-                """,
-                {"limit": limit, "offset": offset},
-            )
-        else:
-            cursor.execute(
-                "SELECT COUNT(*) FROM chats WHERE user_id = %(user_id)s",
-                {"user_id": _chat_user_id(current_user)},
-            )
-            total = cursor.fetchone()[0]
-            cursor.execute(
-                """
-                SELECT c.id, c.user_id, c.model,
-                       TO_CHAR(c.created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at,
-                       (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id) AS message_count
-                FROM chats c
-                WHERE c.user_id = %(user_id)s
-                ORDER BY c.created_at DESC, c.id DESC
-                LIMIT %(limit)s OFFSET %(offset)s
-                """,
-                {"user_id": _chat_user_id(current_user), "limit": limit, "offset": offset},
-            )
+        cursor.execute("SELECT COUNT(*) FROM chats")
+        total = cursor.fetchone()[0]
+        cursor.execute(
+            """
+            SELECT c.id, c.user_id, c.model,
+                   TO_CHAR(c.created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at,
+                   (SELECT COUNT(*) FROM messages m WHERE m.chat_id = c.id) AS message_count
+            FROM chats c
+            ORDER BY c.created_at DESC, c.id DESC
+            LIMIT %(limit)s OFFSET %(offset)s
+            """,
+            {"limit": limit, "offset": offset},
+        )
         rows = cursor.fetchall()
         cursor.close()
         db_pool.release_conn(conn)
@@ -884,11 +1056,14 @@ def get_chats():
         return {"error": str(e)}
 
 
-# 8. Chat Messages (paginated)
+# 9. Chat Messages (paginated, admin only)
 @app.route('/api/chats/<chat_id>/messages', method='GET')
 def get_chat_messages(chat_id):
+    denied = _require_admin()
+    if denied[0] is None:
+        return denied[1]
+
     page, limit, offset = parse_pagination(default_limit=50, max_limit=200)
-    current_user = _get_request_user()
 
     try:
         conn = db_pool.get_conn()
@@ -909,12 +1084,6 @@ def get_chat_messages(chat_id):
             db_pool.release_conn(conn)
             response.status = 404
             return {"error": "Chat non trovata"}
-
-        if not _user_can_access_chat(current_user, chat_row[1]):
-            cursor.close()
-            db_pool.release_conn(conn)
-            response.status = 403
-            return {"error": "Access denied to this chat"}
 
         cursor.execute(
             "SELECT COUNT(*) FROM messages WHERE chat_id = %(chat_id)s",

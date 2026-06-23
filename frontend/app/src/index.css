@@ -97,6 +97,16 @@ body {
   display: block;
 }
 
+.app-logo-link {
+  display: inline-flex;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.app-logo-link:hover {
+  opacity: 0.85;
+}
+
 .login-logo {
   height: 56px;
   width: auto;
@@ -1384,4 +1394,178 @@ table.data tr:hover td {
 .btn--primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-nav .btn.is-active {
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.btn--sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Users management page */
+.users-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 1.2fr) minmax(320px, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .users-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.users-table__row {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.users-table__row:hover td {
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+.users-table__row.is-selected td {
+  background: rgba(var(--accent-rgb), 0.15);
+}
+
+.users-role {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+
+.users-role--admin {
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+}
+
+.users-role--user {
+  color: var(--text-secondary);
+  background: var(--bg-muted);
+}
+
+.users-status--active {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.users-status--inactive {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.users-empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem 1rem;
+  margin: 0;
+}
+
+.users-empty--error {
+  color: var(--danger);
+}
+
+.users-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 420px;
+}
+
+.users-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.users-form__field span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.users-form__field input,
+.users-form__field select {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.users-form__field input:focus,
+.users-form__field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.users-form__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.users-form__readonly {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--bg-muted);
+}
+
+.users-form__readonly-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.users-form__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.users-form__error {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.users-form__success {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--success-bg);
+  color: var(--success);
+  font-size: 0.9rem;
 }
