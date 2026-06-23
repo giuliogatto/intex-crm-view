@@ -815,7 +815,12 @@ def export_discrepanze_pdf():
             ]
             for d in discrepanze
         ]
-        pdf_bytes = build_pdf(f'Auditing Discrepanze — Cliente {codice_cliente}', headers, rows)
+        pdf_bytes = build_pdf(
+            f'Auditing Discrepanze — Cliente {codice_cliente}',
+            headers,
+            rows,
+            col_widths=[0.8, 3.2] + [1] * 10,
+        )
         return _pdf_response(pdf_bytes, f'discrepanze_audit_{codice_cliente}.pdf')
     except Exception as e:
         response.status = 500
