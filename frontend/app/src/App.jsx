@@ -17,15 +17,6 @@ import {
 
 const LIST_PAGE_SIZE = 50
 
-function hasActiveFilters(filters, tab) {
-  if (filters.data_inizio || filters.data_fine) return true
-  if (filters.codice_cliente) return true
-  if (filters.stagione) return true
-  if (tab === 'fatture' && filters.stato && filters.stato !== 'Tutte') return true
-  if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') return true
-  return false
-}
-
 function App() {
   const [activeTab, setActiveTab] = useState('bolle')
   const [data, setData] = useState([])
@@ -82,11 +73,8 @@ function App() {
       params.append('stato', filters.stato)
     }
 
-    const filtersActive = hasActiveFilters(filters, tab)
-    if (!filtersActive) {
-      params.append('page', page)
-      params.append('limit', LIST_PAGE_SIZE)
-    }
+    params.append('page', page)
+    params.append('limit', LIST_PAGE_SIZE)
 
     authFetch(`/api/${tab}?${params.toString()}`)
       .then((res) => res.json())
@@ -94,13 +82,8 @@ function App() {
         if (resData.data) {
           setData(resData.data)
           setListTotal(resData.total ?? resData.data.length)
-          if (filtersActive) {
-            setListPage(1)
-            setListPages(1)
-          } else {
-            setListPage(resData.page ?? page)
-            setListPages(resData.pages ?? 1)
-          }
+          setListPage(resData.page ?? page)
+          setListPages(resData.pages ?? 1)
         }
         setLoading(false)
       })
@@ -775,9 +758,7 @@ function App() {
           {activeTab !== 'discrepanze' ? (
             <div className="panel">
               <div className="panel__head">
-                <span>
-                  Risultati ({hasActiveFilters(currentFilters, activeTab) ? data.length : listTotal} record)
-                </span>
+                <span>Risultati ({listTotal} record)</span>
               </div>
               {loading ? (
                 <div className="loading-indicator">
@@ -793,15 +774,13 @@ function App() {
                     onViewBollaDetail={handleViewBollaDetail}
                     onViewOffertaDetail={handleViewOffertaDetail}
                   />
-                  {!hasActiveFilters(currentFilters, activeTab) && (
-                    <Pagination
-                      page={listPage}
-                      pages={listPages}
-                      total={listTotal}
-                      onPageChange={handleListPageChange}
-                      label="Record"
-                    />
-                  )}
+                  <Pagination
+                    page={listPage}
+                    pages={listPages}
+                    total={listTotal}
+                    onPageChange={handleListPageChange}
+                    label="Record"
+                  />
                 </>
               )}
             </div>
