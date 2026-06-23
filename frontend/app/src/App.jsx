@@ -47,6 +47,7 @@ function App() {
   const [listPage, setListPage] = useState(1)
   const [listTotal, setListTotal] = useState(0)
   const [listPages, setListPages] = useState(1)
+  const [listTotals, setListTotals] = useState(null)
   const clientiCache = useRef(null)
   const skipNextTabFetch = useRef(false)
 
@@ -89,6 +90,7 @@ function App() {
           setListTotal(resData.total ?? resData.data.length)
           setListPage(resData.page ?? page)
           setListPages(resData.pages ?? 1)
+          setListTotals(resData.totals ?? null)
         }
         setLoading(false)
       })
@@ -106,6 +108,7 @@ function App() {
       setListPage(1)
       setListTotal(0)
       setListPages(1)
+      setListTotals(null)
       setLoading(false)
       setActiveTab(tab)
       return
@@ -779,6 +782,7 @@ function App() {
                   <DocumentTable
                     activeTab={activeTab}
                     data={data}
+                    totals={listTotals}
                     onViewDetail={handleViewInvoiceDetail}
                     onViewBollaDetail={handleViewBollaDetail}
                     onViewOffertaDetail={handleViewOffertaDetail}

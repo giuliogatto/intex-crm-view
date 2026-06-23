@@ -777,6 +777,17 @@ table.data tr:hover td {
   background: var(--bg-hover);
 }
 
+table.data tfoot .table-totals-row td {
+  border-top: 2px solid var(--border-color);
+  border-bottom: none;
+  background: var(--bg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+table.data tfoot .table-totals-row:hover td {
+  background: var(--bg-muted);
+}
+
 .table-link {
   color: var(--accent);
   text-decoration: none;

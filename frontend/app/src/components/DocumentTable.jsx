@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function DocumentTable({ activeTab, data, onViewDetail, onViewBollaDetail, onViewOffertaDetail }) {
+export default function DocumentTable({ activeTab, data, totals, onViewDetail, onViewBollaDetail, onViewOffertaDetail }) {
   const formatEuro = (num) => {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -91,6 +91,15 @@ export default function DocumentTable({ activeTab, data, onViewDetail, onViewBol
               </tr>
             ))}
           </tbody>
+          {totals?.importo_documento != null && (
+            <tfoot>
+              <tr className="table-totals-row">
+                <td colSpan={3}><strong>Totale</strong></td>
+                <td><strong>{formatEuro(totals.importo_documento)}</strong></td>
+                <td colSpan={2}></td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       )}
 
@@ -133,6 +142,15 @@ export default function DocumentTable({ activeTab, data, onViewDetail, onViewBol
               </tr>
             ))}
           </tbody>
+          {totals?.importo != null && (
+            <tfoot>
+              <tr className="table-totals-row">
+                <td colSpan={4}><strong>Totale</strong></td>
+                <td><strong>{formatEuro(totals.importo)}</strong></td>
+                <td colSpan={2}></td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       )}
     </div>

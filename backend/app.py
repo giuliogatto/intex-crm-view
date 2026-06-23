@@ -65,15 +65,52 @@ def _list_filters():
     }
 
 
-def _paginated_list_response(items, total, page, limit):
+def _paginated_list_response(items, total, page, limit, totals=None):
     pages = max((total + limit - 1) // limit, 1) if total else 1
-    return {
+    result = {
         "total": total,
         "page": page,
         "limit": limit,
         "pages": pages,
         "data": items,
     }
+    if totals is not None:
+        result["totals"] = totals
+    return result
+
+
+def _filters_are_active(filters, tab=None):
+    if filters.get('data_inizio') or filters.get('data_fine'):
+        return True
+    if filters.get('codice_cliente') or filters.get('ragione_sociale'):
+        return True
+    if filters.get('stagione'):
+        return True
+    stato = filters.get('stato')
+    if stato:
+        if tab == 'fatture' and stato != 'Tutte':
+            return True
+        if tab == 'offerte' and stato != 'Tutti':
+            return True
+    return False
+
+
+def _compute_list_totals(cursor, from_where_fn, field_map, filters):
+    """Aggregate numeric columns for the full filtered result set (not just the current page)."""
+    from_where, params = from_where_fn(filters)
+    select_parts = [f"{expr} AS {key}" for key, expr in field_map.items()]
+    cursor.execute(f"SELECT {', '.join(select_parts)} {from_where}", params)
+    row = cursor.fetchone()
+    return {key: float(row[i]) for i, key in enumerate(field_map)}
+
+
+FATTURE_TOTAL_FIELDS = {
+    'importo_documento': 'COALESCE(SUM(f.importo_totale), 0)',
+}
+
+OFFERTE_TOTAL_FIELDS = {
+    'importo': 'COALESCE(SUM(o.importo_totale), 0)',
+}
 
 PUBLIC_PATHS = {'/health', '/api/auth/login'}
 
@@ -437,9 +474,12 @@ def get_fatture():
         cursor = conn.cursor()
         total = _count_fatture(cursor, filters)
         fatture = _fetch_fatture(cursor, filters, limit=limit, offset=offset)
+        totals = None
+        if _filters_are_active(filters, 'fatture'):
+            totals = _compute_list_totals(cursor, _fatture_from_where, FATTURE_TOTAL_FIELDS, filters)
         cursor.close()
         db_pool.release_conn(conn)
-        return _paginated_list_response(fatture, total, page, limit)
+        return _paginated_list_response(fatture, total, page, limit, totals=totals)
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
@@ -612,9 +652,12 @@ def get_offerte():
         cursor = conn.cursor()
         total = _count_offerte(cursor, filters)
         offerte = _fetch_offerte(cursor, filters, limit=limit, offset=offset)
+        totals = None
+        if _filters_are_active(filters, 'offerte'):
+            totals = _compute_list_totals(cursor, _offerte_from_where, OFFERTE_TOTAL_FIELDS, filters)
         cursor.close()
         db_pool.release_conn(conn)
-        return _paginated_list_response(offerte, total, page, limit)
+        return _paginated_list_response(offerte, total, page, limit, totals=totals)
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
