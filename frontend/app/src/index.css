@@ -1029,6 +1029,22 @@ table.data tr:hover td {
   animation: spin 1s linear infinite;
 }
 
+.spinner--large {
+  width: 48px;
+  height: 48px;
+  border-width: 4px;
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import CustomerAutocomplete from './CustomerAutocomplete'
+import LoadingOverlay from './LoadingOverlay'
 import { authFetch, downloadAuthFile } from '../utils/auth'
 
 export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCustomerChange }) {
@@ -8,6 +9,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
   const setSelectedCustomer = onCustomerChange ?? setInternalCustomer
   const [discrepanze, setDiscrepanze] = useState([])
   const [loading, setLoading] = useState(false)
+  const [exportingPDF, setExportingPDF] = useState(false)
 
   // Fetch discrepancies on customer change
   useEffect(() => {
@@ -55,6 +57,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
 
   const exportPDF = async () => {
     if (discrepanze.length === 0) return
+    setExportingPDF(true)
     try {
       await downloadAuthFile(
         `/api/discrepanze/export/pdf?codice_cliente=${selectedCustomer}`,
@@ -62,11 +65,14 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
       )
     } catch (err) {
       console.error('Error exporting PDF:', err)
+    } finally {
+      setExportingPDF(false)
     }
   }
 
   return (
     <div className="panel">
+      {exportingPDF && <LoadingOverlay />}
       <div className="panel__head">
         <span>Auditing Confronto (Offerta vs DDT vs Fattura)</span>
         <div style={{ display: 'flex', gap: '0.75rem' }}>

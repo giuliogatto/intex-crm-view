@@ -5,6 +5,7 @@ import DiscrepancyPanel from './components/DiscrepancyPanel'
 import ChatPanel from './components/ChatPanel'
 import UserMenu from './components/UserMenu'
 import Pagination from './components/Pagination'
+import LoadingOverlay from './components/LoadingOverlay'
 import { authFetch, downloadAuthFile } from './utils/auth'
 import {
   matchCliente,
@@ -21,6 +22,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('bolle')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
+  const [exportingPDF, setExportingPDF] = useState(false)
   const [selectedInvoiceId, setSelectedInvoiceId] = useState(null)
   const [invoiceDetail, setInvoiceDetail] = useState(null)
   const [selectedBollaId, setSelectedBollaId] = useState(null)
@@ -255,11 +257,14 @@ function App() {
 
   const exportPDF = async () => {
     if (data.length === 0) return
+    setExportingPDF(true)
     try {
       const params = buildExportParams(activeTab, currentFilters)
       await downloadAuthFile(`/api/${activeTab}/export/pdf?${params}`, `${activeTab}_esportazione.pdf`)
     } catch (err) {
       console.error('Error exporting PDF:', err)
+    } finally {
+      setExportingPDF(false)
     }
   }
 
@@ -510,6 +515,7 @@ function App() {
 
   return (
     <div className="app-container">
+      {exportingPDF && <LoadingOverlay />}
       <header className="app-header">
         <div className="app-title-group">
           <img src="/logo.webp" alt="Intex" className="app-logo" />
