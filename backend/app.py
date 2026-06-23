@@ -725,7 +725,7 @@ def _fetch_discrepanze(cursor, codice_cliente):
             COALESCE(SUM(fr.capi_fatturati), 0) AS capi_fatturati,
             COALESCE(SUM(fr.kg_fatturati), 0) AS kg_fatturati,
             COALESCE(SUM(fr.importo_riga), 0) AS valore_fatturato,
-            (COALESCE(SUM(dr.capi_consegnati), 0) - COALESCE(SUM(fr.capi_fatturati), 0)) AS diff_capi,
+            (COALESCE(SUM(fr.capi_fatturati), 0) - COALESCE(SUM(dr.capi_consegnati), 0)) AS diff_capi,
             (COALESCE(SUM(dr.importo_riga), 0) - COALESCE(SUM(fr.importo_riga), 0)) AS diff_valore
         FROM ddt_righe dr
         JOIN ddt_testate dt ON dr.numero_bolla = dt.numero_bolla

@@ -733,8 +733,25 @@ table.data.data--audit .table-col--diff-capi {
   right: 5.25rem;
 }
 
+/* Con le colonne Valore nascoste, solo Diff Capi resta sticky: allineala a destra senza il buco riservato a Diff Valore */
+table.data.data--audit.data--audit--valore-colonne-nascoste .table-col--diff-capi {
+  right: 0;
+}
+
 table.data.data--audit thead .table-col--diff {
   z-index: 2;
+}
+
+table.data.data--audit .audit-col-hint {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.55rem;
+  font-weight: 400;
+  line-height: 1.2;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-secondary);
+  white-space: normal;
 }
 
 table.data th {

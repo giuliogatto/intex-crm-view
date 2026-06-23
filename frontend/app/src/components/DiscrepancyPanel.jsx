@@ -109,26 +109,36 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
           </div>
         ) : (
           <div className="table-wrap table-wrap--audit">
-            <table className="data data--audit">
+            {/*
+              Colonne Valore temporaneamente nascoste (Preventivato, Consegnato DDT, Differenze Valore):
+              Oracle non popola d03_prezzo_uni(_euro) sulle righe DDT/cartellino, quindi importo_riga
+              in offerte_righe e ddt_righe resta sempre 0 e diff_valore non è significativo.
+              Riattivare le <th>/<td> commentate sotto e rimuovere la classe
+              data--audit--valore-colonne-nascoste quando il sync avrà una fonte prezzo affidabile.
+            */}
+            <table className="data data--audit data--audit--valore-colonne-nascoste">
               <thead>
                 <tr>
                   <th rowspan="2">Articolo / Colore</th>
-                  <th colspan="2" className="table-col--a" style={{ textAlign: 'center' }}>Preventivato (Offerta)</th>
-                  <th colspan="3" className="table-col--b" style={{ textAlign: 'center' }}>Consegnato (DDT)</th>
+                  <th colspan="1" className="table-col--a" style={{ textAlign: 'center' }}>Preventivato (Offerta)</th>
+                  <th colspan="2" className="table-col--b" style={{ textAlign: 'center' }}>Consegnato (DDT)</th>
                   <th colspan="3" className="table-col--a" style={{ textAlign: 'center' }}>Fatturato (Fattura)</th>
-                  <th colspan="2" className="table-col--b" style={{ textAlign: 'center' }}>Differenze</th>
+                  <th colspan="1" className="table-col--b" style={{ textAlign: 'center' }}>
+                    Differenze
+                    <span className="audit-col-hint">capi fatturati − capi consegnati</span>
+                  </th>
                 </tr>
                 <tr>
                   <th className="table-col--a">Capi</th>
-                  <th className="table-col--a">Valore</th>
+                  {/* <th className="table-col--a">Valore</th> */}
                   <th className="table-col--b">Capi</th>
                   <th className="table-col--b">Kg</th>
-                  <th className="table-col--b">Valore</th>
+                  {/* <th className="table-col--b">Valore</th> */}
                   <th className="table-col--a">Capi</th>
                   <th className="table-col--a">Kg</th>
                   <th className="table-col--a">Valore</th>
                   <th className="table-col--b table-col--diff table-col--diff-capi">Capi</th>
-                  <th className="table-col--b table-col--diff table-col--diff-valore">Valore</th>
+                  {/* <th className="table-col--b table-col--diff table-col--diff-valore">Valore</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -146,15 +156,15 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
                       </td>
                       {/* Offer */}
                       <td className="table-col--a">{row.capi_offerti || '—'}</td>
-                      <td className="table-col--a">
+                      {/* <td className="table-col--a">
                         {row.valore_offerto ? formatEuro(row.valore_offerto) : '—'}
-                      </td>
+                      </td> */}
                       {/* DDT */}
                       <td className="table-col--b">{row.capi_consegnati || '—'}</td>
                       <td className="table-col--b">{row.kg_consegnati || '—'}</td>
-                      <td className="table-col--b">
+                      {/* <td className="table-col--b">
                         {row.valore_consegnato ? formatEuro(row.valore_consegnato) : '—'}
-                      </td>
+                      </td> */}
                       {/* Invoice */}
                       <td className="table-col--a">{row.capi_fatturati || '—'}</td>
                       <td className="table-col--a">{row.kg_fatturati || '—'}</td>
@@ -171,7 +181,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
                           </span>
                         )}
                       </td>
-                      <td className="table-col--b table-col--diff table-col--diff-valore">
+                      {/* <td className="table-col--b table-col--diff table-col--diff-valore">
                         {row.diff_valore === 0 ? (
                           <span className="text-secondary">—</span>
                         ) : (
@@ -179,7 +189,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
                             {row.diff_valore > 0 ? `+${formatEuro(row.diff_valore)}` : formatEuro(row.diff_valore)}
                           </span>
                         )}
-                      </td>
+                      </td> */}
                     </tr>
                   )
                 })}
