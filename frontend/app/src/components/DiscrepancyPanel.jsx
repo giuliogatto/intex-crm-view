@@ -4,7 +4,7 @@ import LoadingOverlay from './LoadingOverlay'
 import { authFetch, downloadAuthFile } from '../utils/auth'
 
 export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCustomerChange }) {
-  const [internalCustomer, setInternalCustomer] = useState('XXX')
+  const [internalCustomer, setInternalCustomer] = useState('')
   const selectedCustomer = customerProp ?? internalCustomer
   const setSelectedCustomer = onCustomerChange ?? setInternalCustomer
   const [discrepanze, setDiscrepanze] = useState([])
@@ -91,7 +91,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
             <CustomerAutocomplete
               value={selectedCustomer}
               onChange={setSelectedCustomer}
-              placeholder="Cerca per nome o codice..."
+              placeholder="Seleziona codice o nome cliente"
             />
           </div>
         </div>

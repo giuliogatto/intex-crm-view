@@ -39,7 +39,7 @@ function App() {
     stagione: '',
     stato: 'Tutte'
   })
-  const [discrepancyCustomer, setDiscrepancyCustomer] = useState('XXX')
+  const [discrepancyCustomer, setDiscrepancyCustomer] = useState('')
   const [pendingExport, setPendingExport] = useState(false)
   const [pendingInvoiceId, setPendingInvoiceId] = useState(null)
   const [pendingBollaId, setPendingBollaId] = useState(null)
@@ -410,7 +410,7 @@ function App() {
     }
 
     if (tab === 'discrepanze') {
-      setDiscrepancyCustomer(matchResult.codice || 'XXX')
+      setDiscrepancyCustomer(matchResult.codice || '')
       setData([])
       setLoading(false)
       clearDocumentDetails()
@@ -470,7 +470,7 @@ function App() {
 
     if (tab === 'discrepanze') {
       setLoading(false)
-      setDiscrepancyCustomer(qFilters.codice_cliente || 'XXX')
+      setDiscrepancyCustomer(qFilters.codice_cliente || '')
       setCurrentFilters((prev) => ({ ...prev, ...qFilters }))
       setActiveTab('discrepanze')
       return
