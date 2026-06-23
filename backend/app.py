@@ -65,23 +65,6 @@ def _list_filters():
     }
 
 
-def _filters_active(filters, tab=None):
-    if filters.get('data_inizio') or filters.get('data_fine'):
-        return True
-    if filters.get('codice_cliente'):
-        return True
-    if filters.get('ragione_sociale'):
-        return True
-    if filters.get('stagione'):
-        return True
-    stato = filters.get('stato')
-    if tab == 'fatture' and stato and stato not in ('Tutte',):
-        return True
-    if tab == 'offerte' and stato and stato not in ('Tutti',):
-        return True
-    return False
-
-
 def _paginated_list_response(items, total, page, limit):
     pages = max((total + limit - 1) // limit, 1) if total else 1
     return {
@@ -283,19 +266,13 @@ def _fetch_bolle(cursor, filters, limit=None, offset=0):
 def get_bolle():
     try:
         filters = _list_filters()
+        page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-        if _filters_active(filters, 'bolle'):
-            bolle = _fetch_bolle(cursor, filters)
-            total = len(bolle)
-        else:
-            page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
-            total = _count_bolle(cursor, filters)
-            bolle = _fetch_bolle(cursor, filters, limit=limit, offset=offset)
+        total = _count_bolle(cursor, filters)
+        bolle = _fetch_bolle(cursor, filters, limit=limit, offset=offset)
         cursor.close()
         db_pool.release_conn(conn)
-        if _filters_active(filters, 'bolle'):
-            return {"total": total, "data": bolle}
         return _paginated_list_response(bolle, total, page, limit)
     except Exception as e:
         response.status = 500
@@ -455,19 +432,13 @@ def _fetch_fatture(cursor, filters, limit=None, offset=0):
 def get_fatture():
     try:
         filters = _list_filters()
+        page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-        if _filters_active(filters, 'fatture'):
-            fatture = _fetch_fatture(cursor, filters)
-            total = len(fatture)
-        else:
-            page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
-            total = _count_fatture(cursor, filters)
-            fatture = _fetch_fatture(cursor, filters, limit=limit, offset=offset)
+        total = _count_fatture(cursor, filters)
+        fatture = _fetch_fatture(cursor, filters, limit=limit, offset=offset)
         cursor.close()
         db_pool.release_conn(conn)
-        if _filters_active(filters, 'fatture'):
-            return {"total": total, "data": fatture}
         return _paginated_list_response(fatture, total, page, limit)
     except Exception as e:
         response.status = 500
@@ -636,19 +607,13 @@ def _fetch_offerte(cursor, filters, limit=None, offset=0):
 def get_offerte():
     try:
         filters = _list_filters()
+        page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
         conn = db_pool.get_conn()
         cursor = conn.cursor()
-        if _filters_active(filters, 'offerte'):
-            offerte = _fetch_offerte(cursor, filters)
-            total = len(offerte)
-        else:
-            page, limit, offset = parse_pagination(default_limit=50, max_limit=50)
-            total = _count_offerte(cursor, filters)
-            offerte = _fetch_offerte(cursor, filters, limit=limit, offset=offset)
+        total = _count_offerte(cursor, filters)
+        offerte = _fetch_offerte(cursor, filters, limit=limit, offset=offset)
         cursor.close()
         db_pool.release_conn(conn)
-        if _filters_active(filters, 'offerte'):
-            return {"total": total, "data": offerte}
         return _paginated_list_response(offerte, total, page, limit)
     except Exception as e:
         response.status = 500
