@@ -80,9 +80,25 @@ export default function ChatPanel({ onResponse, onClienteSelect }) {
     }
   }
 
+  const handleNewChat = () => {
+    setChatId(null)
+    setMessages([])
+    setInput('')
+  }
+
   return (
     <div className="chat-panel">
-      <div className="chat-panel__head">Assistente Intex</div>
+      <div className="chat-panel__head">
+        <span>Assistente Intex</span>
+        <button
+          type="button"
+          className="btn"
+          onClick={handleNewChat}
+          disabled={sending}
+        >
+          Nuova chat
+        </button>
+      </div>
       <div className="chat-panel__messages">
         {messages.length === 0 && !sending && (
           <div className="chat-panel__placeholder">
