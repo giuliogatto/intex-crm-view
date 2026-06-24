@@ -15,15 +15,25 @@ IntexDataConnector = data_connector_module.IntexDataConnector
 from database import DatabasePool
 db_pool = DatabasePool()
 
+SYNC_TARGETS = ("clienti", "articoli", "fatture", "bolle", "offerte")
+SYNC_METHODS = {
+    "clienti": "sync_clienti",
+    "articoli": "sync_articoli",
+    "fatture": "sync_fatture_and_seasons",
+    "bolle": "sync_ddts",
+    "offerte": "sync_offerte",
+}
+
 class OracleSyncProcess:
     FATTURE_LIMIT = 100
 
-    def __init__(self, limit=100, mode="full", start_date=None, end_date=None):
+    def __init__(self, limit=100, mode="full", start_date=None, end_date=None, sync_targets=None):
         self.connector = IntexDataConnector()
         self.limit = limit
         self.mode = mode
         self.start_date = start_date
         self.end_date = end_date
+        self.sync_targets = sync_targets or SYNC_TARGETS
 
     def _incremental_start_date(self):
         if self.start_date:
@@ -771,15 +781,13 @@ class OracleSyncProcess:
         db_pool.release_conn(conn)
 
     def run_sync(self):
-        print(f"Starting Intex API Database Sync Process (Mode: {self.mode.upper()})...")
+        targets_label = ", ".join(self.sync_targets)
+        print(f"Starting Intex API Database Sync Process (Mode: {self.mode.upper()}, Targets: {targets_label})...")
         start_time = time.time()
         
         try:
-            self.sync_clienti()
-            self.sync_articoli()
-            self.sync_fatture_and_seasons()
-            self.sync_ddts()
-            self.sync_offerte()
+            for target in self.sync_targets:
+                getattr(self, SYNC_METHODS[target])()
             
             elapsed = time.time() - start_time
             print(f"\nDatabase Sync completed successfully in {elapsed:.2f} seconds.")
@@ -787,7 +795,28 @@ class OracleSyncProcess:
             print(f"\nDatabase Sync process encountered a fatal error: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Sync remote Intex ORDS data to local TimescaleDB cache.")
+    parser = argparse.ArgumentParser(
+        description="Sync remote Intex ORDS data to local TimescaleDB cache.",
+        epilog=(
+            "Examples:\n"
+            "  # Sync only delivery notes (bolle) for calendar year 2026\n"
+            "  python oracle-sync.py --only bolle --start-date 2026-01-01 --end-date 2026-12-31\n"
+            "\n"
+            "  # Incremental sync of invoices and offers only\n"
+            "  python oracle-sync.py --mode incremental --only fatture offerte"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        choices=SYNC_TARGETS,
+        metavar="TARGET",
+        help=(
+            "Sync only the listed targets (default: all). "
+            "Choices: clienti, articoli, fatture (invoices + seasons), bolle (DDTs), offerte."
+        ),
+    )
     parser.add_argument(
         "--mode", 
         choices=["full", "incremental"], 
@@ -828,5 +857,6 @@ if __name__ == "__main__":
         mode=args.mode,
         start_date=args.start_date,
         end_date=args.end_date,
+        sync_targets=args.only,
     )
     sync_job.run_sync()

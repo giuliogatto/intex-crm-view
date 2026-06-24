@@ -74,6 +74,33 @@ If the remote Oracle server is under heavy load or if pagination takes too long 
 docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01 --end-date 2026-03-31 --limit 50
 ```
 
+### 2.5. Selective Sync (`--only`)
+By default, the script syncs all five data sets. Use `--only` to run a subset:
+
+| Target | Data synced |
+|--------|-------------|
+| `clienti` | Customers |
+| `articoli` | Articles |
+| `fatture` | Invoices and seasons |
+| `bolle` | Delivery notes (DDTs) |
+| `offerte` | Offers |
+
+Examples:
+
+```bash
+# Sync only delivery notes (bolle) for calendar year 2026
+docker exec -it intex-api python /app/oracle-sync.py \
+  --only bolle \
+  --start-date 2026-01-01 \
+  --end-date 2026-12-31
+
+# Incremental sync of invoices and offers only
+docker exec -it intex-api python /app/oracle-sync.py --mode incremental --only fatture offerte
+
+# Full sync of customers and articles only
+docker exec -it intex-api python /app/oracle-sync.py --mode full --only clienti articoli
+```
+
 ---
 
 ## 3. Database Backups
