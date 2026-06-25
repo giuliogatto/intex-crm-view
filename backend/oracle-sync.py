@@ -160,7 +160,8 @@ class OracleSyncProcess:
                 SELECT fr.numero_bolla,
                        MIN(f.codice_stagione) AS codice_stagione
                 FROM fatture_righe fr
-                JOIN fatture_testate f ON f.numero_disposizione = fr.numero_disposizione
+                JOIN fatture_testate f ON f.codice_cliente = fr.codice_cliente
+                                      AND f.numero_disposizione = fr.numero_disposizione
                 WHERE fr.numero_bolla IS NOT NULL
                   AND f.codice_stagione IS NOT NULL
                 GROUP BY fr.numero_bolla
@@ -598,15 +599,17 @@ class OracleSyncProcess:
                 for season, descrizione in season_meta.items():
                     self._upsert_stagione(cursor, season, descrizione)
                 
-                # 2. Update disposizioni headers running values
+                # 2. Update disposizioni headers running values (keyed by cliente + disposizione)
                 for item in items:
                     disp_num = item.get('ew2_nr_disposizione')
                     if not disp_num:
                         continue
                     disp_num = str(disp_num)
+                    codice_cliente = str(item.get('ew2_cd_cliente') or 'XXX').strip()
+                    disp_key = (codice_cliente, disp_num)
                     importo = float(item.get('f07_importo_riga_euro') or item.get('f07_importo_riga') or 0.00)
-                    
-                    if disp_num not in disposizioni:
+
+                    if disp_key not in disposizioni:
                         date_str = item.get('data_bolla_iso') or item.get('d02_dt_bolla')
                         date_val = datetime.now().date()
                         if date_str:
@@ -614,45 +617,50 @@ class OracleSyncProcess:
                                 date_val = datetime.strptime(date_str[:10], '%Y-%m-%d').date()
                             except ValueError:
                                 pass
-                                
-                        disposizioni[disp_num] = {
+
+                        disposizioni[disp_key] = {
                             "data": date_val,
-                            "codice_cliente": str(item.get('ew2_cd_cliente') or 'XXX').strip(),
+                            "codice_cliente": codice_cliente,
                             "codice_stagione": self._extract_stagione_code(item),
                             "importo_totale": 0.0
                         }
-                    elif not disposizioni[disp_num].get("codice_stagione"):
+                    elif not disposizioni[disp_key].get("codice_stagione"):
                         stagione = self._extract_stagione_code(item)
                         if stagione:
-                            disposizioni[disp_num]["codice_stagione"] = stagione
-                    disposizioni[disp_num]["importo_totale"] += importo
-                
+                            disposizioni[disp_key]["codice_stagione"] = stagione
+                    disposizioni[disp_key]["importo_totale"] += importo
+
                 # Upsert headers in this batch
                 header_query = """
-                    INSERT INTO fatture_testate (numero_disposizione, data_fattura, codice_cliente, codice_stagione, importo_totale, stato_pagamento)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (numero_disposizione) DO UPDATE SET
+                    INSERT INTO fatture_testate (codice_cliente, numero_disposizione, data_fattura, codice_stagione, importo_totale)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (codice_cliente, numero_disposizione) DO UPDATE SET
                         data_fattura = EXCLUDED.data_fattura,
-                        codice_cliente = EXCLUDED.codice_cliente,
                         codice_stagione = EXCLUDED.codice_stagione,
                         importo_totale = EXCLUDED.importo_totale;
                 """
-                for disp_num in set(str(item.get('ew2_nr_disposizione')) for item in items if item.get('ew2_nr_disposizione')):
-                    h = disposizioni[disp_num]
+                batch_keys = set()
+                for item in items:
+                    disp_num = item.get('ew2_nr_disposizione')
+                    if not disp_num:
+                        continue
+                    codice_cliente = str(item.get('ew2_cd_cliente') or 'XXX').strip()
+                    batch_keys.add((codice_cliente, str(disp_num)))
+                for codice_cliente, disp_num in batch_keys:
+                    h = disposizioni[(codice_cliente, disp_num)]
                     cursor.execute(header_query, (
+                        codice_cliente,
                         disp_num,
                         h["data"],
-                        h["codice_cliente"],
                         h["codice_stagione"],
                         h["importo_totale"],
-                        "Aperta"
                     ))
-                
+
                 # 3. Sync invoice lines
                 line_query = """
-                    INSERT INTO fatture_righe (numero_disposizione, riga_disposizione, numero_bolla, codice_articolo, colore, kg_fatturati, capi_fatturati, importo_riga)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (numero_disposizione, riga_disposizione) DO UPDATE SET
+                    INSERT INTO fatture_righe (codice_cliente, numero_disposizione, riga_disposizione, numero_bolla, codice_articolo, colore, kg_fatturati, capi_fatturati, importo_riga)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (codice_cliente, numero_disposizione, riga_disposizione) DO UPDATE SET
                         numero_bolla = EXCLUDED.numero_bolla,
                         codice_articolo = EXCLUDED.codice_articolo,
                         colore = EXCLUDED.colore,
@@ -665,8 +673,9 @@ class OracleSyncProcess:
                     riga_disp = item.get('ew2_riga_disposizione')
                     if not disp_num or not riga_disp:
                         continue
-                        
+
                     cursor.execute(line_query, (
+                        str(item.get('ew2_cd_cliente') or 'XXX').strip(),
                         str(disp_num),
                         int(riga_disp),
                         str(item.get('d02_nr_bolla') or '').strip() or None,

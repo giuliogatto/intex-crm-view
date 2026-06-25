@@ -67,17 +67,6 @@ Date documento per area:
 - **fatture** → `data_fattura`
 - **offerte** → `data_offerta`
 
-### Fatture — campo aggiuntivo
-
-| Campo   | Etichetta UI      | Valori ammessi |
-|---------|-------------------|----------------|
-| `stato` | Stato pagamento   | `Tutte`, `Aperta`, `Pagata` |
-
-Sinonimi utente → valore `stato`:
-- aperte, non pagate, da incassare, scadute → `Aperta`
-- pagate, saldate, incassate → `Pagata`
-- tutte, qualsiasi stato → `Tutte`
-
 ### Offerte — campo aggiuntivo
 
 | Campo   | Etichetta UI       | Valori ammessi |

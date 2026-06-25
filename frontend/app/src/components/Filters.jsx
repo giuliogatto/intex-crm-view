@@ -10,7 +10,7 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
     data_fine: '',
     codice_cliente: '',
     stagione: '',
-    stato: 'Tutte'
+    stato: ''
   })
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
   useEffect(() => {
     setFilters(prev => ({
       ...prev,
-      stato: activeTab === 'offerte' ? 'Tutti' : 'Tutte'
+      stato: activeTab === 'offerte' ? 'Tutti' : ''
     }))
   }, [activeTab])
 
@@ -52,7 +52,7 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
       data_fine: '',
       codice_cliente: '',
       stagione: '',
-      stato: activeTab === 'offerte' ? 'Tutti' : 'Tutte'
+      stato: activeTab === 'offerte' ? 'Tutti' : ''
     }
     setFilters(cleared)
     onSearch(cleared)
@@ -100,17 +100,6 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
             ))}
           </select>
         </div>
-
-        {activeTab === 'fatture' && (
-          <div className="field">
-            <label>Stato pagamento</label>
-            <select name="stato" value={filters.stato} onChange={handleChange}>
-              <option value="Tutte">Tutte</option>
-              <option value="Pagata">Pagate</option>
-              <option value="Aperta">Aperte</option>
-            </select>
-          </div>
-        )}
 
         {activeTab === 'offerte' && (
           <div className="field">

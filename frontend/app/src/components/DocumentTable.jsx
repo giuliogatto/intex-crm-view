@@ -62,13 +62,12 @@ export default function DocumentTable({ activeTab, data, totals, onViewDetail, o
               <th>Periodo riferimento</th>
               <th>Cliente</th>
               <th>Importo documento</th>
-              <th>Stato</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             {data.map((item) => (
-              <tr key={item.numero_disposizione}>
+              <tr key={`${item.codice_cliente}-${item.numero_disposizione}`}>
                 <td><strong>{item.numero_disposizione}</strong></td>
                 <td>{item.data}</td>
                 <td>
@@ -76,14 +75,9 @@ export default function DocumentTable({ activeTab, data, totals, onViewDetail, o
                 </td>
                 <td>{formatEuro(item.importo_documento)}</td>
                 <td>
-                  <span className={`pill pill--${(item.stato ?? '').toLowerCase()}`}>
-                    {item.stato ?? '—'}
-                  </span>
-                </td>
-                <td>
                   <span
                     className="table-link"
-                    onClick={() => onViewDetail(item.numero_disposizione)}
+                    onClick={() => onViewDetail(item.numero_disposizione, item.codice_cliente)}
                   >
                     Dettaglio
                   </span>
@@ -96,7 +90,7 @@ export default function DocumentTable({ activeTab, data, totals, onViewDetail, o
               <tr className="table-totals-row">
                 <td colSpan={3}><strong>Totale</strong></td>
                 <td><strong>{formatEuro(totals.importo_documento)}</strong></td>
-                <td colSpan={2}></td>
+                <td></td>
               </tr>
             </tfoot>
           )}

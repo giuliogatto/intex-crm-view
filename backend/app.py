@@ -89,8 +89,6 @@ def _filters_are_active(filters, tab=None):
         return True
     stato = filters.get('stato')
     if stato:
-        if tab == 'fatture' and stato != 'Tutte':
-            return True
         if tab == 'offerte' and stato != 'Tutti':
             return True
     return False
@@ -422,9 +420,6 @@ def _fatture_from_where(filters):
         query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
         params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
     query, params = apply_stagione_filter(query, params, filters, "f.codice_stagione")
-    if filters['stato'] and filters['stato'] != '' and filters['stato'] != 'Tutte':
-        query += " AND f.stato_pagamento = %(stato)s"
-        params['stato'] = filters['stato']
 
     return query, params
 
@@ -439,7 +434,7 @@ def _fetch_fatture(cursor, filters, limit=None, offset=0):
     from_where, params = _fatture_from_where(filters)
     query = f"""
         SELECT f.numero_disposizione, TO_CHAR(f.data_fattura, 'DD/MM/YYYY') as data_fattura,
-               c.ragione_sociale, c.codice as codice_cliente, f.importo_totale, f.stato_pagamento
+               c.ragione_sociale, c.codice as codice_cliente, f.importo_totale
         {from_where}
         ORDER BY f.data_fattura DESC, f.numero_disposizione DESC
     """
@@ -456,7 +451,6 @@ def _fetch_fatture(cursor, filters, limit=None, offset=0):
             "cliente": r[2],
             "codice_cliente": r[3],
             "importo_documento": float(r[4]),
-            "stato": r[5],
         }
         for r in rows
     ]
@@ -491,7 +485,7 @@ def export_fatture_pdf():
         cursor.close()
         db_pool.release_conn(conn)
 
-        headers = ['N. disp.', 'Periodo riferimento', 'Cliente', 'Codice Cliente', 'Importo documento', 'Stato']
+        headers = ['N. disp.', 'Periodo riferimento', 'Cliente', 'Codice Cliente', 'Importo documento']
         rows = [
             [
                 f['numero_disposizione'],
@@ -499,7 +493,6 @@ def export_fatture_pdf():
                 f['cliente'],
                 f['codice_cliente'],
                 _format_euro(f['importo_documento']),
-                f['stato'],
             ]
             for f in fatture
         ]
@@ -513,19 +506,38 @@ def export_fatture_pdf():
 @app.route('/api/fatture/<id>', method='GET')
 def get_fattura_detail(id):
     try:
+        codice_cliente = (request.query.get('codice_cliente') or '').strip()
         conn = db_pool.get_conn()
         cursor = conn.cursor()
 
-        # Get header
         header_query = """
             SELECT f.numero_disposizione, TO_CHAR(f.data_fattura, 'DD/MM/YYYY') as data_fattura,
-                   c.ragione_sociale, c.codice as codice_cliente, f.importo_totale, f.stato_pagamento
+                   c.ragione_sociale, c.codice as codice_cliente, f.importo_totale
             FROM fatture_testate f
             JOIN clienti c ON f.codice_cliente = c.codice
             WHERE f.numero_disposizione = %(numero_disp)s
         """
-        cursor.execute(header_query, {"numero_disp": id})
+        header_params = {"numero_disp": id}
+        if codice_cliente:
+            header_query += " AND f.codice_cliente = %(codice_cliente)s"
+            header_params["codice_cliente"] = codice_cliente
+        cursor.execute(header_query, header_params)
         header_row = cursor.fetchone()
+
+        if not header_row and not codice_cliente:
+            cursor.execute(
+                """
+                SELECT f.numero_disposizione, TO_CHAR(f.data_fattura, 'DD/MM/YYYY') as data_fattura,
+                       c.ragione_sociale, c.codice as codice_cliente, f.importo_totale
+                FROM fatture_testate f
+                JOIN clienti c ON f.codice_cliente = c.codice
+                WHERE f.numero_disposizione = %(numero_disp)s
+                """,
+                {"numero_disp": id},
+            )
+            matches = cursor.fetchall()
+            if len(matches) == 1:
+                header_row = matches[0]
 
         if not header_row:
             cursor.close()
@@ -533,16 +545,18 @@ def get_fattura_detail(id):
             response.status = 404
             return {"error": "Fattura non trovata"}
 
-        # Get lines
+        codice_cliente = header_row[3]
+
         lines_query = """
             SELECT r.riga_disposizione, 
                    COALESCE((SELECT TO_CHAR(d.data_bolla, 'DD/MM/YYYY') FROM ddt_testate d WHERE d.numero_bolla = r.numero_bolla), '—') as data_bolla,
                    r.numero_bolla, r.codice_articolo, r.colore, r.kg_fatturati, r.capi_fatturati, r.importo_riga
             FROM fatture_righe r
-            WHERE r.numero_disposizione = %(numero_disp)s
+            WHERE r.codice_cliente = %(codice_cliente)s
+              AND r.numero_disposizione = %(numero_disp)s
             ORDER BY r.riga_disposizione
         """
-        cursor.execute(lines_query, {"numero_disp": id})
+        cursor.execute(lines_query, {"numero_disp": id, "codice_cliente": codice_cliente})
         lines_rows = cursor.fetchall()
         cursor.close()
         db_pool.release_conn(conn)
@@ -553,7 +567,6 @@ def get_fattura_detail(id):
             "cliente": header_row[2],
             "codice_cliente": header_row[3],
             "importo_totale": float(header_row[4]),
-            "stato": header_row[5]
         }
 
         lines = [
@@ -769,6 +782,7 @@ def _fetch_discrepanze(cursor, codice_cliente):
         JOIN ddt_testate dt ON dr.numero_bolla = dt.numero_bolla
         LEFT JOIN articoli art ON dr.codice_articolo = art.codice
         LEFT JOIN fatture_righe fr ON dr.numero_disposizione = fr.numero_disposizione
+                                   AND dt.codice_cliente = fr.codice_cliente
                                    AND dr.codice_articolo = fr.codice_articolo
                                    AND dr.colore = fr.colore
         LEFT JOIN offerte_righe o_rig ON dr.numero_offerta = o_rig.numero_offerta

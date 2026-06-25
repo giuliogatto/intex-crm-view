@@ -26,7 +26,7 @@ function App() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [exportingPDF, setExportingPDF] = useState(false)
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState(null)
+  const [selectedInvoice, setSelectedInvoice] = useState(null)
   const [invoiceDetail, setInvoiceDetail] = useState(null)
   const [selectedBollaId, setSelectedBollaId] = useState(null)
   const [bollaDetail, setBollaDetail] = useState(null)
@@ -37,11 +37,11 @@ function App() {
     data_fine: '',
     codice_cliente: '',
     stagione: '',
-    stato: 'Tutte'
+    stato: ''
   })
   const [discrepancyCustomer, setDiscrepancyCustomer] = useState('')
   const [pendingExport, setPendingExport] = useState(false)
-  const [pendingInvoiceId, setPendingInvoiceId] = useState(null)
+  const [pendingInvoice, setPendingInvoice] = useState(null)
   const [pendingBollaId, setPendingBollaId] = useState(null)
   const [pendingOffertaId, setPendingOffertaId] = useState(null)
   const [listPage, setListPage] = useState(1)
@@ -52,7 +52,7 @@ function App() {
   const skipNextTabFetch = useRef(false)
 
   const clearDocumentDetails = () => {
-    setSelectedInvoiceId(null)
+    setSelectedInvoice(null)
     setInvoiceDetail(null)
     setSelectedBollaId(null)
     setBollaDetail(null)
@@ -72,10 +72,7 @@ function App() {
     if (filters.codice_cliente) params.append('codice_cliente', filters.codice_cliente)
     if (filters.stagione) params.append('stagione', filters.stagione)
     
-    // Adjust state parameter name based on tab
-    if (tab === 'fatture' && filters.stato && filters.stato !== 'Tutte') {
-      params.append('stato', filters.stato)
-    } else if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') {
+    if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') {
       params.append('stato', filters.stato)
     }
 
@@ -115,7 +112,7 @@ function App() {
     }
 
     const tabFilters = tab !== activeTab
-      ? { ...currentFilters, stato: tab === 'offerte' ? 'Tutti' : 'Tutte' }
+      ? { ...currentFilters, stato: tab === 'offerte' ? 'Tutti' : '' }
       : currentFilters
 
     setData([])
@@ -140,11 +137,11 @@ function App() {
   }, [activeTab])
 
   useEffect(() => {
-    if (pendingInvoiceId && !loading) {
-      setSelectedInvoiceId(pendingInvoiceId)
-      setPendingInvoiceId(null)
+    if (pendingInvoice && !loading) {
+      setSelectedInvoice(pendingInvoice)
+      setPendingInvoice(null)
     }
-  }, [pendingInvoiceId, loading])
+  }, [pendingInvoice, loading])
 
   useEffect(() => {
     if (pendingBollaId && !loading) {
@@ -160,19 +157,24 @@ function App() {
     }
   }, [pendingOffertaId, loading])
 
-  // Fetch invoice details when selectedInvoiceId changes
+  // Fetch invoice details when selectedInvoice changes
   useEffect(() => {
-    if (!selectedInvoiceId) {
+    if (!selectedInvoice) {
       setInvoiceDetail(null)
       return
     }
     setLoading(true)
-    authFetch(`/api/fatture/${selectedInvoiceId}`)
+    const params = new URLSearchParams()
+    if (selectedInvoice.codice_cliente) {
+      params.append('codice_cliente', selectedInvoice.codice_cliente)
+    }
+    const query = params.toString()
+    authFetch(`/api/fatture/${selectedInvoice.numero_disposizione}${query ? `?${query}` : ''}`)
       .then(async (res) => {
         const resData = await res.json()
         if (!res.ok || !resData.header) {
           console.error('Error fetching invoice details:', resData.error || res.status)
-          setSelectedInvoiceId(null)
+          setSelectedInvoice(null)
           setInvoiceDetail(null)
           return
         }
@@ -180,11 +182,11 @@ function App() {
       })
       .catch((err) => {
         console.error('Error fetching invoice details:', err)
-        setSelectedInvoiceId(null)
+        setSelectedInvoice(null)
         setInvoiceDetail(null)
       })
       .finally(() => setLoading(false))
-  }, [selectedInvoiceId])
+  }, [selectedInvoice])
 
   useEffect(() => {
     if (!selectedBollaId) {
@@ -253,9 +255,7 @@ function App() {
     if (filters.data_fine) params.append('data_fine', filters.data_fine)
     if (filters.codice_cliente) params.append('codice_cliente', filters.codice_cliente)
     if (filters.stagione) params.append('stagione', filters.stagione)
-    if (tab === 'fatture' && filters.stato && filters.stato !== 'Tutte') {
-      params.append('stato', filters.stato)
-    } else if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') {
+    if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') {
       params.append('stato', filters.stato)
     }
     return params
@@ -285,9 +285,9 @@ function App() {
         csvContent += `"${row.numero_bolla}","${row.data}","${row.cliente}","${row.codice_cliente}","${row.righe_collegate}"\n`
       })
     } else if (activeTab === 'fatture') {
-      csvContent += 'N. disp.,Periodo riferimento,Cliente,Codice Cliente,Importo documento,Stato\n'
+      csvContent += 'N. disp.,Periodo riferimento,Cliente,Codice Cliente,Importo documento\n'
       data.forEach((row) => {
-        csvContent += `"${row.numero_disposizione}","${row.data}","${row.cliente}","${row.codice_cliente}",${row.importo_documento},"${row.stato}"\n`
+        csvContent += `"${row.numero_disposizione}","${row.data}","${row.cliente}","${row.codice_cliente}",${row.importo_documento}\n`
       })
     } else if (activeTab === 'offerte') {
       csvContent += 'N. offerta,Data,Cliente,Codice Cliente,Stagione,Importo,Stato\n'
@@ -320,12 +320,15 @@ function App() {
     return clientiCache.current
   }
 
-  const applyPendingDocumentDetail = (azione) => {
+  const applyPendingDocumentDetail = (azione, filters = {}) => {
     const numero = String(azione.numero_documento || '').trim()
     if (!numero) return
 
     if (azione.tipo === 'dettaglio_fattura') {
-      setPendingInvoiceId(numero)
+      setPendingInvoice({
+        numero_disposizione: numero,
+        codice_cliente: filters.codice_cliente || ''
+      })
     } else if (azione.tipo === 'dettaglio_bolla') {
       setPendingBollaId(numero)
     } else if (azione.tipo === 'dettaglio_offerta') {
@@ -341,7 +344,7 @@ function App() {
     setListPage(1)
     clearDocumentDetails()
     setLoading(false)
-    applyPendingDocumentDetail(azione)
+    applyPendingDocumentDetail(azione, filters)
     return { messaggio: messaggio || 'Richiesta elaborata.' }
   }
 
@@ -356,7 +359,7 @@ function App() {
       data_fine: replaceOggiPlaceholder(filtri.data_fine || ''),
       codice_cliente: '',
       stagione: filtri.stagione || '',
-      stato: filtri.stato || (tab === 'offerte' ? 'Tutti' : 'Tutte')
+      stato: filtri.stato || (tab === 'offerte' ? 'Tutti' : '')
     }
 
     const llmCliente = filtri.cliente?.trim() || ''
@@ -458,7 +461,7 @@ function App() {
     fetchData(tab, newFilters)
 
     if (isDocumentDetailAction(azione)) {
-      applyPendingDocumentDetail(azione)
+      applyPendingDocumentDetail(azione, newFilters)
     } else if (azione.tipo === 'esporta_csv') {
       setPendingExport(true)
     }
@@ -488,16 +491,16 @@ function App() {
     })
   }
 
-  const handleViewInvoiceDetail = (id) => {
+  const handleViewInvoiceDetail = (id, codiceCliente) => {
     setSelectedBollaId(null)
     setBollaDetail(null)
     setSelectedOffertaId(null)
     setOffertaDetail(null)
-    setSelectedInvoiceId(id)
+    setSelectedInvoice({ numero_disposizione: id, codice_cliente: codiceCliente })
   }
 
   const handleViewBollaDetail = (id) => {
-    setSelectedInvoiceId(null)
+    setSelectedInvoice(null)
     setInvoiceDetail(null)
     setSelectedOffertaId(null)
     setOffertaDetail(null)
@@ -505,7 +508,7 @@ function App() {
   }
 
   const handleViewOffertaDetail = (id) => {
-    setSelectedInvoiceId(null)
+    setSelectedInvoice(null)
     setInvoiceDetail(null)
     setSelectedBollaId(null)
     setBollaDetail(null)
@@ -581,11 +584,11 @@ function App() {
           )}
 
           {/* Detailed Invoice Rows Panel */}
-          {selectedInvoiceId && invoiceDetail?.header && (
+          {selectedInvoice && invoiceDetail?.header && (
             <div className="panel">
               <div className="panel__head">
                 <span>Dettaglio Documento — Riga Disposition N. {invoiceDetail.header.numero_disposizione}</span>
-                <button className="btn" onClick={() => setSelectedInvoiceId(null)}>Chiudi Dettaglio</button>
+                <button className="btn" onClick={() => setSelectedInvoice(null)}>Chiudi Dettaglio</button>
               </div>
               <div className="panel__body">
                 <div className="detail-header-info">
@@ -600,12 +603,6 @@ function App() {
                   <div className="detail-info-item">
                     <span className="detail-info-item__label">Totale Documento</span>
                     <span className="detail-info-item__value">{formatEuro(invoiceDetail.header.importo_totale)}</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Stato</span>
-                    <span className={`pill pill--${invoiceDetail.header.stato.toLowerCase()}`} style={{ marginTop: '0.2rem' }}>
-                      {invoiceDetail.header.stato}
-                    </span>
                   </div>
                 </div>
 
@@ -829,14 +826,13 @@ function App() {
                   onClick={() =>
                     applyQuestionShortcut('fatture', {
                       codice_cliente: '2618',
-                      stato: 'Aperta',
                       data_inizio: '',
                       data_fine: ''
                     })
                   }
                 >
                   <span className="chat-suggestion-num">2</span>
-                  “Quali fatture di PRIMA SRL risultano ancora aperte?”
+                  “Mostrami tutte le fatture di PRIMA SRL.”
                 </button>
                 <button
                   className="chat-suggestion-btn"

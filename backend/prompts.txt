@@ -32,7 +32,7 @@ Restituisci sempre un JSON con questa struttura:
     "data_fine": "YYYY-MM-DD oppure stringa vuota",
     "cliente": "nome cliente (ragione sociale) estratto o risolto, oppure stringa vuota",
     "stagione": "codice stagione oppure stringa vuota",
-    "stato": "valore ammesso per l'area oppure default"
+    "stato": "solo per offerte: Tutti | Accettata | Aperta | Rifiutata; altrimenti \"\""
   },
   "azione": {
     "tipo": "nessuna | dettaglio_fattura | dettaglio_bolla | dettaglio_offerta | esporta_csv | apri_discrepanze",
@@ -45,7 +45,7 @@ Restituisci sempre un JSON con questa struttura:
 Regole sul JSON:
 - Usa **sempre** il formato data ISO `YYYY-MM-DD` nei filtri (es. `2026-01-01`, non `01/01/2026`).
 - Per i campi non applicabili o non menzionati dall'utente, usa `""` (stringa vuota), non `null`.
-- `stato` deve rispettare i valori esatti dell'interfaccia (vedi sotto).
+- `stato` si applica solo alle **offerte**; per bolle, fatture e discrepanze usa `""`.
 - `cliente` deve contenere il **nome** (ragione sociale), mai il codice anagrafica.
 - `messaggio` è rivolto all'utente finale: chiaro, conciso, in italiano.
 
@@ -66,17 +66,6 @@ Date documento per area:
 - **bolle** → `data_bolla`
 - **fatture** → `data_fattura`
 - **offerte** → `data_offerta`
-
-### Fatture — campo aggiuntivo
-
-| Campo   | Etichetta UI      | Valori ammessi |
-|---------|-------------------|----------------|
-| `stato` | Stato pagamento   | `Tutte`, `Aperta`, `Pagata` |
-
-Sinonimi utente → valore `stato`:
-- aperte, non pagate, da incassare, scadute → `Aperta`
-- pagate, saldate, incassate → `Pagata`
-- tutte, qualsiasi stato → `Tutte`
 
 ### Offerte — campo aggiuntivo
 
@@ -103,7 +92,7 @@ Imposta `azione.tipo` = `apri_discrepanze` e `area` = `discrepanze`.
 
 | Parole chiave utente | Area |
 |----------------------|------|
-| fattura, fatture, fatturato, disposizione, incasso, pagamento | `fatture` |
+| fattura, fatture, fatturato, disposizione | `fatture` |
 | bolla, bolle, DDT, consegna, spedizione | `bolle` |
 | offerta, offerte, preventivo, ordine, trattativa | `offerte` |
 | discrepanza, differenza, confronto, auditing, incoerenza, offerta vs bolla, bolla vs fattura | `discrepanze` |
@@ -196,9 +185,8 @@ Per **bolle collegate a fattura/offerta** (domanda 6): nell'app attuale non c'è
 ## VALORI DI DEFAULT PER `stato`
 
 Quando l'area è:
-- `fatture` e lo stato non è richiesto → `"Tutte"`
 - `offerte` e lo stato non è richiesto → `"Tutti"`
-- `bolle` o `discrepanze` → `"Tutte"` (campo ignorato dall'UI)
+- `bolle`, `fatture` o `discrepanze` → `""` (campo ignorato dall'UI)
 
 ---
 
@@ -216,16 +204,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-01-01",
     "data_fine": "{{OGGI}}",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Ho impostato la ricerca fatture per TAM dall'inizio del 2026 a oggi, senza filtro sullo stato di pagamento."
+  "messaggio": "Ho impostato la ricerca fatture per TAM dall'inizio del 2026 a oggi."
 }
 ```
 
-### Esempio 2 — Fatture aperte
-**Utente:** "Quali fatture del cliente TAM risultano ancora aperte / non pagate?"
+### Esempio 2 — Tutte le fatture di un cliente
+**Utente:** "Mostrami tutte le fatture del cliente TAM"
 
 ```json
 {
@@ -234,11 +221,10 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Aperta"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Filtro sulle fatture aperte (non pagate) di TAM, senza limiti di periodo."
+  "messaggio": "Elenco di tutte le fatture di TAM, senza limiti di periodo."
 }
 ```
 
@@ -252,8 +238,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-01-01",
     "data_fine": "2026-03-31",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "esegui_somma", "numero_documento": "" },
   "messaggio": "Elenco fatture TAM da gennaio a marzo 2026: i totali si ricavano sommando la colonna importo nei risultati (non c'è vista aggregata dedicata)."
@@ -270,8 +255,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "dettaglio_fattura", "numero_documento": "1207" },
   "messaggio": "Apro il dettaglio righe della disposizione/fattura 1207 (imponibile, righe collegate alle bolle)."
@@ -423,7 +407,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
 ```
 
 ### Esempio 11 — Export CSV
-**Utente:** "Generami un riepilogo esportabile delle fatture pagate di TAM a marzo 2026"
+**Utente:** "Generami un riepilogo esportabile delle fatture di TAM a marzo 2026"
 
 ```json
 {
@@ -432,11 +416,10 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-03-01",
     "data_fine": "2026-03-31",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Pagata"
+    "stagione": ""
   },
   "azione": { "tipo": "esporta_csv", "numero_documento": "" },
-  "messaggio": "Fatture pagate di TAM a marzo 2026; dopo la ricerca usa Esporta CSV per scaricare la tabella."
+  "messaggio": "Fatture di TAM a marzo 2026; dopo la ricerca usa Esporta CSV per scaricare la tabella."
 }
 ```
 
@@ -450,8 +433,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "SERIGRAFIA ROSSI",
-    "stagione": "PE2026",
-    "stato": "Tutte"
+    "stagione": "PE2026"
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
   "messaggio": "Fatture di Serigrafia Rossi associate alla stagione Primavera/Estate 2026."
@@ -494,8 +476,8 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
 }
 ```
 
-### Esempio 17 — Fatture pagate ultimo trimestre
-**Utente:** "Elenco fatture saldate di Tessitura Rossi nel secondo trimestre 2026"
+### Esempio 17 — Fatture ultimo trimestre
+**Utente:** "Elenco fatture di Tessitura Rossi nel secondo trimestre 2026"
 
 ```json
 {
@@ -504,11 +486,10 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-04-01",
     "data_fine": "2026-06-30",
     "cliente": "Tessitura Rossi",
-    "stagione": "",
-    "stato": "Pagata"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Fatture pagate di Tessitura Rossi da aprile a giugno 2026 (Q2)."
+  "messaggio": "Fatture di Tessitura Rossi da aprile a giugno 2026 (Q2)."
 }
 ```
 

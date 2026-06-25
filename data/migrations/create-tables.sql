@@ -71,19 +71,20 @@ CREATE TABLE ddt_righe (
     CONSTRAINT uq_ddt_righe UNIQUE (numero_bolla, riga_num)
 );
 
--- Invoices Tables
+-- Invoices Tables (disposition numbers are unique per customer, not globally)
 CREATE TABLE fatture_testate (
-    numero_disposizione VARCHAR(100) PRIMARY KEY,
-    data_fattura DATE NOT NULL,
     codice_cliente VARCHAR(50) NOT NULL REFERENCES clienti(codice),
+    numero_disposizione VARCHAR(100) NOT NULL,
+    data_fattura DATE NOT NULL,
     codice_stagione VARCHAR(50) REFERENCES stagioni(codice),
     importo_totale NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    stato_pagamento VARCHAR(50) NOT NULL DEFAULT 'Aperta'
+    PRIMARY KEY (codice_cliente, numero_disposizione)
 );
 
 CREATE TABLE fatture_righe (
     id SERIAL PRIMARY KEY,
-    numero_disposizione VARCHAR(100) NOT NULL REFERENCES fatture_testate(numero_disposizione) ON DELETE CASCADE,
+    codice_cliente VARCHAR(50) NOT NULL,
+    numero_disposizione VARCHAR(100) NOT NULL,
     riga_disposizione INTEGER NOT NULL,
     numero_bolla VARCHAR(100),
     codice_articolo VARCHAR(100) REFERENCES articoli(codice),
@@ -91,7 +92,10 @@ CREATE TABLE fatture_righe (
     kg_fatturati NUMERIC(10, 3) NOT NULL DEFAULT 0.000,
     capi_fatturati NUMERIC(10, 0) NOT NULL DEFAULT 0,
     importo_riga NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    CONSTRAINT uq_fatture_righe UNIQUE (numero_disposizione, riga_disposizione)
+    CONSTRAINT uq_fatture_righe UNIQUE (codice_cliente, numero_disposizione, riga_disposizione),
+    CONSTRAINT fatture_righe_fatture_testate_fkey
+        FOREIGN KEY (codice_cliente, numero_disposizione)
+        REFERENCES fatture_testate(codice_cliente, numero_disposizione) ON DELETE CASCADE
 );
 
 -- Indexes
