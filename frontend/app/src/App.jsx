@@ -855,17 +855,16 @@ function App() {
                   className="chat-suggestion-btn"
                   onClick={() =>
                     applyQuestionShortcut('offerte', {
-                      codice_cliente: '1283',
+                      codice_cliente: '1071',
                       stagione: 'PE2026',
                       data_inizio: '',
                       data_fine: '',
-                      stagione: '',
-                      stato: ''
+                      stato: 'Tutti'
                     })
                   }
                 >
                   <span className="chat-suggestion-num">7</span>
-                  “Cerca le offerte di Maglificio Rossi per la stagione PE 2026.”
+                  “Cerca le offerte di Zanuso per la stagione PE2026.”
                 </button>
                 <button
                   className="chat-suggestion-btn"
