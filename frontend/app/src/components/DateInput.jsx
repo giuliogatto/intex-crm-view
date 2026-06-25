@@ -52,9 +52,13 @@ function buildCalendarDays(viewDate) {
   return days
 }
 
+const MIN_YEAR = 1900
+const MAX_YEAR = 2100
+
 export default function DateInput({ name, value, onChange, placeholder = 'Seleziona data' }) {
   const [open, setOpen] = useState(false)
   const [viewDate, setViewDate] = useState(() => parseISO(value) || new Date())
+  const [yearInput, setYearInput] = useState(() => String((parseISO(value) || new Date()).getFullYear()))
   const [calendarStyle, setCalendarStyle] = useState({ top: 0, left: 0, width: 0 })
   const containerRef = useRef(null)
   const controlRef = useRef(null)
@@ -81,6 +85,10 @@ export default function DateInput({ name, value, onChange, placeholder = 'Selezi
       if (parsed) setViewDate(parsed)
     }
   }, [value])
+
+  useEffect(() => {
+    setYearInput(String(viewDate.getFullYear()))
+  }, [viewDate])
 
   useEffect(() => {
     if (!open) return undefined
@@ -131,6 +139,15 @@ export default function DateInput({ name, value, onChange, placeholder = 'Selezi
     setViewDate((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1))
   }
 
+  const commitYearInput = () => {
+    const year = Number(yearInput)
+    if (Number.isInteger(year) && year >= MIN_YEAR && year <= MAX_YEAR) {
+      setViewDate((prev) => new Date(year, prev.getMonth(), 1))
+    } else {
+      setYearInput(String(viewDate.getFullYear()))
+    }
+  }
+
   const selectedDate = parseISO(value)
   const todayISO = toISO(new Date())
   const calendarDays = buildCalendarDays(viewDate)
@@ -153,7 +170,23 @@ export default function DateInput({ name, value, onChange, placeholder = 'Selezi
           ‹
         </button>
         <span className="date-input__title">
-          {MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}
+          {MONTHS[viewDate.getMonth()]}
+          <input
+            type="text"
+            inputMode="numeric"
+            maxLength={4}
+            className="date-input__year"
+            value={yearInput}
+            onChange={(event) => setYearInput(event.target.value.replace(/\D/g, '').slice(0, 4))}
+            onBlur={commitYearInput}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                commitYearInput()
+              }
+            }}
+            aria-label="Anno"
+          />
         </span>
         <button type="button" className="date-input__nav" onClick={() => shiftMonth(1)} aria-label="Mese successivo">
           ›

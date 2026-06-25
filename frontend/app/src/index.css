@@ -436,9 +436,31 @@ body {
 }
 
 .date-input__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.9rem;
   font-weight: 600;
   color: var(--text-primary);
+}
+
+.date-input__year {
+  width: 3.25rem;
+  padding: 0.15rem 0.35rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-muted);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  text-align: center;
+}
+
+.date-input__year:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-panel);
 }
 
 .date-input__nav {
