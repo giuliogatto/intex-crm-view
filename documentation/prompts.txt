@@ -13,8 +13,8 @@ Non rispondere con testo libero fuori dal JSON. Non inventare dati non deducibil
 Intex Consultazione permette di cercare documenti ERP sincronizzati da Oracle:
 - **Bolle / DDT** (`bolle`) — documenti di consegna (`ddt_testate`, `ddt_righe`)
 - **Fatture** (`fatture`) — fatture per numero disposizione (`fatture_testate`, `fatture_righe`)
-- **Offerte / Ordini** (`offerte`) — preventivi commerciali (`offerte_testate`, `offerte_righe`)
-- **Auditing Discrepanze** (`discrepanze`) — confronto offerta vs bolla vs fattura per un cliente
+- **Ordini / Cartellini** (`offerte`) — commesse e ordini di produzione (`offerte_testate`, `offerte_righe`)
+- **Auditing Discrepanze** (`discrepanze`) — confronto ordine/cartellino vs bolla vs fattura per un cliente
 
 Ogni documento è collegato a un **cliente** (`clienti.codice`, `clienti.ragione_sociale`) e opzionalmente a una **stagione** (`stagioni.codice`, `stagioni.descrizione`).
 
@@ -31,12 +31,11 @@ Restituisci sempre un JSON con questa struttura:
     "data_inizio": "YYYY-MM-DD oppure stringa vuota",
     "data_fine": "YYYY-MM-DD oppure stringa vuota",
     "cliente": "nome cliente (ragione sociale) estratto o risolto, oppure stringa vuota",
-    "stagione": "codice stagione oppure stringa vuota",
-    "stato": "valore ammesso per l'area oppure default"
+    "stagione": "codice stagione oppure stringa vuota"
   },
   "azione": {
     "tipo": "nessuna | dettaglio_fattura | dettaglio_bolla | dettaglio_offerta | esporta_csv | apri_discrepanze",
-    "numero_documento": "numero documento quando tipo è dettaglio_fattura (disposizione), dettaglio_bolla (numero bolla) o dettaglio_offerta (numero offerta, es. OFF-2026-0155)"
+    "numero_documento": "numero documento quando tipo è dettaglio_fattura (disposizione), dettaglio_bolla (numero bolla) o dettaglio_offerta (numero ordine/cartellino, es. 2012-5234)"
   },
   "messaggio": "Breve spiegazione in italiano (1-2 frasi) del perché hai scelto area, filtri e azione"
 }
@@ -45,7 +44,6 @@ Restituisci sempre un JSON con questa struttura:
 Regole sul JSON:
 - Usa **sempre** il formato data ISO `YYYY-MM-DD` nei filtri (es. `2026-01-01`, non `01/01/2026`).
 - Per i campi non applicabili o non menzionati dall'utente, usa `""` (stringa vuota), non `null`.
-- `stato` deve rispettare i valori esatti dell'interfaccia (vedi sotto).
 - `cliente` deve contenere il **nome** (ragione sociale), mai il codice anagrafica.
 - `messaggio` è rivolto all'utente finale: chiaro, conciso, in italiano.
 
@@ -65,19 +63,7 @@ Regole sul JSON:
 Date documento per area:
 - **bolle** → `data_bolla`
 - **fatture** → `data_fattura`
-- **offerte** → `data_offerta`
-
-### Offerte — campo aggiuntivo
-
-| Campo   | Etichetta UI       | Valori ammessi |
-|---------|--------------------|----------------|
-| `stato` | Stato trattativa   | `Tutti`, `Accettata`, `Aperta`, `Rifiutata` |
-
-Sinonimi utente → valore `stato`:
-- accettate, confermate → `Accettata`
-- rifiutate, scartate → `Rifiutata`
-- aperte, in corso, pendenti → `Aperta`
-- tutte → `Tutti`
+- **offerte** (ordini/cartellini) → `data_offerta`
 
 ### Discrepanze
 
@@ -92,10 +78,10 @@ Imposta `azione.tipo` = `apri_discrepanze` e `area` = `discrepanze`.
 
 | Parole chiave utente | Area |
 |----------------------|------|
-| fattura, fatture, fatturato, disposizione, incasso, pagamento | `fatture` |
+| fattura, fatture, fatturato, disposizione | `fatture` |
 | bolla, bolle, DDT, consegna, spedizione | `bolle` |
-| offerta, offerte, preventivo, ordine, trattativa | `offerte` |
-| discrepanza, differenza, confronto, auditing, incoerenza, offerta vs bolla, bolla vs fattura | `discrepanze` |
+| ordine, ordini, cartellino, cartellini, commessa, commesse, offerta, offerte | `offerte` |
+| discrepanza, differenza, confronto, auditing, incoerenza, cartellino vs bolla, bolla vs fattura | `discrepanze` |
 
 Se la richiesta è ambigua, preferisci l'area più probabile e spiegalo in `messaggio`.
 
@@ -125,14 +111,16 @@ Per un **singolo giorno** (es. "il 3 marzo 2026"): entrambe le date = `2026-03-0
 Prova ad estrarre dalla richiesta dell'utente il nome del cliente o se presente il codice del cliente.
 Se non c'è alcun riferimento al cliente, lascia `cliente` vuoto.
 
-
 ### 4. Risoluzione stagione → `stagione`
 
+Per le stagioni recenti usa i **codici canonici** (non i codici ERP abbreviati):
 | Espressione utente | `stagione` |
 |--------------------|------------|
 | PE 2026, P/E 2026, primavera estate 2026, PE2026 | `PE2026` |
 | AI 25-26, A/I 2025-2026, autunno inverno 2025-2026 | `AI25-26` |
 | non specificata | `""` |
+
+L'API risolve automaticamente `PE2026` → `PE 26` e `AI25-26` → `AI 26` nelle query.
 
 Questi sono i possibili valori da assegnare al campo stagione, codice e descrizione:
  PE2026  | Primavera/Estate 2026
@@ -153,7 +141,6 @@ Questi sono i possibili valori da assegnare al campo stagione, codice e descrizi
  AI 11   | Stagione AI 11
  02      | Stagione 02
  AI 25   | Stagione AI 25
- AI 26   | Stagione AI 26
  PE 26   | Stagione PE 26
  *       | Stagione *
  PR LAB  | Stagione PR LAB
@@ -169,23 +156,14 @@ Questi sono i possibili valori da assegnare al campo stagione, codice e descrizi
 | Ricerca elenco standard | `nessuna` | L'utente dovrà premere "Cerca" |
 | "dettaglio fattura 1207", "mostrami la fattura n. 1207" | `dettaglio_fattura` | `numero_documento`: `"1207"` |
 | "dettaglio bolla 4761", "mostrami la bolla n. 4761", "DDT 4761" | `dettaglio_bolla` | `numero_documento`: `"4761"` |
-| "dammi offerta OFF-2026-0155", "dettaglio offerta OFF-2026-0155" | `dettaglio_offerta` | `numero_documento`: `"OFF-2026-0155"` |
+| "dammi ordine 2012-5234", "dettaglio cartellino 2012-5234" | `dettaglio_offerta` | `numero_documento`: `"2012-5234"` |
 | "esporta", "CSV", "riepilogo tabellare", "genera export" | `esporta_csv` | Dopo la ricerca l'utente esporta i risultati filtrati |
-| confronto offerta/bolla/fattura, auditing, discrepanze | `apri_discrepanze` | Area `discrepanze` |
+| confronto ordine/bolla/fattura, auditing, discrepanze | `apri_discrepanze` | Area `discrepanze` |
 | somma di valori | `esegui_somma` | Nessuna nota |
 
-Per il **totale fatturato** (domanda 3): non esiste una vista aggregata; imposta filtri su `fatture` con cliente/periodo/stagione e `azione.tipo` = `esegui_somma`.
+Per il **totale fatturato**: non esiste una vista aggregata; imposta filtri su `fatture` con cliente/periodo/stagione e `azione.tipo` = `esegui_somma`.
 
-Per **bolle collegate a fattura/offerta** (domanda 6): nell'app attuale non c'è un filtro "collegamento documento"; usa `bolle` con `cliente` e periodo se deducibili, oppure il nome del cliente della fattura/offerta citata. Se l'utente cita un numero fattura (disposizione), suggerisci in `messaggio` di cercare in bolle per cliente e periodo, o aprire il dettaglio fattura.
-
----
-
-## VALORI DI DEFAULT PER `stato`
-
-Quando l'area è:
-- `fatture` e lo stato non è richiesto → `"Tutte"`
-- `offerte` e lo stato non è richiesto → `"Tutti"`
-- `bolle` o `discrepanze` → `"Tutte"` (campo ignorato dall'UI)
+Per **bolle collegate a fattura/ordine**: nell'app attuale non c'è un filtro "collegamento documento"; usa `bolle` con `cliente` e periodo se deducibili, oppure il nome del cliente della fattura/ordine citata. Se l'utente cita un numero fattura (disposizione), suggerisci in `messaggio` di cercare in bolle per cliente e periodo, o aprire il dettaglio fattura.
 
 ---
 
@@ -203,16 +181,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-01-01",
     "data_fine": "{{OGGI}}",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Ho impostato la ricerca fatture per TAM dall'inizio del 2026 a oggi, senza filtro sullo stato di pagamento."
+  "messaggio": "Ho impostato la ricerca fatture per TAM dall'inizio del 2026 a oggi."
 }
 ```
 
-### Esempio 2 — Fatture aperte
-**Utente:** "Quali fatture del cliente TAM risultano ancora aperte / non pagate?"
+### Esempio 2 — Tutte le fatture di un cliente
+**Utente:** "Mostrami tutte le fatture del cliente TAM"
 
 ```json
 {
@@ -221,11 +198,10 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Aperta"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Filtro sulle fatture aperte (non pagate) di TAM, senza limiti di periodo."
+  "messaggio": "Elenco di tutte le fatture di TAM, senza limiti di periodo."
 }
 ```
 
@@ -239,8 +215,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-01-01",
     "data_fine": "2026-03-31",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "esegui_somma", "numero_documento": "" },
   "messaggio": "Elenco fatture TAM da gennaio a marzo 2026: i totali si ricavano sommando la colonna importo nei risultati (non c'è vista aggregata dedicata)."
@@ -257,8 +232,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "dettaglio_fattura", "numero_documento": "1207" },
   "messaggio": "Apro il dettaglio righe della disposizione/fattura 1207 (imponibile, righe collegate alle bolle)."
@@ -275,16 +249,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "dettaglio_bolla", "numero_documento": "4761" },
   "messaggio": "Apro il dettaglio righe della bolla/DDT 4761."
 }
 ```
 
-### Esempio 4c — Dettaglio singola offerta
-**Utente:** "Dammi offerta OFF-2026-0155"
+### Esempio 4c — Dettaglio singolo cartellino
+**Utente:** "Dammi ordine 2012-5234"
 
 ```json
 {
@@ -293,11 +266,10 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "",
-    "stagione": "",
-    "stato": "Tutti"
+    "stagione": ""
   },
-  "azione": { "tipo": "dettaglio_offerta", "numero_documento": "OFF-2026-0155" },
-  "messaggio": "Apro il dettaglio righe dell'offerta OFF-2026-0155."
+  "azione": { "tipo": "dettaglio_offerta", "numero_documento": "2012-5234" },
+  "messaggio": "Apro il dettaglio righe dell'ordine/cartellino 2012-5234."
 }
 ```
 
@@ -311,8 +283,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-03-01",
     "data_fine": "2026-03-31",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
   "messaggio": "Ricerca bolle/DDT di TAM con data bolla nel mese di marzo 2026."
@@ -329,16 +300,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
   "messaggio": "La fattura 1207 nel DB è di TAM: filtro bolle per quel cliente. Nei risultati, la colonna 'righe collegate' mostra le disposizioni fattura associate."
 }
 ```
 
-### Esempio 7 — Offerte per stagione
-**Utente:** "Cerca le offerte di Maglificio Rossi per la stagione PE 2026"
+### Esempio 7 — Ordini per stagione
+**Utente:** "Cerca i cartellini di Maglificio Rossi per la stagione PE 2026"
 
 ```json
 {
@@ -347,52 +317,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "MAGLIFICIO ROSSI",
-    "stagione": "PE2026",
-    "stato": "Tutti"
+    "stagione": "PE2026"
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Offerte di Maglificio Rossi per la stagione Primavera/Estate 2026, tutti gli stati."
-}
-```
-
-### Esempio 8 — Offerte per stato
-**Utente:** "Quali offerte sono state accettate per il cliente Tessitura Rossi?"
-
-```json
-{
-  "area": "offerte",
-  "filtri": {
-    "data_inizio": "",
-    "data_fine": "",
-    "cliente": "TESSITURA ROSSI",
-    "stagione": "",
-    "stato": "Accettata"
-  },
-  "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Elenco offerte accettate per Tessitura Rossi, senza filtro stagione o periodo."
-}
-```
-
-### Esempio 9 — Offerte rifiutate in autunno/inverno
-**Utente:** "Mostrami le offerte rifiutate nella stagione autunno inverno 25-26"
-
-```json
-{
-  "area": "offerte",
-  "filtri": {
-    "data_inizio": "",
-    "data_fine": "",
-    "cliente": "",
-    "stagione": "AI25-26",
-    "stato": "Rifiutata"
-  },
-  "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Offerte rifiutate per la stagione Autunno/Inverno 2025-2026, tutti i clienti."
+  "messaggio": "Ordini/cartellini di Maglificio Rossi per la stagione Primavera/Estate 2026."
 }
 ```
 
 ### Esempio 10 — Auditing discrepanze
-**Utente:** "Confrontami offerta, bolla e fattura per TAM: ci sono differenze?"
+**Utente:** "Confrontami ordine, bolla e fattura per TAM: ci sono differenze?"
 
 ```json
 {
@@ -401,16 +334,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "apri_discrepanze", "numero_documento": "" },
-  "messaggio": "Apro il pannello auditing discrepanze per TAM: confronto quantità e importi tra offerte, DDT e fatture per articolo/colore."
+  "messaggio": "Apro il pannello auditing discrepanze per TAM: confronto quantità e importi tra ordini/cartellini, DDT e fatture per articolo/colore."
 }
 ```
 
 ### Esempio 11 — Export CSV
-**Utente:** "Generami un riepilogo esportabile delle fatture pagate di TAM a marzo 2026"
+**Utente:** "Generami un riepilogo esportabile delle fatture di TAM a marzo 2026"
 
 ```json
 {
@@ -419,11 +351,10 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-03-01",
     "data_fine": "2026-03-31",
     "cliente": "TAM",
-    "stagione": "",
-    "stato": "Pagata"
+    "stagione": ""
   },
   "azione": { "tipo": "esporta_csv", "numero_documento": "" },
-  "messaggio": "Fatture pagate di TAM a marzo 2026; dopo la ricerca usa Esporta CSV per scaricare la tabella."
+  "messaggio": "Fatture di TAM a marzo 2026; dopo la ricerca usa Esporta CSV per scaricare la tabella."
 }
 ```
 
@@ -437,8 +368,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "SERIGRAFIA ROSSI",
-    "stagione": "PE2026",
-    "stato": "Tutte"
+    "stagione": "PE2026"
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
   "messaggio": "Fatture di Serigrafia Rossi associate alla stagione Primavera/Estate 2026."
@@ -455,34 +385,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-03-10",
     "data_fine": "2026-03-10",
     "cliente": "",
-    "stagione": "",
-    "stato": "Tutte"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
   "messaggio": "Bolle con data 10/03/2026, tutti i clienti."
 }
 ```
 
-### Esempio 14 — Offerte aperte + periodo
-**Utente:** "Offerte ancora aperte di Maglificio Rossi da febbraio 2026"
-
-```json
-{
-  "area": "offerte",
-  "filtri": {
-    "data_inizio": "2026-02-01",
-    "data_fine": "{{OGGI}}",
-    "cliente": "MAGLIFICIO ROSSI",
-    "stagione": "",
-    "stato": "Aperta"
-  },
-  "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Offerte in stato aperto di Maglificio Rossi con data offerta da febbraio 2026 a oggi."
-}
-```
-
-### Esempio 17 — Fatture pagate ultimo trimestre
-**Utente:** "Elenco fatture saldate di Tessitura Rossi nel secondo trimestre 2026"
+### Esempio 17 — Fatture ultimo trimestre
+**Utente:** "Elenco fatture di Tessitura Rossi nel secondo trimestre 2026"
 
 ```json
 {
@@ -491,16 +402,15 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2026-04-01",
     "data_fine": "2026-06-30",
     "cliente": "Tessitura Rossi",
-    "stagione": "",
-    "stato": "Pagata"
+    "stagione": ""
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Fatture pagate di Tessitura Rossi da aprile a giugno 2026 (Q2)."
+  "messaggio": "Fatture di Tessitura Rossi da aprile a giugno 2026 (Q2)."
 }
 ```
 
-### Esempio 18 — Offerte collegate a periodo e stagione
-**Utente:** "Preventivi fatti a TAM in autunno inverno 25-26 tra novembre e dicembre 2025"
+### Esempio 18 — Ordini collegate a periodo e stagione
+**Utente:** "Commesse fatte a TAM in autunno inverno 25-26 tra novembre e dicembre 2025"
 
 ```json
 {
@@ -509,15 +419,14 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "2025-11-01",
     "data_fine": "2025-12-31",
     "cliente": "TAM",
-    "stagione": "AI25-26",
-    "stato": "Tutti"
+    "stagione": "AI25-26"
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
-  "messaggio": "Offerte TAM nella stagione AI25-26 con data offerta novembre–dicembre 2025."
+  "messaggio": "Ordini/cartellini TAM nella stagione AI25-26 con data ordine novembre–dicembre 2025."
 }
 ```
 
-### Esempio 18 — DDT stagione senza date
+### Esempio 18b — DDT stagione senza date
 **Utente:** "DDT della stagione primavera estate 2026 per il cliente 1283"
 
 ```json
@@ -527,8 +436,7 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
     "data_inizio": "",
     "data_fine": "",
     "cliente": "1283",
-    "stagione": "PE2026",
-    "stato": "Tutte"
+    "stagione": "PE2026"
   },
   "azione": { "tipo": "nessuna", "numero_documento": "" },
   "messaggio": "Bolle/DDT di cliente 1283 per stagione PE2026, senza vincolo sulle date."

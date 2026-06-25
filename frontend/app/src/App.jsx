@@ -36,8 +36,7 @@ function App() {
     data_inizio: '',
     data_fine: '',
     codice_cliente: '',
-    stagione: '',
-    stato: ''
+    stagione: ''
   })
   const [discrepancyCustomer, setDiscrepancyCustomer] = useState('')
   const [pendingExport, setPendingExport] = useState(false)
@@ -71,10 +70,6 @@ function App() {
     if (filters.data_fine) params.append('data_fine', filters.data_fine)
     if (filters.codice_cliente) params.append('codice_cliente', filters.codice_cliente)
     if (filters.stagione) params.append('stagione', filters.stagione)
-    
-    if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') {
-      params.append('stato', filters.stato)
-    }
 
     params.append('page', page)
     params.append('limit', LIST_PAGE_SIZE)
@@ -111,9 +106,7 @@ function App() {
       return
     }
 
-    const tabFilters = tab !== activeTab
-      ? { ...currentFilters, stato: tab === 'offerte' ? 'Tutti' : '' }
-      : currentFilters
+    const tabFilters = currentFilters
 
     setData([])
     setListPage(1)
@@ -255,9 +248,6 @@ function App() {
     if (filters.data_fine) params.append('data_fine', filters.data_fine)
     if (filters.codice_cliente) params.append('codice_cliente', filters.codice_cliente)
     if (filters.stagione) params.append('stagione', filters.stagione)
-    if (tab === 'offerte' && filters.stato && filters.stato !== 'Tutti') {
-      params.append('stato', filters.stato)
-    }
     return params
   }
 
@@ -290,9 +280,9 @@ function App() {
         csvContent += `"${row.numero_disposizione}","${row.data}","${row.cliente}","${row.codice_cliente}",${row.importo_documento}\n`
       })
     } else if (activeTab === 'offerte') {
-      csvContent += 'N. offerta,Data,Cliente,Codice Cliente,Stagione,Importo,Stato\n'
+      csvContent += 'N. Ordine/Cartellino,Data,Cliente,Codice Cliente,Stagione,Importo\n'
       data.forEach((row) => {
-        csvContent += `"${row.numero_offerta}","${row.data}","${row.cliente}","${row.codice_cliente}","${row.stagione}",${row.importo},"${row.stato}"\n`
+        csvContent += `"${row.numero_offerta}","${row.data}","${row.cliente}","${row.codice_cliente}","${row.stagione}",${row.importo}\n`
       })
     }
 
@@ -358,8 +348,7 @@ function App() {
       data_inizio: replaceOggiPlaceholder(filtri.data_inizio || ''),
       data_fine: replaceOggiPlaceholder(filtri.data_fine || ''),
       codice_cliente: '',
-      stagione: filtri.stagione || '',
-      stato: filtri.stato || (tab === 'offerte' ? 'Tutti' : '')
+      stagione: filtri.stagione || ''
     }
 
     const llmCliente = filtri.cliente?.trim() || ''
@@ -552,7 +541,7 @@ function App() {
           className={`nav-tab ${activeTab === 'offerte' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('offerte')}
         >
-          📋 Offerte / Ordini
+          📋 Ordini / Cartellino
         </button>
         <button
           className={`nav-tab ${activeTab === 'discrepanze' ? 'is-active' : ''}`}
@@ -705,7 +694,7 @@ function App() {
           {selectedOffertaId && offertaDetail?.header && (
             <div className="panel">
               <div className="panel__head">
-                <span>Dettaglio Offerta — N. {offertaDetail.header.numero_offerta}</span>
+                <span>Dettaglio Ordine/Cartellino — N. {offertaDetail.header.numero_offerta}</span>
                 <button className="btn" onClick={() => setSelectedOffertaId(null)}>Chiudi Dettaglio</button>
               </div>
               <div className="panel__body">
@@ -715,7 +704,7 @@ function App() {
                     <span className="detail-info-item__value">{offertaDetail.header.cliente} ({offertaDetail.header.codice_cliente})</span>
                   </div>
                   <div className="detail-info-item">
-                    <span className="detail-info-item__label">Data Offerta</span>
+                    <span className="detail-info-item__label">Data Ordine</span>
                     <span className="detail-info-item__value">{offertaDetail.header.data}</span>
                   </div>
                   <div className="detail-info-item">
@@ -725,12 +714,6 @@ function App() {
                   <div className="detail-info-item">
                     <span className="detail-info-item__label">Totale Documento</span>
                     <span className="detail-info-item__value">{formatEuro(offertaDetail.header.importo_totale)}</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Stato</span>
-                    <span className={`pill pill--${offertaDetail.header.stato.toLowerCase()}`} style={{ marginTop: '0.2rem' }}>
-                      {offertaDetail.header.stato}
-                    </span>
                   </div>
                 </div>
 
@@ -854,13 +837,12 @@ function App() {
                       codice_cliente: '1071',
                       stagione: 'PE2026',
                       data_inizio: '',
-                      data_fine: '',
-                      stato: 'Tutti'
+                      data_fine: ''
                     })
                   }
                 >
                   <span className="chat-suggestion-num">7</span>
-                  “Cerca le offerte di Zanuso per la stagione PE2026.”
+                  “Cerca i cartellini di Zanuso per la stagione PE2026.”
                 </button>
                 <button
                   className="chat-suggestion-btn"
@@ -871,7 +853,7 @@ function App() {
                   }
                 >
                   <span className="chat-suggestion-num">9</span>
-                  “Confrontami offerta, bolla e fattura per verificare differenze di Prima Srl.”
+                  “Confrontami ordine, bolla e fattura per verificare differenze di Prima Srl.”
                 </button>
               </div>
             </div>

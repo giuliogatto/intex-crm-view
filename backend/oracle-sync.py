@@ -201,8 +201,8 @@ class OracleSyncProcess:
             return
 
         header_query = """
-            INSERT INTO offerte_testate (numero_offerta, data_offerta, codice_cliente, codice_stagione, importo_totale, stato)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO offerte_testate (numero_offerta, data_offerta, codice_cliente, codice_stagione, importo_totale)
+            VALUES (%s, %s, %s, %s, %s)
             ON CONFLICT (numero_offerta) DO UPDATE SET
                 data_offerta = LEAST(offerte_testate.data_offerta, EXCLUDED.data_offerta),
                 codice_cliente = EXCLUDED.codice_cliente,
@@ -216,7 +216,6 @@ class OracleSyncProcess:
                 header["codice_cliente"],
                 header.get("codice_stagione"),
                 header["importo_totale"],
-                header.get("stato", "Accettata"),
             ))
 
         line_query = """
@@ -299,7 +298,6 @@ class OracleSyncProcess:
                 "codice_cliente": codice_cliente,
                 "codice_stagione": codice_stagione,
                 "importo_totale": importo_riga,
-                "stato": "Accettata",
             }
         else:
             if data_offerta < existing_header["data_offerta"]:

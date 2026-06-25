@@ -9,8 +9,7 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
     data_inizio: '',
     data_fine: '',
     codice_cliente: '',
-    stagione: '',
-    stato: ''
+    stagione: ''
   })
 
   useEffect(() => {
@@ -28,14 +27,6 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
       .catch((err) => console.error('Error fetching seasons:', err))
   }, [])
 
-  // Reset status value when activeTab changes
-  useEffect(() => {
-    setFilters(prev => ({
-      ...prev,
-      stato: activeTab === 'offerte' ? 'Tutti' : ''
-    }))
-  }, [activeTab])
-
   const handleChange = (e) => {
     const { name, value } = e.target
     setFilters((prev) => ({ ...prev, [name]: value }))
@@ -51,8 +42,7 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
       data_inizio: '',
       data_fine: '',
       codice_cliente: '',
-      stagione: '',
-      stato: activeTab === 'offerte' ? 'Tutti' : ''
+      stagione: ''
     }
     setFilters(cleared)
     onSearch(cleared)
@@ -100,18 +90,6 @@ export default function Filters({ activeTab, onSearch, onExport, onExportPDF, fi
             ))}
           </select>
         </div>
-
-        {activeTab === 'offerte' && (
-          <div className="field">
-            <label>Stato trattativa</label>
-            <select name="stato" value={filters.stato} onChange={handleChange}>
-              <option value="Tutti">Tutti</option>
-              <option value="Accettata">Accettate</option>
-              <option value="Aperta">Aperte</option>
-              <option value="Rifiutata">Rifiutate</option>
-            </select>
-          </div>
-        )}
       </div>
 
       <div className="actions-bar">

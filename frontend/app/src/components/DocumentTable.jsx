@@ -101,12 +101,11 @@ export default function DocumentTable({ activeTab, data, totals, onViewDetail, o
         <table className="data">
           <thead>
             <tr>
-              <th>N. offerta</th>
+              <th>N. Ordine/Cartellino</th>
               <th>Data</th>
               <th>Cliente</th>
               <th>Stagione</th>
               <th>Importo</th>
-              <th>Stato</th>
               <th></th>
             </tr>
           </thead>
@@ -120,11 +119,6 @@ export default function DocumentTable({ activeTab, data, totals, onViewDetail, o
                 </td>
                 <td>{item.stagione}</td>
                 <td>{formatEuro(item.importo)}</td>
-                <td>
-                  <span className={`pill pill--${(item.stato ?? '').toLowerCase()}`}>
-                    {item.stato ?? '—'}
-                  </span>
-                </td>
                 <td>
                   <span
                     className="table-link"
@@ -141,7 +135,7 @@ export default function DocumentTable({ activeTab, data, totals, onViewDetail, o
               <tr className="table-totals-row">
                 <td colSpan={4}><strong>Totale</strong></td>
                 <td><strong>{formatEuro(totals.importo)}</strong></td>
-                <td colSpan={2}></td>
+                <td></td>
               </tr>
             </tfoot>
           )}

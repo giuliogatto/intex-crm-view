@@ -62,7 +62,6 @@ def _list_filters():
         'codice_cliente': request.query.get('codice_cliente'),
         'ragione_sociale': request.query.get('ragione_sociale'),
         'stagione': request.query.get('stagione'),
-        'stato': request.query.get('stato'),
     }
 
 
@@ -87,10 +86,6 @@ def _filters_are_active(filters, tab=None):
         return True
     if filters.get('stagione'):
         return True
-    stato = filters.get('stato')
-    if stato:
-        if tab == 'offerte' and stato != 'Tutti':
-            return True
     return False
 
 
@@ -609,9 +604,6 @@ def _offerte_from_where(filters):
         query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
         params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
     query, params = apply_stagione_filter(query, params, filters, "o.codice_stagione")
-    if filters['stato'] and filters['stato'] != '' and filters['stato'] != 'Tutti':
-        query += " AND o.stato = %(stato)s"
-        params['stato'] = filters['stato']
 
     return query, params
 
@@ -626,7 +618,7 @@ def _fetch_offerte(cursor, filters, limit=None, offset=0):
     from_where, params = _offerte_from_where(filters)
     query = f"""
         SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
-               c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
+               c.ragione_sociale, c.codice as codice_cliente, o.importo_totale,
                o.codice_stagione
         {from_where}
         ORDER BY o.data_offerta DESC, o.numero_offerta DESC
@@ -644,8 +636,7 @@ def _fetch_offerte(cursor, filters, limit=None, offset=0):
             "cliente": r[2],
             "codice_cliente": r[3],
             "importo": float(r[4]),
-            "stato": r[5],
-            "stagione": stagione_display_label(r[6]),
+            "stagione": stagione_display_label(r[5]),
         }
         for r in rows
     ]
@@ -679,7 +670,7 @@ def get_offerta_detail(id):
 
         header_query = """
             SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
-                   c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
+                   c.ragione_sociale, c.codice as codice_cliente, o.importo_totale,
                    o.codice_stagione
             FROM offerte_testate o
             JOIN clienti c ON o.codice_cliente = c.codice
@@ -711,8 +702,7 @@ def get_offerta_detail(id):
             "cliente": header_row[2],
             "codice_cliente": header_row[3],
             "importo_totale": float(header_row[4]),
-            "stato": header_row[5],
-            "stagione": stagione_display_label(header_row[6]),
+            "stagione": stagione_display_label(header_row[5]),
         }
 
         lines = [
@@ -742,7 +732,7 @@ def export_offerte_pdf():
         cursor.close()
         db_pool.release_conn(conn)
 
-        headers = ['N. offerta', 'Data', 'Cliente', 'Codice Cliente', 'Stagione', 'Importo', 'Stato']
+        headers = ['N. Ordine/Cartellino', 'Data', 'Cliente', 'Codice Cliente', 'Stagione', 'Importo']
         rows = [
             [
                 o['numero_offerta'],
@@ -751,11 +741,10 @@ def export_offerte_pdf():
                 o['codice_cliente'],
                 o['stagione'],
                 _format_euro(o['importo']),
-                o['stato'],
             ]
             for o in offerte
         ]
-        pdf_bytes = build_pdf('Offerte / Ordini — Esportazione', headers, rows)
+        pdf_bytes = build_pdf('Ordini / Cartellini — Esportazione', headers, rows)
         return _pdf_response(pdf_bytes, 'offerte_esportazione.pdf')
     except Exception as e:
         response.status = 500

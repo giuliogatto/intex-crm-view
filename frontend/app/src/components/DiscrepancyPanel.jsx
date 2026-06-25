@@ -74,7 +74,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
     <div className="panel">
       {exportingPDF && <LoadingOverlay />}
       <div className="panel__head">
-        <span>Auditing Confronto (Offerta vs DDT vs Fattura)</span>
+        <span>Auditing Confronto (Ordine/Cartellino vs DDT vs Fattura)</span>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button className="btn" onClick={exportCSV} disabled={discrepanze.length === 0}>
             Esporta Report CSV
@@ -120,7 +120,7 @@ export default function DiscrepancyPanel({ selectedCustomer: customerProp, onCus
               <thead>
                 <tr>
                   <th rowspan="2">Articolo / Colore</th>
-                  <th colspan="1" className="table-col--a" style={{ textAlign: 'center' }}>Preventivato (Offerta)</th>
+                  <th colspan="1" className="table-col--a" style={{ textAlign: 'center' }}>Ordinato (Cartellino)</th>
                   <th colspan="2" className="table-col--b" style={{ textAlign: 'center' }}>Consegnato (DDT)</th>
                   <th colspan="3" className="table-col--a" style={{ textAlign: 'center' }}>Fatturato (Fattura)</th>
                   <th colspan="1" className="table-col--b" style={{ textAlign: 'center' }}>

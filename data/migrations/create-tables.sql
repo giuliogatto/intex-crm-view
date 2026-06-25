@@ -32,8 +32,7 @@ CREATE TABLE offerte_testate (
     data_offerta DATE NOT NULL,
     codice_cliente VARCHAR(50) NOT NULL REFERENCES clienti(codice),
     codice_stagione VARCHAR(50) REFERENCES stagioni(codice),
-    importo_totale NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    stato VARCHAR(50) NOT NULL DEFAULT 'Aperta'
+    importo_totale NUMERIC(12, 2) NOT NULL DEFAULT 0.00
 );
 
 CREATE TABLE offerte_righe (
