@@ -7,6 +7,7 @@ from auth import authenticate_user, create_token, get_current_user, hash_passwor
 from prompts import genericPrompt, replace_oggi_placeholder
 from LLMservice import send_prompt, get_model_name
 from pdf_export import build_pdf
+from stagioni_aliases import apply_stagione_filter, build_stagioni_api_list, stagione_display_label
 
 app = Bottle()
 db_pool = DatabasePool()
@@ -231,7 +232,7 @@ def get_stagioni():
         cursor.close()
         db_pool.release_conn(conn)
 
-        stagioni = [{"codice": r[0], "descrizione": r[1]} for r in rows]
+        stagioni = build_stagioni_api_list(rows)
         return {"total": len(stagioni), "data": stagioni}
     except Exception as e:
         response.status = 500
@@ -258,9 +259,7 @@ def _bolle_from_where(filters):
     if filters['ragione_sociale'] and filters['ragione_sociale'] != '':
         query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
         params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
-    if filters['stagione'] and filters['stagione'] != '':
-        query += " AND d.codice_stagione ILIKE %(stagione)s"
-        params['stagione'] = f"%{filters['stagione']}%"
+    query, params = apply_stagione_filter(query, params, filters, "d.codice_stagione")
 
     return query, params
 
@@ -422,9 +421,7 @@ def _fatture_from_where(filters):
     if filters['ragione_sociale'] and filters['ragione_sociale'] != '':
         query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
         params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
-    if filters['stagione'] and filters['stagione'] != '':
-        query += " AND f.codice_stagione ILIKE %(stagione)s"
-        params['stagione'] = f"%{filters['stagione']}%"
+    query, params = apply_stagione_filter(query, params, filters, "f.codice_stagione")
     if filters['stato'] and filters['stato'] != '' and filters['stato'] != 'Tutte':
         query += " AND f.stato_pagamento = %(stato)s"
         params['stato'] = filters['stato']
@@ -598,9 +595,7 @@ def _offerte_from_where(filters):
     if filters['ragione_sociale'] and filters['ragione_sociale'] != '':
         query += " AND c.ragione_sociale ILIKE %(ragione_sociale)s"
         params['ragione_sociale'] = f"%{filters['ragione_sociale']}%"
-    if filters['stagione'] and filters['stagione'] != '':
-        query += " AND o.codice_stagione ILIKE %(stagione)s"
-        params['stagione'] = f"%{filters['stagione']}%"
+    query, params = apply_stagione_filter(query, params, filters, "o.codice_stagione")
     if filters['stato'] and filters['stato'] != '' and filters['stato'] != 'Tutti':
         query += " AND o.stato = %(stato)s"
         params['stato'] = filters['stato']
@@ -619,7 +614,7 @@ def _fetch_offerte(cursor, filters, limit=None, offset=0):
     query = f"""
         SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
                c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
-               COALESCE((SELECT descrizione FROM stagioni WHERE codice = o.codice_stagione), o.codice_stagione) as stagione_desc
+               o.codice_stagione
         {from_where}
         ORDER BY o.data_offerta DESC, o.numero_offerta DESC
     """
@@ -637,7 +632,7 @@ def _fetch_offerte(cursor, filters, limit=None, offset=0):
             "codice_cliente": r[3],
             "importo": float(r[4]),
             "stato": r[5],
-            "stagione": r[6],
+            "stagione": stagione_display_label(r[6]),
         }
         for r in rows
     ]
@@ -672,7 +667,7 @@ def get_offerta_detail(id):
         header_query = """
             SELECT o.numero_offerta, TO_CHAR(o.data_offerta, 'DD/MM/YYYY') as data_offerta,
                    c.ragione_sociale, c.codice as codice_cliente, o.importo_totale, o.stato,
-                   COALESCE((SELECT descrizione FROM stagioni WHERE codice = o.codice_stagione), o.codice_stagione) as stagione
+                   o.codice_stagione
             FROM offerte_testate o
             JOIN clienti c ON o.codice_cliente = c.codice
             WHERE o.numero_offerta = %(numero_offerta)s
@@ -704,7 +699,7 @@ def get_offerta_detail(id):
             "codice_cliente": header_row[3],
             "importo_totale": float(header_row[4]),
             "stato": header_row[5],
-            "stagione": header_row[6],
+            "stagione": stagione_display_label(header_row[6]),
         }
 
         lines = [

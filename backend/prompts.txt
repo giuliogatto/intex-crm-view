@@ -139,11 +139,14 @@ Se non c'è alcun riferimento al cliente, lascia `cliente` vuoto.
 
 ### 4. Risoluzione stagione → `stagione`
 
+Per le stagioni recenti usa i **codici canonici** (non i codici ERP abbreviati):
 | Espressione utente | `stagione` |
 |--------------------|------------|
 | PE 2026, P/E 2026, primavera estate 2026, PE2026 | `PE2026` |
 | AI 25-26, A/I 2025-2026, autunno inverno 2025-2026 | `AI25-26` |
 | non specificata | `""` |
+
+L'API risolve automaticamente `PE2026` → `PE 26` e `AI25-26` → `AI 26` nelle query.
 
 Questi sono i possibili valori da assegnare al campo stagione, codice e descrizione:
  PE2026  | Primavera/Estate 2026
@@ -164,7 +167,6 @@ Questi sono i possibili valori da assegnare al campo stagione, codice e descrizi
  AI 11   | Stagione AI 11
  02      | Stagione 02
  AI 25   | Stagione AI 25
- AI 26   | Stagione AI 26
  PE 26   | Stagione PE 26
  *       | Stagione *
  PR LAB  | Stagione PR LAB
