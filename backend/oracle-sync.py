@@ -94,6 +94,107 @@ class OracleSyncProcess:
         nr_bolla_cli = str(item.get('ew1_nr_bolla_cli') or '').strip()
         return nr_bolla_cli or None
 
+    @staticmethod
+    def _extract_stagione_code(item):
+        for key in ('ew2_cd_stagione', 'ew1_cd_stagione'):
+            val = item.get(key)
+            if val:
+                code = str(val).strip()
+                if code:
+                    return code
+        return None
+
+    @staticmethod
+    def _extract_stagione_descrizione(item, codice):
+        desc = item.get('z11_ds_stagione')
+        if desc:
+            text = str(desc).strip()
+            if text:
+                return text
+        return f"Stagione {codice}"
+
+    def _upsert_stagione(self, cursor, codice, descrizione=None):
+        if not codice:
+            return
+        desc = descrizione or f"Stagione {codice}"
+        cursor.execute(
+            """
+            INSERT INTO stagioni (codice, descrizione)
+            VALUES (%s, %s)
+            ON CONFLICT (codice) DO UPDATE SET
+                descrizione = CASE
+                    WHEN stagioni.descrizione LIKE 'Stagione %%' THEN EXCLUDED.descrizione
+                    ELSE stagioni.descrizione
+                END
+            """,
+            (codice, desc),
+        )
+
+    def _apply_bolla_stagioni(self, cursor, bolla_stagioni):
+        if not bolla_stagioni:
+            return
+        update_query = """
+            UPDATE ddt_testate
+            SET codice_stagione = %s
+            WHERE numero_bolla = %s AND codice_stagione IS NULL
+        """
+        for numero_bolla, codice in bolla_stagioni.items():
+            self._upsert_stagione(cursor, codice)
+            cursor.execute(update_query, (codice, numero_bolla))
+        bolla_stagioni.clear()
+
+    def _backfill_stagione_codes(self):
+        """
+        D03_DDT_RIGHE_002W does not expose season fields; propagate codice_stagione
+        from fatture -> bolle -> offerte using local link tables.
+        """
+        print("\n--- Backfilling stagione on bolle and offerte ---")
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE ddt_testate d
+            SET codice_stagione = sub.codice_stagione
+            FROM (
+                SELECT fr.numero_bolla,
+                       MIN(f.codice_stagione) AS codice_stagione
+                FROM fatture_righe fr
+                JOIN fatture_testate f ON f.numero_disposizione = fr.numero_disposizione
+                WHERE fr.numero_bolla IS NOT NULL
+                  AND f.codice_stagione IS NOT NULL
+                GROUP BY fr.numero_bolla
+            ) sub
+            WHERE d.numero_bolla = sub.numero_bolla
+              AND d.codice_stagione IS NULL
+            """
+        )
+        bolle_updated = cursor.rowcount
+
+        cursor.execute(
+            """
+            UPDATE offerte_testate o
+            SET codice_stagione = sub.codice_stagione
+            FROM (
+                SELECT dr.numero_offerta,
+                       MIN(d.codice_stagione) AS codice_stagione
+                FROM ddt_righe dr
+                JOIN ddt_testate d ON d.numero_bolla = dr.numero_bolla
+                WHERE dr.numero_offerta IS NOT NULL
+                  AND d.codice_stagione IS NOT NULL
+                GROUP BY dr.numero_offerta
+            ) sub
+            WHERE o.numero_offerta = sub.numero_offerta
+              AND o.codice_stagione IS NULL
+            """
+        )
+        offerte_updated = cursor.rowcount
+
+        conn.commit()
+        cursor.close()
+        db_pool.release_conn(conn)
+        print(f"  Backfilled codice_stagione on {bolle_updated} bolle and {offerte_updated} offerte.")
+
     def _upsert_offerte_batch(self, cursor, offerte_headers, offerte_lines):
         if not offerte_headers and not offerte_lines:
             return
@@ -167,9 +268,7 @@ class OracleSyncProcess:
         if not codice_cliente:
             return
 
-        codice_stagione = item.get('ew2_cd_stagione')
-        if codice_stagione:
-            codice_stagione = str(codice_stagione).strip() or None
+        codice_stagione = self._extract_stagione_code(item)
 
         data_offerta = self._parse_iso_date(
             item.get('data_bolla_cli_iso') or item.get('data_bolla_iso') or item.get('ew1_data_bolla_cli')
@@ -256,12 +355,6 @@ class OracleSyncProcess:
         total_cartellini = 0
         uncommitted = 0
 
-        season_query = """
-            INSERT INTO stagioni (codice, descrizione)
-            VALUES (%s, %s)
-            ON CONFLICT (codice) DO NOTHING;
-        """
-
         while True:
             params = {"limit": self.limit, "offset": offset}
             if ords_q:
@@ -279,10 +372,13 @@ class OracleSyncProcess:
                         continue
 
                     total_cartellini += 1
-                    stagione = item.get('ew2_cd_stagione')
+                    stagione = self._extract_stagione_code(item)
                     if stagione:
-                        stagione = str(stagione).strip()
-                        cursor.execute(season_query, (stagione, f"Stagione {stagione}"))
+                        self._upsert_stagione(
+                            cursor,
+                            stagione,
+                            self._extract_stagione_descrizione(item, stagione),
+                        )
 
                     date_str = (
                         item.get('data_bolla_cli_iso')
@@ -322,6 +418,7 @@ class OracleSyncProcess:
         cursor.close()
         db_pool.release_conn(conn)
         print(f"  Synced offerte from {total_cartellini} cartellino-linked DDT lines.")
+        self._backfill_stagione_codes()
 
     def fetch_all_paginated(self, endpoint, filters=None, mappings=None):
         """
@@ -489,19 +586,17 @@ class OracleSyncProcess:
                 print(f"    Fetched {total_fetched} records so far...{date_log}")
                 
                 # 1. Sync unique seasons
-                seasons = set()
+                season_meta = {}
                 for item in items:
-                    s_code = item.get('ew2_cd_stagione')
+                    s_code = self._extract_stagione_code(item)
                     if s_code:
-                        seasons.add(s_code.strip())
-                
-                season_query = """
-                    INSERT INTO stagioni (codice, descrizione)
-                    VALUES (%s, %s)
-                    ON CONFLICT (codice) DO NOTHING;
-                """
-                for season in seasons:
-                    cursor.execute(season_query, (season, f"Stagione {season}"))
+                        season_meta.setdefault(
+                            s_code,
+                            self._extract_stagione_descrizione(item, s_code),
+                        )
+
+                for season, descrizione in season_meta.items():
+                    self._upsert_stagione(cursor, season, descrizione)
                 
                 # 2. Update disposizioni headers running values
                 for item in items:
@@ -523,9 +618,13 @@ class OracleSyncProcess:
                         disposizioni[disp_num] = {
                             "data": date_val,
                             "codice_cliente": str(item.get('ew2_cd_cliente') or 'XXX').strip(),
-                            "codice_stagione": (item.get('ew2_cd_stagione') or 'PE 12').strip(),
+                            "codice_stagione": self._extract_stagione_code(item),
                             "importo_totale": 0.0
                         }
+                    elif not disposizioni[disp_num].get("codice_stagione"):
+                        stagione = self._extract_stagione_code(item)
+                        if stagione:
+                            disposizioni[disp_num]["codice_stagione"] = stagione
                     disposizioni[disp_num]["importo_totale"] += importo
                 
                 # Upsert headers in this batch
@@ -627,7 +726,7 @@ class OracleSyncProcess:
             ON CONFLICT (numero_bolla) DO UPDATE SET
                 data_bolla = EXCLUDED.data_bolla,
                 codice_cliente = EXCLUDED.codice_cliente,
-                codice_stagione = EXCLUDED.codice_stagione;
+                codice_stagione = COALESCE(EXCLUDED.codice_stagione, ddt_testate.codice_stagione);
         """
         
         offset = 0
@@ -721,6 +820,7 @@ class OracleSyncProcess:
         offset = 0
         total_lines = 0
         uncommitted_l = 0
+        bolla_stagioni = {}
         
         while True:
             params = {"limit": self.limit, "offset": offset}
@@ -745,6 +845,9 @@ class OracleSyncProcess:
                         qty = item.get('d03_capi_in_uscita') or item.get('d03_kg_in_uscita') or 0
                         importo = float(price) * float(qty)
                         numero_offerta = self._build_numero_offerta(item)
+                        stagione = self._extract_stagione_code(item)
+                        if stagione and nr_bolla not in bolla_stagioni:
+                            bolla_stagioni[nr_bolla] = stagione
                         
                         cursor.execute(upsert_line, (
                             nr_bolla,
@@ -760,6 +863,7 @@ class OracleSyncProcess:
                         ))
                         uncommitted_l += 1
                         if uncommitted_l >= 1000:
+                            self._apply_bolla_stagioni(cursor, bolla_stagioni)
                             conn.commit()
                             print(f"      [Database] Committed {uncommitted_l} DDT lines to local cache.")
                             uncommitted_l = 0
@@ -772,22 +876,31 @@ class OracleSyncProcess:
                 print(f"    Error during DDT lines sync at offset {offset}: {e}")
                 break
                 
-        if uncommitted_l > 0:
+        if uncommitted_l > 0 or bolla_stagioni:
+            self._apply_bolla_stagioni(cursor, bolla_stagioni)
             conn.commit()
-            print(f"      [Database] Final Commit: {uncommitted_l} DDT lines.")
+            if uncommitted_l > 0:
+                print(f"      [Database] Final Commit: {uncommitted_l} DDT lines.")
             
         print(f"  Synced {total_lines} DDT detail lines.")
         cursor.close()
         db_pool.release_conn(conn)
 
+        self._backfill_stagione_codes()
+
     def run_sync(self):
         targets_label = ", ".join(self.sync_targets)
         print(f"Starting Intex API Database Sync Process (Mode: {self.mode.upper()}, Targets: {targets_label})...")
         start_time = time.time()
+        backfill_targets = {"fatture", "bolle", "offerte"}
         
         try:
             for target in self.sync_targets:
                 getattr(self, SYNC_METHODS[target])()
+
+            if backfill_targets.intersection(self.sync_targets):
+                if "bolle" not in self.sync_targets and "offerte" not in self.sync_targets:
+                    self._backfill_stagione_codes()
             
             elapsed = time.time() - start_time
             print(f"\nDatabase Sync completed successfully in {elapsed:.2f} seconds.")
