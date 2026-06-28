@@ -1,0 +1,16 @@
+services:
+  frontend-intex:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_BACKEND: ${VITE_APP_BACKEND:-https://api.doc2class.com}
+    ports:
+      - "5447:80"
+    restart: unless-stopped
+    networks:
+      - intex_network
+
+networks:
+  intex_network:
+    external: true
