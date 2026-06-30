@@ -1,4 +1,5 @@
 import os
+from typing import List, Optional
 
 import requests
 from dotenv import load_dotenv
@@ -16,9 +17,9 @@ def _get_provider() -> str:
 def get_model_name() -> str:
     provider = _get_provider()
     if provider == "OPENAI":
-        return os.getenv("OPENAI_MODEL", DEFAULT_OPENAI_MODEL)
+        return os.getenv("OPENAI_MODEL") or DEFAULT_OPENAI_MODEL
     if provider == "GEMINI":
-        return os.getenv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL)
+        return os.getenv("GEMINI_MODEL") or DEFAULT_GEMINI_MODEL
     raise ValueError(f"Unsupported LLM_PROVIDER: {provider}. Supported: OPENAI, GEMINI")
 
 
@@ -32,7 +33,11 @@ def _extract_openai_response_text(data: dict) -> str:
     raise ValueError("OpenAI response did not contain assistant text")
 
 
-def _call_openai(input_text: str, instructions: str | None = None, previous_response_id: str | None = None) -> dict:
+def _call_openai(
+    input_text: str,
+    instructions: Optional[str] = None,
+    previous_response_id: Optional[str] = None,
+) -> dict:
     api_key = os.getenv("OPENAI_APIKEY")
     if not api_key:
         raise ValueError("OPENAI_APIKEY environment variable is not set")
@@ -65,7 +70,11 @@ def _call_openai(input_text: str, instructions: str | None = None, previous_resp
     }
 
 
-def _call_gemini(input_text: str, instructions: str | None = None, history: list | None = None) -> dict:
+def _call_gemini(
+    input_text: str,
+    instructions: Optional[str] = None,
+    history: Optional[List] = None,
+) -> dict:
     api_key = os.getenv("GEMINI_APIKEY")
     if not api_key:
         raise ValueError("GEMINI_APIKEY environment variable is not set")
@@ -101,9 +110,9 @@ def _call_gemini(input_text: str, instructions: str | None = None, history: list
 
 def send_prompt(
     input_text: str,
-    instructions: str | None = None,
-    previous_response_id: str | None = None,
-    history: list | None = None,
+    instructions: Optional[str] = None,
+    previous_response_id: Optional[str] = None,
+    history: Optional[List] = None,
 ) -> dict:
     """
     Send a prompt to the configured LLM provider.

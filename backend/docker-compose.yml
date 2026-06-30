@@ -9,6 +9,7 @@ services:
     volumes:
       - .:/app  # Map the local repository (where docker-compose.yml is located) to /app in the container
       - ../data/migrations:/data/migrations:ro
+      - ../tests:/tests
     environment:
       - MIGRATIONS_DIR=/data/migrations
       - DB_HOST=${DB_HOST}
@@ -19,6 +20,11 @@ services:
       - INTEX_ENDPOINT_USER=${INTEX_ENDPOINT_USER}
       - INTEX_ENDPOINT_PASSWORD=${INTEX_ENDPOINT_PASSWORD}
       - INTEX_BASE_URL=${INTEX_BASE_URL}
+      - LLM_PROVIDER=${LLM_PROVIDER:-OPENAI}
+      - OPENAI_APIKEY=${OPENAI_APIKEY:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - GEMINI_APIKEY=${GEMINI_APIKEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
       - PYTHONUNBUFFERED=1
     networks:
       - intex_network
