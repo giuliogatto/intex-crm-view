@@ -13,6 +13,8 @@ data_connector_module = importlib.import_module("data-connector")
 IntexDataConnector = data_connector_module.IntexDataConnector
 
 from database import DatabasePool
+from analytics import refresh_analytics_layer
+
 db_pool = DatabasePool()
 
 SYNC_TARGETS = ("clienti", "articoli", "fatture", "bolle", "offerte")
@@ -27,13 +29,14 @@ SYNC_METHODS = {
 class OracleSyncProcess:
     FATTURE_LIMIT = 100
 
-    def __init__(self, limit=100, mode="full", start_date=None, end_date=None, sync_targets=None):
+    def __init__(self, limit=100, mode="full", start_date=None, end_date=None, sync_targets=None, skip_analytics=False):
         self.connector = IntexDataConnector()
         self.limit = limit
         self.mode = mode
         self.start_date = start_date
         self.end_date = end_date
         self.sync_targets = sync_targets or SYNC_TARGETS
+        self.skip_analytics = skip_analytics
 
     def _incremental_start_date(self):
         if self.start_date:
@@ -908,7 +911,14 @@ class OracleSyncProcess:
             if backfill_targets.intersection(self.sync_targets):
                 if "bolle" not in self.sync_targets and "offerte" not in self.sync_targets:
                     self._backfill_stagione_codes()
-            
+
+            if not self.skip_analytics:
+                try:
+                    refresh_analytics_layer(db_pool)
+                except Exception as analytics_err:
+                    print(f"\nWarning: analytics refresh failed: {analytics_err}")
+                    print("  Apply migration: python apply_migrations.py create-analytics.sql")
+
             elapsed = time.time() - start_time
             print(f"\nDatabase Sync completed successfully in {elapsed:.2f} seconds.")
         except Exception as e:
@@ -961,7 +971,12 @@ if __name__ == "__main__":
         default=None,
         help="Optional end date (YYYY-MM-DD) to fetch records up to this date. Defaults to today."
     )
-    
+    parser.add_argument(
+        "--skip-analytics",
+        action="store_true",
+        help="Skip post-sync analytics materialized view refresh.",
+    )
+
     args = parser.parse_args()
     
     for date_arg, flag in ((args.start_date, "--start-date"), (args.end_date, "--end-date")):
@@ -978,5 +993,6 @@ if __name__ == "__main__":
         start_date=args.start_date,
         end_date=args.end_date,
         sync_targets=args.only,
+        skip_analytics=args.skip_analytics,
     )
     sync_job.run_sync()

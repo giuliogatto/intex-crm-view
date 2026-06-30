@@ -1,0 +1,202 @@
+# Risposte alle domande gestionali (domande2.txt)
+# Valutazione rispetto al layer analytics implementato (schema analytics + API /api/analisi/* + pagina Analisi)
+# Legenda: SÌ = risposta ottenibile oggi | PARZIALE = risposta incompleta o con limiti | NO = non ottenibile con i dati attuali
+# Nota generale: il fatturato mensile/stagionale usa fatture_testate.data_fattura, che nello sync corrisponde alla data di consegna (bolla), non alla data di fatturazione civilistica.
+
+---
+
+## 1. Capire i clienti
+
+### Q1 — Primi 10 clienti per fatturato ultimi 12 mesi, con percentuale sul totale
+**SÌ**
+Fonte: vista `analytics.clienti_snapshot` (campi `fatturato_rolling_12m`, `percentuale_sul_totale_12m`, `rank_fatturato_12m`), alimentata dalla MV `analytics.clienti_fatturato_mensile` ← `fatture_testate` + `fatture_righe`.
+API: `GET /api/analisi/clienti/ranking?limit=10` · UI: tab Performance Clienti.
+
+### Q2 — Quota fatturato nei primi 5 clienti rispetto a due anni fa (è aumentata o diminuita?)
+**SÌ**
+Fonte: confronto rolling su `analytics.clienti_fatturato_mensile` (ultimi 12 mesi vs periodo 12–24 mesi fa), non anni civili fissi.
+API: `GET /api/analisi/clienti/concentrazione?top_n=5` · UI: widget concentrazione.
+
+### Q3 — Clienti con fatturato semestre corrente inferiore allo stesso semestre anno scorso, e di quanto
+**SÌ**
+Fonte: vista `analytics.clienti_snapshot` (`fatturato_semestre_corrente` vs `fatturato_semestre_yoy`), derivata da `analytics.clienti_fatturato_mensile`.
+API: `GET /api/analisi/clienti/erosione` · UI: sezione clienti a rischio.
+
+### Q4 — Clienti dormienti (>90 gg senza ordini, attivi nei 12 mesi precedenti)
+**SÌ**
+Fonte: vista `analytics.clienti_snapshot` (flag `is_dormiente`), calcolato da `offerte_testate` (date ordine/cartellino) + soglia 90 giorni.
+API: `GET /api/analisi/clienti/dormienti` · UI: tab Performance Clienti.
+
+### Q5 — Clienti con allungamento del tempo medio tra un ordine e il successivo rispetto all'anno scorso
+**SÌ**
+Fonte: vista `analytics.clienti_snapshot` (`intervallo_medio_giorni_corrente` vs `intervallo_medio_giorni_prec`), calcolato con window function sulle date in `offerte_testate`.
+API: `GET /api/analisi/clienti/erosione` · UI: tab Performance Clienti.
+
+### Q6 — Per ciascun cliente: valore medio ordine e numero ordini quest'anno
+**SÌ**
+Fonte: vista `analytics.clienti_snapshot` (`ordini_ytd`, `valore_medio_ordine_ytd`) ← `offerte_testate` filtrate sull'anno corrente.
+API: non esiste un endpoint dedicato, ma i dati sono nella vista e interrogabili via SQL o estensione API. Non ancora in UI dedicata.
+
+### Q7 — Confronto fatturato per cliente tra stagione attuale e precedente
+**SÌ** (richiede parametri stagione)
+Fonte: MV `analytics.clienti_fatturato_stagionale` ← `fatture_testate` + `fatture_righe`, con `codice_stagione`.
+API: `GET /api/analisi/clienti/stagione?stagione_attuale=...&stagione_precedente=...`
+Nota: serve indicare esplicitamente le due stagioni (es. PE 26 vs PE 25); non c'è auto-rilevamento della «stagione attuale».
+
+### Q8 — Clienti nuovi ultimi 12 mesi e fatturato generato
+**SÌ**
+Fonte: vista `analytics.clienti_snapshot` (`is_nuovo_12m`, `data_primo_ordine`, `fatturato_rolling_12m`).
+API: `GET /api/analisi/clienti/nuovi` · UI: tab Performance Clienti.
+
+### Q9 — Tipi di lavorazione o capo richiesti più spesso da ciascun cliente
+**PARZIALE** (solo per articolo/capo, non per lavorazione)
+Fonte: incrocio `fatture_righe` + `articoli` (aggregazione per `codice_articolo` / descrizione capo).
+API: `GET /api/analisi/clienti/articoli-top?codice_cliente=...`
+Perché parziale: `cd_lavorazione` / `ds_lavorazione` non sono sincronizzati nel DB locale; la domanda originale sul «tipo di lavorazione» non è coperta.
+
+### Q10 — Tempo medio di pagamento per cliente (giorni fattura → incasso)
+**NO**
+Motivo: nel database non ci sono date di incasso né scadenziario; la colonna `stato_pagamento` è stata rimossa dallo schema. Servirebbe un endpoint ERP dedicato (partite aperte / pagamenti).
+
+---
+
+## 2. Efficienza produttiva
+
+### Q11 — Tempo medio tra bolla in entrata e DDT in uscita, per cliente
+**SÌ**
+Fonte: MV `analytics.lead_time_documenti` ← `offerte_testate.data_offerta` (proxy bolla entrata da `ew1_data_bolla_cli`) + `ddt_testate.data_bolla` collegati via `ddt_righe.numero_offerta`; aggregato in vista `analytics.lead_time_mensile`.
+API: `GET /api/analisi/produzione/lead-time?tipo=trend&codice_cliente=...`
+
+### Q12 — Andamento lead time medio ultimi 24 mesi, mese per mese
+**SÌ**
+Fonte: vista `analytics.lead_time_mensile` ← MV `analytics.lead_time_documenti`.
+API: `GET /api/analisi/produzione/lead-time?tipo=trend&mesi=24` · UI: tab Produzione.
+
+### Q13 — Ordini con attraversamento più lungo nell'ultimo trimestre e clienti
+**SÌ**
+Fonte: MV `analytics.lead_time_documenti` + `clienti`.
+API: `GET /api/analisi/produzione/lead-time?tipo=top` · UI: tab Produzione.
+
+### Q14 — Ordini aperti adesso e da quanti giorni
+**NO**
+Motivo: non esiste un flag aperto/chiuso sincronizzato (`d03_flag_chiusa` / `ew1_flag_chiuso`). Inoltre `offerte_testate` è derivata dalle righe DDT già collegate, quindi non rappresenta ordini «aperti» in senso ERP.
+
+### Q15 — Mesi con picchi di volume negli ultimi 2 anni
+**SÌ**
+Fonte: MV `analytics.volume_giornaliero` ← `ddt_testate` + `ddt_righe` (kg e capi consegnati, non fatturati).
+API: `GET /api/analisi/produzione/volumi?granularita=mensile` · UI: tab Produzione.
+
+### Q16 — Volume settimanale (capi/kg) vs stesso periodo anno scorso
+**SÌ**
+Fonte: MV `analytics.volume_giornaliero` (settimana ISO + anno).
+API: `GET /api/analisi/produzione/volumi?granularita=settimanale` · UI: tab Produzione.
+
+### Q17 — Tipi di lavorazione che assorbono più tempo o volume
+**NO**
+Motivo: `cd_lavorazione` / `ds_lavorazione` non presenti in `fatture_righe` né `ddt_righe`. I campi esistono in Oracle (`F07_003W`) ma non sono ancora sincronizzati.
+
+### Q18 — Lavorazioni rifatte o con più ritardi rispetto alla media
+**NO**
+Motivo: nessun tracciamento rilavorazioni nell'ERP esposto via ORDS; manca anche `cd_lavorazione` per confronti per tipologia.
+
+---
+
+## 3. Dove abbiamo perso (controllo e auditing)
+
+### Q19 — DDT in uscita senza fattura da più di 60 giorni
+**SÌ**
+Fonte: vista live `analytics.v_anomalie_ddt_non_fatturati` ← anti-join `ddt_testate` / `ddt_righe` (righe senza `numero_disposizione`) + soglia 60 gg; copia anche in `analytics.anomalie_rilevate` a fine sync.
+API: `GET /api/analisi/controllo/anomalie` · UI: tab Controllo Perdite.
+
+### Q20 — Valore stimato consegne non fatturate, per cliente
+**SÌ**
+Fonte: vista `analytics.v_consegne_non_fatturate_cliente` ← somma `ddt_righe.importo_riga` dove `numero_disposizione` è vuoto, per `ddt_testate.codice_cliente`.
+API: `GET /api/analisi/controllo/anomalie` · UI: tab Controllo Perdite.
+Nota: il valore dipende da `importo_riga` sulle righe DDT, spesso non popolato da Oracle.
+
+### Q21 — Discrepanze tra quantità ordine, bolla e fattura
+**SÌ** (modulo esistente, non nel nuovo layer analytics)
+Fonte: query runtime su `offerte_righe` + `ddt_righe` + `fatture_righe` via `_fetch_discrepanze` in `backend/app.py`.
+API: `GET /api/discrepanze?codice_cliente=...` · UI: tab Auditing Confronto (per singolo cliente).
+
+### Q22 — Fatture emesse senza DDT o ordine collegato
+**SÌ** (solo verifica assenza DDT collegato)
+Fonte: vista `analytics.v_anomalie_fatture_senza_ddt` ← anti-join `fatture_testate` / `fatture_righe` (nessuna riga con `numero_bolla`).
+API: `GET /api/analisi/controllo/anomalie` · UI: tab Controllo Perdite.
+Nota: verifica il collegamento a DDT tramite `fatture_righe.numero_bolla`, non l'esistenza di un ordine/cartellino.
+
+### Q23 — Ordini chiusi senza DDT di consegna
+**NO**
+Motivo: stesso blocco di Q14 — nessun flag chiusura e `offerte_testate` derivate da DDT già evasi; l'anti-join ordini↔DDT non ha significato.
+
+### Q24 — Clienti con prezzo medio per lavorazione sotto la media aziendale
+**NO**
+Motivo: manca `cd_lavorazione` nel DB; inoltre non esistono dati di costo per stimare il margine reale (solo prezzo di vendita).
+
+### Q25 — Prezzi applicati cambiati nel tempo senza ragione evidente
+**PARZIALE** (solo per articolo, non per lavorazione)
+Fonte: euristica a fine sync su `fatture_righe` + `fatture_testate` (deviazione >10% del prezzo unitario per articolo rispetto allo storico cliente) → righe in `analytics.anomalie_rilevate` (`tipo_anomalia = prezzo_articolo_spostamento`).
+API: `GET /api/analisi/opportunita/trimestre` (se rientra tra le anomalie del trimestre).
+Perché parziale: non per «lavorazione»; è un alert automatico, non una ricerca interattiva dedicata in UI.
+
+---
+
+## 4. Miglioramento e visione d'insieme
+
+### Q26 — Andamento fatturato totale mese per mese ultimi 24 mesi
+**SÌ**
+Fonte: MV `analytics.clienti_fatturato_mensile` aggregata a livello aziendale (SUM per anno/mese).
+API: `GET /api/analisi/fatturato/mensile?mesi=24` · UI: grafico tab Performance Clienti.
+
+### Q27 — Confronto stagione attuale vs precedente: fatturato, ordini, volume
+**PARZIALE**
+Fonte:
+  - Fatturato: MV `analytics.clienti_fatturato_stagionale` ← `fatture_testate`
+  - Volume: MV `analytics.clienti_fatturato_stagionale` (capi/kg fatturati) o `analytics.volume_giornaliero` (capi/kg consegnati)
+  - Numero ordini: richiede conteggio su `offerte_testate` per `codice_stagione` (non esposto in un endpoint unico)
+API: `GET /api/analisi/clienti/stagione` copre solo il fatturato per stagione; manca endpoint combinato per ordini + volume nella stessa risposta.
+
+### Q28 — Clienti ideali: alto fatturato, pagamenti puntuali, tempi rapidi
+**PARZIALE** (senza pagamenti)
+Fonte: vista `analytics.clienti_snapshot` (fatturato) + MV `analytics.lead_time_documenti` (lead time produzione); ordinamento combinato in `GET /api/analisi/clienti/qualita`.
+Perché parziale: la dimensione «pagamenti puntuali» è assente (vedi Q10). UI: tab Opportunità (scatter semplificato).
+
+### Q29 — Clienti con alto fatturato ma margini bassi o pagamenti lunghi
+**NO**
+Motivo: servono dati di costo (margine) e di incasso (pagamenti), entrambi assenti nel DB attuale.
+
+### Q30 — Stress test: se i top 3 clienti riducessero ordini del 20%, impatto su fatturato e mesi
+**SÌ**
+Fonte: MV `analytics.clienti_fatturato_mensile` + ranking da `analytics.clienti_snapshot`; calcolo runtime nell'API.
+API: `POST /api/analisi/simulazioni/stress-test` · UI: tab Opportunità (slider).
+
+### Q31 — Clienti che ordinano solo in una stagione (opportunità sviluppo nell'altra)
+**SÌ**
+Fonte: vista `analytics.clienti_snapshot` (array `stagioni_attive` da `analytics.clienti_fatturato_stagionale`).
+API: `GET /api/analisi/clienti/mono-stagione`
+Nota: non distingue automaticamente PE vs AI; elenca chi ha una sola stagione nello storico fatturato.
+
+### Q32 — Riepilogo delle 3 anomalie/opportunità più rilevanti del trimestre
+**PARZIALE**
+Fonte: tabella `analytics.anomalie_rilevate` (popolata a fine sync da viste strutturali + euristica prezzi articolo), ordinata per `severita` e `valore_stimato`.
+API: `GET /api/analisi/opportunita/trimestre?limit=3` · UI: card Insight del trimestre.
+Perché parziale: la sintesi testuale «aperta» per l'assistente LLM non è ancora integrata nel prompt; oggi restituisce le 3 righe strutturate, non un paragrafo interpretativo automatico.
+
+---
+
+## Riepilogo numerico
+
+| Esito      | Domande                          | N°  |
+|------------|----------------------------------|-----|
+| SÌ         | 1, 2, 3, 4, 5, 6, 7, 8, 11–13, 15, 16, 19, 20, 21, 22, 26, 30, 31 | 22 |
+| PARZIALE   | 9, 25, 27, 28, 32                | 5   |
+| NO         | 10, 14, 17, 18, 23, 24, 29      | 7   |
+
+---
+
+## Dove aggiornare i dati
+
+- **Sync transazionale** (`oracle-sync.py`): popola `clienti`, `fatture_*`, `ddt_*`, `offerte_*`, `articoli`, `stagioni`.
+- **Refresh analytics** (automatico a fine sync o manuale): `REFRESH MATERIALIZED VIEW` su 4 MV + rebuild `analytics.anomalie_rilevate`.
+- **Viste live** (sempre aggiornate): `clienti_snapshot`, `lead_time_mensile`, `v_anomalie_*` — non richiedono refresh separato.
+- **Pagina Analisi**: http://localhost:5447/analisi

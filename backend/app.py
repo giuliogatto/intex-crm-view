@@ -1343,5 +1343,9 @@ def llmrequest():
         response.status = 500
         return {"error": str(e)}
 
+from analisi import register_analisi_routes
+
+register_analisi_routes(app, db_pool)
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)

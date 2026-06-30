@@ -1,0 +1,131 @@
+1. Capire i clienti
+Priorità numero uno. In conto terzi il rischio maggiore è la dipendenza da pochi committenti e
+l&#39;erosione silenziosa: clienti che riducono i volumi senza dirlo. Questa sezione serve a vedere chi
+conta davvero, chi sta scivolando via e chi vale la pena coltivare.
+
+Concentrazione e peso dei clienti
+1. Mostrami i primi 10 clienti per fatturato negli ultimi 12 mesi, con la percentuale di ciascuno
+sul totale.
+↳ Perché serve: misura quanto sei esposto. Se i primi tre clienti valgono più della metà del
+fatturato, è una fragilità da monitorare.
+2. Qual è la quota di fatturato concentrata nei primi 5 clienti rispetto a due anni fa? È
+aumentata o diminuita?
+↳ Perché serve: dice se la dipendenza dai grandi clienti sta crescendo nel tempo.
+Erosione e clienti a rischio
+3. Quali clienti hanno fatturato meno in questo semestre rispetto allo stesso semestre
+dell&#39;anno scorso, e di quanto?
+↳ Perché serve: intercetta chi sta riducendo i volumi prima che sparisca del tutto.
+4. Quali clienti non emettono ordini da più di 90 giorni ma erano attivi nei 12 mesi precedenti?
+↳ Perché serve: una lista di clienti &quot;dormienti&quot; su cui fare una telefonata commerciale.
+5. Quali clienti hanno allungato i tempi medi tra un ordine e il successivo rispetto all&#39;anno
+scorso?
+↳ Perché serve: segnale precoce di raffreddamento del rapporto, prima ancora che il fatturato
+cali.
+Profilo e valore dei clienti
+6. Per ciascun cliente, qual è il valore medio dell&#39;ordine e quanti ordini ha fatto quest&#39;anno?
+↳ Perché serve: distingue i clienti grandi-pochi-ordini dai piccoli-tanti-ordini: due profili da gestire
+diversamente.
+7. Confronta il fatturato per cliente tra la stagione attuale e quella precedente.
+↳ Perché serve: la stagionalità è il battito del tessile: chi cresce e chi cala stagione su stagione
+conta più del dato annuo secco.
+8. Quali clienti nuovi sono comparsi negli ultimi 12 mesi e quanto hanno fatturato finora?
+↳ Perché serve: dice se l&#39;acquisizione di nuovi clienti sta compensando l&#39;erosione dei vecchi.
+
+INTEX SRL · Domande all&#39;assistente dati
+
+Pag. 3
+
+9. Quali tipi di lavorazione o capo richiede più spesso ciascun cliente?
+↳ Perché serve: dal cartellino: capire se un cliente porta lavoro a margine alto o solo commodity.
+10. Qual è il tempo medio di pagamento per cliente (giorni tra fattura e incasso)?
+↳ Perché serve: se il dato dell&#39;incasso è disponibile: un cliente che fattura tanto ma paga a 120
+giorni vale meno di quanto sembri.
+2. Efficienza produttiva
+Il cartellino e l&#39;incrocio tra bolla in entrata e DDT in uscita raccontano come gira davvero la
+produzione: tempi reali, carichi, colli di bottiglia e stagioni di picco. Serve a direzione e operatori
+per dimensionare lavoro e turni.
+
+Tempi e lead time
+11. Qual è il tempo medio tra ricezione bolla in entrata e consegna DDT in uscita, per cliente?
+↳ Perché serve: il lead time reale di lavorazione: il tuo vero indicatore di servizio.
+12. Come è cambiato il lead time medio negli ultimi 24 mesi, mese per mese?
+↳ Perché serve: vede se l&#39;azienda sta diventando più lenta o più veloce nel tempo.
+13. Quali sono gli ordini con il tempo di attraversamento più lungo nell&#39;ultimo trimestre e a quali
+clienti appartengono?
+↳ Perché serve: isola i casi peggiori per capire dove si inceppa il flusso.
+Carico di lavoro e arretrati
+14. Quanti ordini sono aperti adesso e da quanti giorni ciascuno?
+↳ Perché serve: il quadro degli arretrati e del carico corrente in un colpo solo.
+15. In quali mesi si concentrano i picchi di volume nell&#39;ultimo paio d&#39;anni?
+↳ Perché serve: per dimensionare personale e turni nei periodi caldi della stagione.
+16. Qual è il volume di lavorazione (capi o kg) per settimana, e come si confronta con lo stesso
+periodo dell&#39;anno scorso?
+↳ Perché serve: misura la pressione produttiva reale rispetto allo storico.
+Tipologie di lavorazione
+17. Quali tipi di lavorazione assorbono più tempo o più volume?
+↳ Perché serve: dal cartellino: capire dove va davvero la capacità produttiva.
+18. Ci sono lavorazioni che vengono rifatte o che generano più ritardi rispetto alla media?
+↳ Perché serve: indizio di processi problematici da rivedere.
+3. Dove abbiamo perso (controllo e auditing)
+Qui entra il modulo Auditing Confronto, il più prezioso per il controllo. È dove si nascondono i
+
+INTEX SRL · Domande all&#39;assistente dati
+
+Pag. 4
+
+soldi persi: lavorazioni consegnate ma mai fatturate, discrepanze tra quantità ordinate, lavorate e
+fatturate, documenti scollegati. Queste domande sono per direzione e amministrazione.
+
+Lavorato ma non incassato
+19. Ci sono DDT in uscita senza fattura corrispondente da più di 60 giorni?
+↳ Perché serve: lavorazioni consegnate ma non ancora fatturate: soldi fermi, il recupero più
+immediato.
+20. Qual è il valore totale stimato delle consegne non ancora fatturate, raggruppato per
+cliente?
+↳ Perché serve: quantifica quanto fatturato è &quot;sospeso&quot; e dove si concentra.
+Discrepanze tra documenti
+21. Ci sono discrepanze tra quantità in ordine, quantità in bolla e quantità fatturata?
+↳ Perché serve: il cuore del modulo confronto: è qui che si annidano gli errori che costano.
+22. Quali fatture risultano emesse senza un DDT o un ordine collegato?
+↳ Perché serve: il controllo inverso, per stanare anomalie e possibili errori di fatturazione.
+23. Ci sono ordini chiusi senza alcun DDT di consegna registrato?
+↳ Perché serve: lavoro che risulta completato ma senza traccia di uscita: o un errore
+documentale o una consegna non registrata.
+Marginalità e prezzi
+24. Quali clienti hanno il prezzo medio per lavorazione più basso rispetto alla media aziendale?
+↳ Perché serve: individua i clienti che potrebbero erodere il margine, da rivedere in sede di
+trattativa.
+25. Ci sono lavorazioni il cui prezzo applicato è cambiato nel tempo senza una ragione
+evidente?
+↳ Perché serve: possibili scostamenti dal listino o errori di prezzatura.
+4. Miglioramento e visione d&#39;insieme
+Domande trasversali che incrociano più fonti per dare alla direzione una lettura strategica, non
+solo un numero. Sono le più ambiziose: vale la pena testare se il layer riesce a combinare
+fatturato, tempi e tipo di lavorazione in un&#39;unica risposta.
+
+Trend e andamento generale
+26. Qual è l&#39;andamento del fatturato totale mese per mese negli ultimi 24 mesi?
+↳ Perché serve: la fotografia di base della salute dell&#39;azienda.
+27. Come si confronta questa stagione con la stessa dell&#39;anno scorso, per fatturato, numero di
+ordini e volume lavorato?
+
+INTEX SRL · Domande all&#39;assistente dati
+
+Pag. 5
+
+↳ Perché serve: tre indicatori insieme dicono se stai crescendo in valore, in lavoro o solo in
+prezzi.
+Il cliente ideale
+28. Quali clienti combinano fatturato elevato, pagamenti puntuali e tempi di lavorazione rapidi?
+↳ Perché serve: è la domanda più potente: identifica i clienti da coltivare. Qui lo strumento smette
+di cercare dati e inizia a suggerire decisioni.
+29. Quali clienti danno tanto fatturato ma con margini bassi o tempi di pagamento lunghi?
+↳ Perché serve: il rovescio della medaglia: clienti grandi ma faticosi, da rinegoziare.
+Opportunità e simulazioni
+30. Se i miei primi tre clienti riducessero gli ordini del 20%, quanto fatturato perderei e quali
+periodi sarebbero più colpiti?
+↳ Perché serve: uno stress test semplice per capire la fragilità della base clienti.
+31. Quali clienti ordinano solo in una stagione e potrebbero essere sviluppati anche nell&#39;altra?
+↳ Perché serve: opportunità commerciali nascoste nello storico ordini.
+32. Riepiloga le tre anomalie o opportunità più rilevanti emerse dai dati dell&#39;ultimo trimestre.
+↳ Perché serve: una domanda &quot;aperta&quot; per far emergere ciò che non avevi pensato di chiedere.

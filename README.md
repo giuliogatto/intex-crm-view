@@ -101,6 +101,31 @@ docker exec -it intex-api python /app/oracle-sync.py --mode incremental --only f
 docker exec -it intex-api python /app/oracle-sync.py --mode full --only clienti articoli
 ```
 
+### 2.6. Analytics layer (materialized views)
+
+After transactional sync, `oracle-sync.py` refreshes the `analytics` schema (fatturato mensile, snapshot clienti, lead time, anomalie). Skip with `--skip-analytics`.
+
+**Existing local database** (Docker volume already created — init scripts do not re-run):
+
+```bash
+cd backend
+python apply_migrations.py create-analytics.sql
+```
+
+Or from the API container:
+
+```bash
+docker exec -it intex-api python /app/apply_migrations.py create-analytics.sql
+```
+
+Then refresh aggregates (runs automatically at end of sync, or manually):
+
+```bash
+docker exec -it intex-api python -c "from analytics import refresh_analytics_layer; from database import DatabasePool; refresh_analytics_layer(DatabasePool())"
+```
+
+Open the **Analisi** dashboard at [http://localhost:5447/analisi](http://localhost:5447/analisi).
+
 ---
 
 ## 3. Database Backups

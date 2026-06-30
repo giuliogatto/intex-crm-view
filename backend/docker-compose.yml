@@ -8,7 +8,9 @@ services:
     command: bash -c "pip install -r requirements.txt && apt-get update && apt-get install -y supervisor && supervisord -c /app/supervisord.conf"
     volumes:
       - .:/app  # Map the local repository (where docker-compose.yml is located) to /app in the container
+      - ../data/migrations:/data/migrations:ro
     environment:
+      - MIGRATIONS_DIR=/data/migrations
       - DB_HOST=${DB_HOST}
       - DB_PORT=${DB_PORT}
       - DB_NAME=${DB_NAME}

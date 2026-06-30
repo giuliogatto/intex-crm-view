@@ -549,6 +549,9 @@ function App() {
         >
           ⚖️ Auditing Confronto
         </button>
+        <a href="/analisi" className="nav-tab nav-tab--link">
+          📊 Analisi
+        </a>
       </nav>
 
       <div className="dashboard-grid">

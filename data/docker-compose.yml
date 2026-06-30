@@ -10,6 +10,7 @@ services:
       - ./data:/custom/data/pgdata
       - ./migrations/create-tables.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
       - ./migrations/create-users.sql:/docker-entrypoint-initdb.d/02-users.sql:ro
+      - ./migrations/create-analytics.sql:/docker-entrypoint-initdb.d/03-analytics.sql:ro
     restart: always
     user: "0:0"
     networks:
