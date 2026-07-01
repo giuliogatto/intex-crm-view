@@ -302,7 +302,7 @@ export default function AnalisiPage({ subTabOverride, scrollTargetOverride }) {
     ])
     setMeta(metaJ.data)
     setRanking(rankJ.data || [])
-    setFatturatoMensile((fatJ.data || []).reverse())
+    setFatturatoMensile(fatJ.data || [])
     setConcentrazione(concJ.data)
     setErosione(erosJ.data || [])
     setDormienti(dormJ.data || [])
