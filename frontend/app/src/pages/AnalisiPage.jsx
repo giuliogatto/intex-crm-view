@@ -460,7 +460,7 @@ export default function AnalisiPage({ subTabOverride, scrollTargetOverride }) {
               <DataTable
                 columns={[
                   { key: 'ragione_sociale', label: 'Cliente' },
-                  { key: 'calo_percentuale', label: 'Calo sem.%', render: (r) => r.calo_percentuale != null ? `${r.calo_percentuale}%` : '—' },
+                  { key: 'calo_percentuale', label: 'Calo semestrale %', render: (r) => r.calo_percentuale != null ? `${r.calo_percentuale}%` : '—' },
                   { key: 'allungamento_giorni', label: 'Δ giorni tra ordini' },
                 ]}
                 rows={erosione}
