@@ -21,6 +21,19 @@ import {
 
 const LIST_PAGE_SIZE = 50
 
+const ANALISI_QUESTION_SHORTCUTS = [
+  { num: 10, target_tab: 'clienti', target_section: 'fatturato-mensile', question: 'Qual è l\'andamento del fatturato negli ultimi 24 mesi?' },
+  { num: 11, target_tab: 'clienti', target_section: 'concentrazione', question: 'Quanto incidono i 5 clienti principali sul fatturato totale?' },
+  { num: 12, target_tab: 'clienti', target_section: 'top-clienti', question: 'Chi sono i 10 clienti con il fatturato più alto nell\'ultimo anno?' },
+  { num: 13, target_tab: 'clienti', target_section: 'erosione', question: 'Quali clienti mostrano segnali di erosione o calo degli ordini?' },
+  { num: 14, target_tab: 'clienti', target_section: 'dormienti', question: 'Quali clienti non ordinano da oltre 90 giorni?' },
+  { num: 15, target_tab: 'clienti', target_section: 'nuovi', question: 'Quali clienti abbiamo acquisito negli ultimi 12 mesi?' },
+  { num: 16, target_tab: 'produzione', target_section: 'lead-time-trend', question: 'Come è evoluto il lead time medio mensile negli ultimi mesi?' },
+  { num: 17, target_tab: 'produzione', target_section: 'lead-time-top', question: 'Quali ordini hanno avuto i tempi di consegna più lunghi nell\'ultimo trimestre?' },
+  { num: 18, target_tab: 'produzione', target_section: 'volumi-mensili', question: 'Quali sono stati i picchi di volume mensile in kg e capi consegnati?' },
+  { num: 19, target_tab: 'produzione', target_section: 'volumi-settimanali', question: 'Come si confrontano i volumi settimanali con l\'anno scorso?' },
+]
+
 function App() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState(() => {
@@ -545,6 +558,17 @@ function App() {
     })
   }
 
+  const applyAnalisiShortcut = (targetTab, targetSection) => {
+    setData([])
+    setLoading(false)
+    clearDocumentDetails()
+    skipNextTabFetch.current = true
+    setActiveTab('analisi')
+    setAnalisiSubTab(targetTab)
+    setAnalisiScrollTarget(targetSection)
+    window.history.replaceState({}, document.title, `/analisi?tab=${targetTab}#${targetSection}`)
+  }
+
   const handleViewInvoiceDetail = (id, codiceCliente) => {
     setSelectedBollaId(null)
     setBollaDetail(null)
@@ -931,6 +955,16 @@ function App() {
                   <span className="chat-suggestion-num">9</span>
                   “Confrontami ordine, bolla e fattura per verificare differenze di Prima Srl.”
                 </button>
+                {ANALISI_QUESTION_SHORTCUTS.map((shortcut) => (
+                  <button
+                    key={shortcut.target_section}
+                    className="chat-suggestion-btn"
+                    onClick={() => applyAnalisiShortcut(shortcut.target_tab, shortcut.target_section)}
+                  >
+                    <span className="chat-suggestion-num">{shortcut.num}</span>
+                    “{shortcut.question}”
+                  </button>
+                ))}
               </div>
             </div>
             
