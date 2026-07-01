@@ -6,8 +6,9 @@ import { authFetch } from '../utils/auth'
 const TABS = [
   { id: 'clienti', label: 'Performance Clienti' },
   { id: 'produzione', label: 'Produzione' },
-  { id: 'controllo', label: 'Controllo Perdite' },
-  { id: 'opportunita', label: 'Simulatore & Opportunità' },
+  // Temporarily removed from nav — "Controllo Perdite" and "Simulatore & Opportunità" links hidden; tab logic kept below.
+  // { id: 'controllo', label: 'Controllo Perdite' },
+  // { id: 'opportunita', label: 'Simulatore & Opportunità' },
 ]
 
 const CLIENTI_TOC = [
