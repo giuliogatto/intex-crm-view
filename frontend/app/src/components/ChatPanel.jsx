@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react'
 import { authFetch } from '../utils/auth'
 import { parseLlmJson } from '../utils/llm'
 
-export default function ChatPanel({ onResponse, onClienteSelect }) {
+export default function ChatPanel({ onResponse, onClienteSelect, initialQuery }) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([])
   const [chatId, setChatId] = useState(null)
@@ -13,13 +13,27 @@ export default function ChatPanel({ onResponse, onClienteSelect }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, sending])
 
-  const handleSend = async () => {
-    const text = input.trim()
-    if (!text || sending) return
+  useEffect(() => {
+    if (initialQuery) {
+      setInput(initialQuery)
+      const timer = setTimeout(() => {
+        executeSendMessage(initialQuery)
+      }, 300)
+      return () => clearTimeout(timer)
+    }
+  }, [initialQuery])
 
+  const handleSend = () => {
+    const text = input.trim()
+    if (!text) return
     setInput('')
-    setMessages((prev) => [...prev, { role: 'user', text }])
+    executeSendMessage(text)
+  }
+
+  const executeSendMessage = async (text) => {
+    if (sending) return
     setSending(true)
+    setMessages((prev) => [...prev, { role: 'user', text }])
 
     try {
       const payload = { message: text }

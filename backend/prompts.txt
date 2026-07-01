@@ -26,7 +26,7 @@ Restituisci sempre un JSON con questa struttura:
 
 ```json
 {
-  "area": "bolle | fatture | offerte | discrepanze",
+  "area": "bolle | fatture | offerte | discrepanze | analisi",
   "filtri": {
     "data_inizio": "YYYY-MM-DD oppure stringa vuota",
     "data_fine": "YYYY-MM-DD oppure stringa vuota",
@@ -34,8 +34,10 @@ Restituisci sempre un JSON con questa struttura:
     "stagione": "codice stagione oppure stringa vuota"
   },
   "azione": {
-    "tipo": "nessuna | dettaglio_fattura | dettaglio_bolla | dettaglio_offerta | esporta_csv | apri_discrepanze",
-    "numero_documento": "numero documento quando tipo è dettaglio_fattura (disposizione), dettaglio_bolla (numero bolla) o dettaglio_offerta (numero ordine/cartellino, es. 2012-5234)"
+    "tipo": "nessuna | dettaglio_fattura | dettaglio_bolla | dettaglio_offerta | esporta_csv | apri_discrepanze | apri_analisi",
+    "numero_documento": "numero documento quando tipo è dettaglio_fattura (disposizione), dettaglio_bolla (numero bolla) o dettaglio_offerta (numero ordine/cartellino, es. 2012-5234)",
+    "target_tab": "clienti | produzione | controllo | opportunita (obbligatorio se area è 'analisi', altrimenti stringa vuota)",
+    "target_section": "ID della sottosezione (obbligatorio se area è 'analisi', altrimenti stringa vuota)"
   },
   "messaggio": "Breve spiegazione in italiano (1-2 frasi) del perché hai scelto area, filtri e azione"
 }
@@ -78,12 +80,39 @@ Imposta `azione.tipo` = `apri_discrepanze` e `area` = `discrepanze`.
 
 | Parole chiave utente | Area |
 |----------------------|------|
-| fattura, fatture, fatturato, disposizione | `fatture` |
-| bolla, bolle, DDT, consegna, spedizione | `bolle` |
-| ordine, ordini, cartellino, cartellini, commessa, commesse, offerta, offerte | `offerte` |
-| discrepanza, differenza, confronto, auditing, incoerenza, cartellino vs bolla, bolla vs fattura | `discrepanze` |
+| fattura, fatture, disposizione (se riferito a elenchi o dettagli ordinari di documenti) | `fatture` |
+| bolla, bolle, DDT, consegna, spedizione (se riferito a elenchi o dettagli ordinari di documenti) | `bolle` |
+| ordine, ordini, cartellino, cartellini, commessa, commesse, offerta, offerte (se riferito a elenchi o dettagli ordinari) | `offerte` |
+| discrepanza, differenza, confronto, auditing, incoerenza, cartellino vs bolla, bolla vs fattura (se riferito all'auditing discrepanze cliente) | `discrepanze` |
+| report, grafici, statistiche, andamento, trend, medie, anomalie, lead time, stress test, clienti dormienti/a rischio/nuovi, fatturato mensile, concentrazione clienti, stima sospeso | `analisi` |
 
 Se la richiesta è ambigua, preferisci l'area più probabile e spiegalo in `messaggio`.
+
+### 1b. Mappatura Area Analisi (`target_tab` e `target_section`)
+
+Quando l'area è `analisi`, imposta sempre `azione.tipo` = `apri_analisi` e determina `azione.target_tab` e `azione.target_section` in base alla tabella seguente:
+
+| Sezione / Richiesta Utente | `target_tab` | `target_section` |
+|----------------------------|--------------|------------------|
+| "fatturato mensile", "andamento vendite", "trend vendite" | `clienti` | `fatturato-mensile` |
+| "concentrazione clienti", "quota top 5", "incidenza grandi clienti" | `clienti` | `concentrazione` |
+| "migliori clienti", "classifica clienti", "top 10" | `clienti` | `top-clienti` |
+| "clienti a rischio", "erosione clienti", "alert clienti" | `clienti` | `erosione` |
+| "clienti dormienti", "clienti inattivi", "non acquistano da 90 giorni" | `clienti` | `dormienti` |
+| "nuovi clienti", "clienti acquisiti" | `clienti` | `nuovi` |
+| "lead time medio", "tempi di consegna", "giorni medi ordine-bolla" | `produzione` | `lead-time-trend` |
+| "lead time lunghi", "ritardi di consegna", "consegne lente" | `produzione` | `lead-time-top` |
+| "volumi consegnati", "capi consegnati", "kg consegnati", "picco volumi" | `produzione` | `volumi-mensili` |
+| "confronto settimanale", "volume anno su anno", "kg YoY" | `produzione` | `volumi-settimanali` |
+| "totale sospeso", "ddt non fatturati", "valore da fatturare" | `controllo` | `totale-sospeso` |
+| "ddt senza fattura elenco", "bolle da fatturare" | `controllo` | `ddt-senza-fattura` |
+| "consegne non fatturate per cliente", "stima sospeso cliente" | `controllo` | `consegne-non-fatturate` |
+| "fatture senza ddt", "disp senza bolla" | `controllo` | `fatture-senza-ddt` |
+| "stress test", "simulatore fatturato", "cosa succede se calano ordini" | `opportunita` | `stress-test` |
+| "clienti ideali", "clienti migliori per lead time" | `opportunita` | `clienti-ideali` |
+| "insight trimestre", "anomalie automatiche", "alert trimestre" | `opportunita` | `insight-trimestre` |
+
+Se l'utente cita un cliente specifico in una domanda analitica (es. "fatturato di TAM"), inserisci la ragione sociale in `filtri.cliente`.
 
 ### 2. Risoluzione date
 
@@ -160,6 +189,7 @@ Questi sono i possibili valori da assegnare al campo stagione, codice e descrizi
 | "esporta", "CSV", "riepilogo tabellare", "genera export" | `esporta_csv` | Dopo la ricerca l'utente esporta i risultati filtrati |
 | confronto ordine/bolla/fattura, auditing, discrepanze | `apri_discrepanze` | Area `discrepanze` |
 | somma di valori | `esegui_somma` | Nessuna nota |
+| grafici, metriche, andamenti, trend, statistiche, simulazioni o report di analisi | `apri_analisi` | Area `analisi` (deve valorizzare `target_tab` e `target_section` in `azione`) |
 
 Per il **totale fatturato**: non esiste una vista aggregata; imposta filtri su `fatture` con cliente/periodo/stagione e `azione.tipo` = `esegui_somma`.
 
@@ -443,7 +473,118 @@ Sostituisci `{{OGGI}}` con la data odierna reale al momento della chiamata (es. 
 }
 ```
 
+### Esempio 19 — Analisi: Andamento Fatturato Mensile
+**Utente:** "Voglio vedere l'andamento del fatturato mensile degli ultimi due anni"
+
+```json
+{
+  "area": "analisi",
+  "filtri": {
+    "data_inizio": "",
+    "data_fine": "",
+    "cliente": "",
+    "stagione": ""
+  },
+  "azione": {
+    "tipo": "apri_analisi",
+    "numero_documento": "",
+    "target_tab": "clienti",
+    "target_section": "fatturato-mensile"
+  },
+  "messaggio": "Apro il grafico dell'andamento mensile del fatturato per gli ultimi 24 mesi."
+}
+```
+
+### Esempio 20 — Analisi: Clienti Dormienti
+**Utente:** "Quali sono i clienti dormienti o inattivi da oltre 90 giorni?"
+
+```json
+{
+  "area": "analisi",
+  "filtri": {
+    "data_inizio": "",
+    "data_fine": "",
+    "cliente": "",
+    "stagione": ""
+  },
+  "azione": {
+    "tipo": "apri_analisi",
+    "numero_documento": "",
+    "target_tab": "clienti",
+    "target_section": "dormienti"
+  },
+  "messaggio": "Apro l'elenco dei clienti dormienti (nessun ordine da più di 90 giorni)."
+}
+```
+
+### Esempio 21 — Analisi: Lead Time Produzione
+**Utente:** "Mostrami i tempi medi di consegna o lead time della produzione"
+
+```json
+{
+  "area": "analisi",
+  "filtri": {
+    "data_inizio": "",
+    "data_fine": "",
+    "cliente": "",
+    "stagione": ""
+  },
+  "azione": {
+    "tipo": "apri_analisi",
+    "numero_documento": "",
+    "target_tab": "produzione",
+    "target_section": "lead-time-trend"
+  },
+  "messaggio": "Navigo all'analisi del lead time medio aziendale mensile."
+}
+```
+
+### Esempio 22 — Analisi: Consegne non Fatturate per Cliente
+**Utente:** "Fammi vedere le consegne non fatturate del cliente TAM"
+
+```json
+{
+  "area": "analisi",
+  "filtri": {
+    "data_inizio": "",
+    "data_fine": "",
+    "cliente": "TAM",
+    "stagione": ""
+  },
+  "azione": {
+    "tipo": "apri_analisi",
+    "numero_documento": "",
+    "target_tab": "controllo",
+    "target_section": "consegne-non-fatturate"
+  },
+  "messaggio": "Apro il controllo delle consegne non fatturate per cliente. Puoi trovare il dettaglio per TAM nella tabella."
+}
+```
+
+### Esempio 23 — Analisi: Stress Test
+**Utente:** "Esegui un simulatore o stress test sul fatturato"
+
+```json
+{
+  "area": "analisi",
+  "filtri": {
+    "data_inizio": "",
+    "data_fine": "",
+    "cliente": "",
+    "stagione": ""
+  },
+  "azione": {
+    "tipo": "apri_analisi",
+    "numero_documento": "",
+    "target_tab": "opportunita",
+    "target_section": "stress-test"
+  },
+  "messaggio": "Apro il simulatore di stress test del fatturato."
+}
+```
+
 ---
+
 
 ## ISTRUZIONI FINALI
 

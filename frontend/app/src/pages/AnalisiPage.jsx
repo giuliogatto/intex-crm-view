@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import UserMenu from '../components/UserMenu'
-import AdminNav from '../components/AdminNav'
 import LoadingOverlay from '../components/LoadingOverlay'
 import { useAuth } from '../context/AuthContext'
 import { authFetch } from '../utils/auth'
@@ -188,7 +186,7 @@ function AnalisiToc({ items }) {
   )
 }
 
-export default function AnalisiPage() {
+export default function AnalisiPage({ subTabOverride, scrollTargetOverride }) {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState('clienti')
   const [loading, setLoading] = useState(true)
@@ -210,6 +208,82 @@ export default function AnalisiPage() {
   const [stressPct, setStressPct] = useState(20)
   const [stressResult, setStressResult] = useState(null)
   const [stressLoading, setStressLoading] = useState(false)
+
+  // Gestione deep-linking da Chat Assistant (tab e anchor scrolling)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const urlTab = params.get('tab')
+    const validTabs = ['clienti', 'produzione', 'controllo', 'opportunita']
+    
+    if (urlTab && validTabs.includes(urlTab)) {
+      setActiveTab(urlTab)
+    } else {
+      const hash = window.location.hash.replace('#', '')
+      if (hash) {
+        const sectionToTabMap = {
+          'fatturato-mensile': 'clienti',
+          'concentrazione': 'clienti',
+          'top-clienti': 'clienti',
+          'erosione': 'clienti',
+          'dormienti': 'clienti',
+          'nuovi': 'clienti',
+          'lead-time-trend': 'produzione',
+          'lead-time-top': 'produzione',
+          'volumi-mensili': 'produzione',
+          'volumi-settimanali': 'produzione',
+          'totale-sospeso': 'controllo',
+          'ddt-senza-fattura': 'controllo',
+          'consegne-non-fatturate': 'controllo',
+          'fatture-senza-ddt': 'controllo',
+          'stress-test': 'opportunita',
+          'clienti-ideali': 'opportunita',
+          'insight-trimestre': 'opportunita',
+        }
+        const deducedTab = sectionToTabMap[hash]
+        if (deducedTab) {
+          setActiveTab(deducedTab)
+        }
+      }
+    }
+    // Clean query parameters from URL after parsing
+    if (urlTab) {
+      const newUrl = window.location.pathname + window.location.hash
+      window.history.replaceState({}, document.title, newUrl)
+    }
+  }, [])
+
+  // Esegue lo scroll all'ancora desiderata una volta caricati i dati
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash && !loading) {
+      const timer = setTimeout(() => {
+        const element = document.querySelector(hash)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 200)
+      return () => clearTimeout(timer)
+    }
+  }, [activeTab, loading])
+
+  // Supporto per i prop overrides da parte dell'applicazione genitore (App.jsx)
+  useEffect(() => {
+    if (subTabOverride) {
+      setActiveTab(subTabOverride)
+    }
+  }, [subTabOverride])
+
+  useEffect(() => {
+    if (scrollTargetOverride && !loading) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(scrollTargetOverride)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 150)
+      return () => clearTimeout(timer)
+    }
+  }, [scrollTargetOverride, loading])
 
   const loadClienti = useCallback(async () => {
     const [metaRes, rankRes, fatRes, concRes, erosRes, dormRes, nuoviRes] = await Promise.all([
@@ -295,21 +369,8 @@ export default function AnalisiPage() {
   const maxFatturato = Math.max(...fatturatoMensile.map((r) => r.fatturato_mensile || 0), 1)
 
   return (
-    <div className="app-container">
+    <div className="analisi-dashboard-tab">
       {loading && <LoadingOverlay />}
-      <header className="app-header">
-        <div className="app-title-group">
-          <a href="/" className="app-logo-link">
-            <img src="/logo.webp" alt="Intex" className="app-logo" />
-          </a>
-          <span className="badge-mock">Analisi</span>
-        </div>
-        <div className="app-header__actions">
-          <a href="/" className="btn">← Consultazione</a>
-          <UserMenu />
-          {user?.role === 'admin' && <AdminNav />}
-        </div>
-      </header>
 
       {meta?.last_success && (
         <p className="meta analisi-meta">
@@ -324,7 +385,7 @@ export default function AnalisiPage() {
       )}
 
       <nav className="nav-primary">
-        {TABS.map((tab) => (
+            {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"

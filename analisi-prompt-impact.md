@@ -271,19 +271,196 @@ useEffect(() => {
 
 ---
 
-## 5. Valutazione UX ed Evoluzioni Future
+## 5. Dettaglio di Implementazione: Integrazione della Chat nella Pagina Analisi
 
-### Limite della Redirezione Semplice (Perdita di Contesto)
-L'utilizzo di `window.location.href` causa un ricaricamento completo della pagina. Questo comporta:
-*   La chiusura del pannello chat.
-*   La perdita della cronologia locale dei messaggi scambiati in quella sessione.
-*   La necessità di riautenticare implicitamente la sessione o ricaricare tutti i KPI di analisi da zero.
+Invece di affidarsi a un rinvio distruttivo via `window.location.href` (che costringe al ricaricamento totale per le query analitiche), la soluzione ottimale è integrare direttamente il `ChatPanel` all'interno della pagina `/analisi`. Questo garantisce continuità conversazionale e permette una navigazione intra-pagina fluida.
 
-### Soluzioni Raccomandate per il Futuro
-1.  **Integrazione della Chat nella Pagina Analisi**:
-    *   Renderizzare il componente `ChatPanel` anche all'interno di `AnalisiPage.jsx` (ad esempio in una sidebar collassabile). In questo modo, la navigazione interna tra schede e l'auto-scorrimento possono avvenire senza ricaricare la pagina (modificando semplicemente lo stato `activeTab` del componente a livello locale).
-2.  **Routing Client-Side (Single Page Application)**:
-    *   Se l'applicazione decidesse di adottare un router di libreria (es. `react-router-dom`), la redirezione da `/` a `/analisi` avverrebbe mantenendo lo stato globale della chat intatto, eliminando la necessità di caricamenti completi del browser.
+Di seguito viene spiegato passo-passo come implementare questa integrazione a livello di layout e di logica.
+
+### A. Modifiche al Layout di `AnalisiPage.jsx`
+Dobbiamo allineare il layout di `AnalisiPage.jsx` a quello di `App.jsx` importando `ChatPanel` e inserendolo nella griglia CSS a due colonne (`dashboard-grid`).
+
+```jsx
+// AnalisiPage.jsx - Importazione del componente
+import ChatPanel from '../components/ChatPanel'
+
+export default function AnalisiPage() {
+  // ... stati esistenti ...
+
+  return (
+    <div className="app-container">
+      {loading && <LoadingOverlay />}
+      <header className="app-header">
+        {/* ... intestazione esistente ... */}
+      </header>
+
+      {/* Griglia a due colonne identica alla Home Page per consistenza UI */}
+      <div className="dashboard-grid">
+        
+        {/* Colonna di sinistra: Chat Assistente */}
+        <div className="dashboard-chat">
+          <ChatPanel 
+            onResponse={applyLlmResponse} 
+            onClienteSelect={applyClienteSelection} 
+          />
+        </div>
+
+        {/* Colonna di destra: Contenuti ed Elenchi dell'Analisi */}
+        <div className="dashboard-main">
+          {meta?.last_success && (
+            <p className="meta analisi-meta">
+              Dati analitici aggiornati al {formatDate(meta.last_success)}
+            </p>
+          )}
+
+          <nav className="nav-primary">
+            {TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`nav-tab ${activeTab === tab.id ? 'is-active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+
+          {/* ... rendering dei tab esistenti (clienti, produzione, controllo, opportunita) ... */}
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+### B. Logica di Risposta della Chat (`applyLlmResponse` in `AnalisiPage.jsx`)
+Nella pagina Analisi, la chat deve comportarsi in due modi diversi a seconda del tipo di richiesta dell'utente:
+1.  **Se la richiesta è analitica (`area === 'analisi'`)**: cambia il tab attivo locale ed effettua uno scroll smooth alla sezione desiderata in modo puramente client-side, senza ricaricare la pagina.
+2.  **Se la richiesta è di ricerca ordinaria (es. "mostrami la bolla n. 4761")**: effettua un reindirizzamento alla homepage (`/`) passando la query originale come parametro URL.
+
+```javascript
+// AnalisiPage.jsx - Gestione risposte LLM
+const applyLlmResponse = async (llmJson, userMessage = '') => {
+  const { area, messaggio } = llmJson || {}
+  const azione = llmJson?.azione || {}
+
+  if (area === 'analisi') {
+    const targetTab = azione.target_tab
+    const targetSection = azione.target_section
+
+    // Cambia la scheda attiva localmente
+    if (targetTab) {
+      setActiveTab(targetTab)
+    }
+
+    // Scroll morbido alla sezione di analisi desiderata
+    if (targetSection) {
+      setTimeout(() => {
+        const element = document.getElementById(targetSection)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 150)
+    }
+
+    return { messaggio: messaggio || 'Sezione aperta correttamente.' }
+  }
+
+  // Se l'utente chiede dati al di fuori dell'analisi (es. dettaglio bolle o fatture)
+  // lo reindirizziamo alla Consultazione passando la richiesta in querystring per non interrompere il flusso
+  const redirectUrl = `/?query=${encodeURIComponent(userMessage)}`
+  window.location.href = redirectUrl
+
+  return { messaggio: 'Reindirizzamento alla consultazione documenti...' }
+}
+
+const applyClienteSelection = (codice, context) => {
+  // Nel contesto dell'analisi, se l'utente seleziona un cliente da un menù di disambiguazione,
+  // possiamo memorizzarlo localmente per filtrare le tabelle nella pagina o evidenziare righe.
+  console.log('Cliente selezionato nell\'analisi:', codice, context)
+}
+```
+
+### C. Gestione della Query Automatica all'Avvio in `App.jsx`
+Per far sì che l'utente che viene reindirizzato dalla pagina Analisi alla homepage non debba riscrivere la richiesta, dobbiamo fare in modo che `App.jsx` intercetti il parametro `query` all'avvio e lo inoltri alla chat.
+
+1.  **In `App.jsx`**:
+    Estraiamo il parametro `query` dalla querystring dell'URL e lo passiamo al `ChatPanel` come prop `initialQuery`:
+    ```javascript
+    // Estrazione del parametro all'avvio di App.jsx
+    const params = new URLSearchParams(window.location.search)
+    const initialQuery = params.get('query') || ''
+    ```
+    Nel rendering del layout:
+    ```jsx
+    <ChatPanel 
+      onResponse={applyLlmResponse} 
+      onClienteSelect={applyClienteSelection} 
+      initialQuery={initialQuery}
+    />
+    ```
+
+2.  **In `ChatPanel.jsx`**:
+    Intercettiamo la prop `initialQuery` ed eseguiamo automaticamente l'invio al caricamento del componente:
+    ```javascript
+    export default function ChatPanel({ onResponse, onClienteSelect, initialQuery }) {
+      const [input, setInput] = useState('')
+      const [messages, setMessages] = useState([])
+      const [sending, setSending] = useState(false)
+      // ... altri stati ...
+
+      useEffect(() => {
+        if (initialQuery) {
+          // Imposta l'input visibile
+          setInput(initialQuery)
+          
+          // Eseguiamo l'invio automatico dopo un breve ritardo per garantire che la chat sia montata
+          const timer = setTimeout(() => {
+            handleSendQuery(initialQuery)
+          }, 300)
+          return () => clearTimeout(timer)
+        }
+      }, [initialQuery])
+
+      const handleSendQuery = async (queryText) => {
+        if (!queryText.trim() || sending) return
+        setSending(true)
+        
+        // Aggiunge il messaggio utente all'elenco
+        setMessages((prev) => [...prev, { role: 'user', text: queryText }])
+        setInput('')
+
+        try {
+          const res = await authFetch('/llmrequest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: queryText })
+          })
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error)
+
+          const parsed = parseLlmJson(data.response)
+          const result = await onResponse(parsed, queryText)
+          const messaggio = typeof result === 'string' ? result : result.messaggio
+
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', text: messaggio, disambiguation: result.disambiguation || null }
+          ])
+        } catch (err) {
+          setMessages((prev) => [
+            ...prev,
+            { role: 'assistant', text: `Errore: ${err.message}`, isError: true }
+          ])
+        } finally {
+          setSending(false)
+        }
+      }
+      
+      // ... rendering esistente ...
+    }
+    ```
 
 ---
 
@@ -298,3 +475,43 @@ Per validare le modifiche senza introdurre bug regressivi nelle ricerche ordinar
     *   Verificare che l'URL finale generato corrisponda a `/analisi?tab=opportunita#stress-test`.
 3.  **Test di Caricamento Asincrono (Scorrimento)**:
     *   Simulare una connessione lenta e verificare che l'auto-scorrimento si attivi solo *dopo* il termine del caricamento della tabella dati (quando `loading === false`), altrimenti l'ancora si posizionerebbe su coordinate errate.
+
+---
+
+## 7. Analisi dell'Impatto di GPT-4o-Mini (OpenAI) rispetto a Gemini
+
+È possibile configurare l'applicazione per utilizzare **`gpt-4o-mini`** di OpenAI in sostituzione del modello Gemini. Di seguito si esaminano la compatibilità con il nuovo prompt esteso, le differenze prestazionali, i costi e la facilità di integrazione.
+
+### A. Compatibilità del Prompt Esteso con `gpt-4o-mini`
+*   **Finestra di Contesto**: `gpt-4o-mini` supporta fino a **128.000 token** di input. Il nostro prompt principale esteso per la sezione Analisi (~6.000 token complessivi) occupa solo il **4.7%** della finestra di contesto disponibile.
+*   **Token di Output**: Il modello supporta fino a 16.384 token in uscita. La risposta del nostro parser è un oggetto JSON compatto che richiede meno di 250 token.
+*   **Conclusione**: **Sì, il nuovo prompt esteso funzionerà perfettamente e senza alcuna limitazione fisica.**
+
+### B. Confronto tra i Modelli
+
+| Caratteristica | Gemini (2.0-flash / 3.5-flash) | GPT-4o-Mini (OpenAI) | Impatto sull'Applicazione |
+| :--- | :--- | :--- | :--- |
+| **Context Window** | 1.000.000+ token | 128.000 token | Entrambi sono ampiamente sovradimensionati per il nostro prompt di ~6k token. |
+| **Structured Outputs** | Supporto per JSON schema nativo. | Supporto nativo per **Structured Outputs** (JSON Schema rigido). | OpenAI garantisce al 100% che l'output sia JSON valido conforme allo schema, eliminando errori di sintassi. |
+| **Prompt Caching** | Supportato (automatico per blocchi >32k token). | Supportato ( automatico per richieste frequenti, con sconto del 50% sui token di input). | Il caching riduce drasticamente latenza e costi di input su OpenAI per richieste ripetute. |
+| **Costi (Input / Output)** | ~$0.075 / $0.30 per 1M token | $0.150 / $0.60 per 1M token ($0.075 input con cache) | I costi per singola richiesta rimangono inferiori a $0.0005. La differenza economica è irrilevante. |
+| **Latenza di Risposta** | Estremamente veloce (tipicamente <800ms) | Molto veloce (tipicamente 600ms - 1s) | Esperienza utente fluida e risposte quasi istantanee in entrambi i casi. |
+
+### C. Vantaggi Specifici di `gpt-4o-mini`
+1.  **Garanzia di Formato (Structured Outputs)**:
+    OpenAI permette di forzare l'output affinché rispetti esattamente uno schema JSON definito. Questo previene qualsiasi anomalia in cui il modello risponde con testo libero o include i delimitatori ```json ... ```, facilitando il parsing lato client.
+2.  **Affidabilità dell'Instruction Following**:
+    `gpt-4o-mini` dimostra un'elevata precisione nel comprendere vincoli complessi e negazioni (es. distinguere rigidamente quando una parola chiave fa riferimento a un documento specifico rispetto a un report aggregato di analisi).
+
+### D. Impatto sull'Infrastruttura Esistente (`backend/LLMservice.py`)
+L'infrastruttura backend di Intex è già predisposta per supportare entrambi i provider tramite la classe/funzioni definite in [LLMservice.py](file:///Users/globalbit/Code/intex/backend/LLMservice.py):
+*   Il provider di default è controllato dalla variabile d'ambiente `LLM_PROVIDER` (righe 13-14).
+*   Se `LLM_PROVIDER="OPENAI"`, il sistema utilizza automaticamente `gpt-4o-mini` come modello predefinito (riga 9) e invoca la chiamata Responses API (`_call_openai`).
+
+Per passare a `gpt-4o-mini` è quindi sufficiente aggiornare le configurazioni nel file di ambiente `.env` del backend:
+```env
+LLM_PROVIDER=OPENAI
+OPENAI_APIKEY=sk-proj-tuachiaveapi...
+OPENAI_MODEL=gpt-4o-mini
+```
+Non è richiesta alcuna modifica al codice sorgente del backend o del frontend.

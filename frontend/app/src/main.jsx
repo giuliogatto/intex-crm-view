@@ -4,16 +4,14 @@ import './index.css'
 import App from './App.jsx'
 import ChatsPage from './pages/ChatsPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
-import AnalisiPage from './pages/AnalisiPage.jsx'
-import LoginPage from './pages/LoginPage.jsx'
 import AdminGuard from './components/AdminGuard.jsx'
+import LoginPage from './pages/LoginPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 
 function getAdminPage() {
   const pathname = window.location.pathname
   if (pathname === '/chats') return 'chats'
   if (pathname === '/users') return 'users'
-  if (pathname === '/analisi') return 'analisi'
   return null
 }
 
@@ -50,10 +48,6 @@ function AppRoot() {
         <UsersPage />
       </AdminGuard>
     )
-  }
-
-  if (adminPage === 'analisi') {
-    return <AnalisiPage />
   }
 
   return <App />

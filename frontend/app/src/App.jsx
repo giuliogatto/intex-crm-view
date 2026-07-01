@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Filters from './components/Filters'
 import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
+import AnalisiPage from './pages/AnalisiPage'
 import ChatPanel from './components/ChatPanel'
 import UserMenu from './components/UserMenu'
 import AdminNav from './components/AdminNav'
@@ -22,7 +23,13 @@ const LIST_PAGE_SIZE = 50
 
 function App() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState('bolle')
+  const [activeTab, setActiveTab] = useState(() => {
+    const pathname = window.location.pathname
+    if (pathname === '/analisi') return 'analisi'
+    return 'bolle'
+  })
+  const [analisiSubTab, setAnalisiSubTab] = useState(null)
+  const [analisiScrollTarget, setAnalisiScrollTarget] = useState(null)
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [exportingPDF, setExportingPDF] = useState(false)
@@ -37,6 +44,15 @@ function App() {
     data_fine: '',
     codice_cliente: '',
     stagione: ''
+  })
+  const [initialQuery] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get('query') || ''
+    if (q) {
+      const newUrl = window.location.pathname + window.location.hash
+      window.history.replaceState({}, document.title, newUrl)
+    }
+    return q
   })
   const [discrepancyCustomer, setDiscrepancyCustomer] = useState('')
   const [pendingExport, setPendingExport] = useState(false)
@@ -95,6 +111,16 @@ function App() {
   const handleTabChange = (tab) => {
     clearDocumentDetails()
 
+    if (tab === 'analisi') {
+      window.history.replaceState({}, document.title, '/analisi')
+      setActiveTab(tab)
+      setAnalisiSubTab(null)
+      setAnalisiScrollTarget(null)
+      return
+    }
+
+    window.history.replaceState({}, document.title, '/')
+
     if (tab === 'discrepanze') {
       setData([])
       setListPage(1)
@@ -120,7 +146,7 @@ function App() {
 
   // Fetch list data when activeTab changes
   useEffect(() => {
-    if (activeTab !== 'discrepanze') {
+    if (activeTab !== 'discrepanze' && activeTab !== 'analisi') {
       if (skipNextTabFetch.current) {
         skipNextTabFetch.current = false
         return
@@ -351,6 +377,53 @@ function App() {
       stagione: filtri.stagione || ''
     }
 
+    if (isDocumentDetailAction(azione)) {
+      const llmCliente = filtri.cliente?.trim() || ''
+      const userHint = extractClienteHint(userMessage)
+      const clienti = await getClienti()
+
+      const llmMatch = llmCliente ? matchCliente(llmCliente, clienti) : null
+      const userMatch = userHint ? matchCliente(userHint, clienti) : null
+
+      let matchResult = { codice: '', matched: true, ambiguous: false, candidates: [] }
+      if (userMatch?.ambiguous) {
+        matchResult = userMatch
+      } else if (llmMatch) {
+        matchResult = llmMatch
+      } else if (userMatch) {
+        matchResult = userMatch
+      }
+
+      newFilters.codice_cliente = matchResult.ambiguous ? '' : matchResult.codice
+
+      const clienteQuery = userHint || llmCliente
+      const finalMessaggio = appendClienteNotFoundMessage(
+        messaggio,
+        clienteQuery,
+        matchResult
+      )
+
+      const detailTab = tabForDocumentDetailAction(azione, tab)
+      return openDocumentDetailFromLlm(detailTab, newFilters, azione, finalMessaggio)
+    }
+
+    if (tab === 'analisi' || azione.tipo === 'apri_analisi') {
+      setData([])
+      setLoading(false)
+      clearDocumentDetails()
+      skipNextTabFetch.current = true
+      const targetTab = azione.target_tab || 'clienti'
+      const targetSection = azione.target_section || ''
+
+      setActiveTab('analisi')
+      setAnalisiSubTab(targetTab)
+      setAnalisiScrollTarget(targetSection)
+
+      const hash = targetSection ? `#${targetSection}` : ''
+      window.history.replaceState({}, document.title, `/analisi?tab=${targetTab}${hash}`)
+      return { messaggio: messaggio || 'Navigazione alla pagina Analisi...' }
+    }
+
     const llmCliente = filtri.cliente?.trim() || ''
     const userHint = extractClienteHint(userMessage)
     const clienti = await getClienti()
@@ -377,14 +450,6 @@ function App() {
     )
 
     const disambiguationContext = { tab, filtri: newFilters, azione }
-
-    if (isDocumentDetailAction(azione)) {
-      if (matchResult.ambiguous) {
-        newFilters.codice_cliente = ''
-      }
-      const detailTab = tabForDocumentDetailAction(azione, tab)
-      return openDocumentDetailFromLlm(detailTab, newFilters, azione, finalMessaggio)
-    }
 
     if (matchResult.ambiguous) {
       setData([])
@@ -549,242 +614,250 @@ function App() {
         >
           ⚖️ Auditing Confronto
         </button>
-        <a href="/analisi" className="nav-tab nav-tab--link">
+        <button
+          className={`nav-tab ${activeTab === 'analisi' ? 'is-active' : ''}`}
+          onClick={() => handleTabChange('analisi')}
+        >
           📊 Analisi
-        </a>
+        </button>
       </nav>
 
       <div className="dashboard-grid">
         <div className="dashboard-chat">
-          <ChatPanel onResponse={applyLlmResponse} onClienteSelect={applyClienteSelection} />
+          <ChatPanel onResponse={applyLlmResponse} onClienteSelect={applyClienteSelection} initialQuery={initialQuery} />
         </div>
 
         <div className="dashboard-main">
-          {activeTab !== 'discrepanze' && (
-            <div className="panel">
-              <div className="panel__head">Filtri di Ricerca</div>
-              <div className="panel__body">
-                <Filters
-                  activeTab={activeTab}
-                  onSearch={handleSearch}
-                  onExport={exportCSV}
-                  onExportPDF={exportPDF}
-                  filterValues={currentFilters}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Detailed Invoice Rows Panel */}
-          {selectedInvoice && invoiceDetail?.header && (
-            <div className="panel">
-              <div className="panel__head">
-                <span>Dettaglio Documento — Riga Disposition N. {invoiceDetail.header.numero_disposizione}</span>
-                <button className="btn" onClick={() => setSelectedInvoice(null)}>Chiudi Dettaglio</button>
-              </div>
-              <div className="panel__body">
-                <div className="detail-header-info">
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Cliente</span>
-                    <span className="detail-info-item__value">{invoiceDetail.header.cliente} ({invoiceDetail.header.codice_cliente})</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Data Fattura</span>
-                    <span className="detail-info-item__value">{invoiceDetail.header.data}</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Totale Documento</span>
-                    <span className="detail-info-item__value">{formatEuro(invoiceDetail.header.importo_totale)}</span>
-                  </div>
-                </div>
-
-                <div className="table-wrap">
-                  <table className="data">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Data bolla</th>
-                        <th>N. bolla</th>
-                        <th>Articolo</th>
-                        <th>Colore</th>
-                        <th>Kg fatturati</th>
-                        <th>Capi fatturati</th>
-                        <th>Importo riga</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoiceDetail.lines.map((line) => (
-                        <tr key={line.riga_disposizione}>
-                          <td>{line.riga_disposizione}</td>
-                          <td>{line.data_bolla}</td>
-                          <td>{line.numero_bolla || '—'}</td>
-                          <td><strong>{line.articolo}</strong></td>
-                          <td>{line.colore}</td>
-                          <td>{line.kg_fatturati}</td>
-                          <td>{line.capi_fatturati}</td>
-                          <td>{formatEuro(line.importo_riga)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {selectedBollaId && bollaDetail?.header && (
-            <div className="panel">
-              <div className="panel__head">
-                <span>Dettaglio Bolla — N. {bollaDetail.header.numero_bolla}</span>
-                <button className="btn" onClick={() => setSelectedBollaId(null)}>Chiudi Dettaglio</button>
-              </div>
-              <div className="panel__body">
-                <div className="detail-header-info">
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Cliente</span>
-                    <span className="detail-info-item__value">{bollaDetail.header.cliente} ({bollaDetail.header.codice_cliente})</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Data Bolla</span>
-                    <span className="detail-info-item__value">{bollaDetail.header.data}</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Totale Documento</span>
-                    <span className="detail-info-item__value">{formatEuro(bollaDetail.header.importo_totale)}</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Righe</span>
-                    <span className="detail-info-item__value">{bollaDetail.lines.length}</span>
-                  </div>
-                </div>
-
-                <div className="table-wrap">
-                  <table className="data">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>N. disp.</th>
-                        <th>Riga disp.</th>
-                        <th>N. offerta</th>
-                        <th>Articolo</th>
-                        <th>Colore</th>
-                        <th>Kg consegnati</th>
-                        <th>Capi consegnati</th>
-                        <th>Importo riga</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bollaDetail.lines.map((line) => (
-                        <tr key={line.riga_num}>
-                          <td>{line.riga_num}</td>
-                          <td>{line.numero_disposizione}</td>
-                          <td>{line.riga_disposizione}</td>
-                          <td>{line.numero_offerta}</td>
-                          <td><strong>{line.articolo}</strong></td>
-                          <td>{line.colore}</td>
-                          <td>{line.kg_consegnati}</td>
-                          <td>{line.capi_consegnati}</td>
-                          <td>{formatEuro(line.importo_riga)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {selectedOffertaId && offertaDetail?.header && (
-            <div className="panel">
-              <div className="panel__head">
-                <span>Dettaglio Ordine/Cartellino — N. {offertaDetail.header.numero_offerta}</span>
-                <button className="btn" onClick={() => setSelectedOffertaId(null)}>Chiudi Dettaglio</button>
-              </div>
-              <div className="panel__body">
-                <div className="detail-header-info">
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Cliente</span>
-                    <span className="detail-info-item__value">{offertaDetail.header.cliente} ({offertaDetail.header.codice_cliente})</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Data Ordine</span>
-                    <span className="detail-info-item__value">{offertaDetail.header.data}</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Stagione</span>
-                    <span className="detail-info-item__value">{offertaDetail.header.stagione}</span>
-                  </div>
-                  <div className="detail-info-item">
-                    <span className="detail-info-item__label">Totale Documento</span>
-                    <span className="detail-info-item__value">{formatEuro(offertaDetail.header.importo_totale)}</span>
-                  </div>
-                </div>
-
-                <div className="table-wrap">
-                  <table className="data">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Articolo</th>
-                        <th>Colore</th>
-                        <th>Quantità</th>
-                        <th>Prezzo unitario</th>
-                        <th>Importo riga</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {offertaDetail.lines.map((line) => (
-                        <tr key={line.riga_num}>
-                          <td>{line.riga_num}</td>
-                          <td><strong>{line.articolo}</strong></td>
-                          <td>{line.colore}</td>
-                          <td>{line.quantita}</td>
-                          <td>{formatEuro(line.prezzo_unitario)}</td>
-                          <td>{formatEuro(line.importo_riga)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab !== 'discrepanze' ? (
-            <div className="panel">
-              <div className="panel__head">
-                <span>Risultati ({listTotal} record)</span>
-              </div>
-              {loading ? (
-                <div className="loading-indicator">
-                  <div className="spinner"></div>
-                  <span>Recupero dati in corso...</span>
-                </div>
-              ) : (
-                <>
-                  <DocumentTable
-                    activeTab={activeTab}
-                    data={data}
-                    totals={listTotals}
-                    onViewDetail={handleViewInvoiceDetail}
-                    onViewBollaDetail={handleViewBollaDetail}
-                    onViewOffertaDetail={handleViewOffertaDetail}
-                  />
-                  <Pagination
-                    page={listPage}
-                    pages={listPages}
-                    total={listTotal}
-                    onPageChange={handleListPageChange}
-                    label="Record"
-                  />
-                </>
-              )}
-            </div>
-          ) : (
+          {activeTab === 'analisi' ? (
+            <AnalisiPage 
+              subTabOverride={analisiSubTab} 
+              scrollTargetOverride={analisiScrollTarget} 
+            />
+          ) : activeTab === 'discrepanze' ? (
             <DiscrepancyPanel
               selectedCustomer={discrepancyCustomer}
               onCustomerChange={setDiscrepancyCustomer}
             />
+          ) : (
+            <>
+              <div className="panel">
+                <div className="panel__head">Filtri di Ricerca</div>
+                <div className="panel__body">
+                  <Filters
+                    activeTab={activeTab}
+                    onSearch={handleSearch}
+                    onExport={exportCSV}
+                    onExportPDF={exportPDF}
+                    filterValues={currentFilters}
+                  />
+                </div>
+              </div>
+
+              {/* Detailed Invoice Rows Panel */}
+              {selectedInvoice && invoiceDetail?.header && (
+                <div className="panel">
+                  <div className="panel__head">
+                    <span>Dettaglio Documento — Riga Disposition N. {invoiceDetail.header.numero_disposizione}</span>
+                    <button className="btn" onClick={() => setSelectedInvoice(null)}>Chiudi Dettaglio</button>
+                  </div>
+                  <div className="panel__body">
+                    <div className="detail-header-info">
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Cliente</span>
+                        <span className="detail-info-item__value">{invoiceDetail.header.cliente} ({invoiceDetail.header.codice_cliente})</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Data Fattura</span>
+                        <span className="detail-info-item__value">{invoiceDetail.header.data}</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Totale Documento</span>
+                        <span className="detail-info-item__value">{formatEuro(invoiceDetail.header.importo_totale)}</span>
+                      </div>
+                    </div>
+
+                    <div className="table-wrap">
+                      <table className="data">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Data bolla</th>
+                            <th>N. bolla</th>
+                            <th>Articolo</th>
+                            <th>Colore</th>
+                            <th>Kg fatturati</th>
+                            <th>Capi fatturati</th>
+                            <th>Importo riga</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {invoiceDetail.lines.map((line) => (
+                            <tr key={line.riga_disposizione}>
+                              <td>{line.riga_disposizione}</td>
+                              <td>{line.data_bolla}</td>
+                              <td>{line.numero_bolla || '—'}</td>
+                              <td><strong>{line.articolo}</strong></td>
+                              <td>{line.colore}</td>
+                              <td>{line.kg_fatturati}</td>
+                              <td>{line.capi_fatturati}</td>
+                              <td>{formatEuro(line.importo_riga)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedBollaId && bollaDetail?.header && (
+                <div className="panel">
+                  <div className="panel__head">
+                    <span>Dettaglio Bolla — N. {bollaDetail.header.numero_bolla}</span>
+                    <button className="btn" onClick={() => setSelectedBollaId(null)}>Chiudi Dettaglio</button>
+                  </div>
+                  <div className="panel__body">
+                    <div className="detail-header-info">
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Cliente</span>
+                        <span className="detail-info-item__value">{bollaDetail.header.cliente} ({bollaDetail.header.codice_cliente})</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Data Bolla</span>
+                        <span className="detail-info-item__value">{bollaDetail.header.data}</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Totale Documento</span>
+                        <span className="detail-info-item__value">{formatEuro(bollaDetail.header.importo_totale)}</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Righe</span>
+                        <span className="detail-info-item__value">{bollaDetail.lines.length}</span>
+                      </div>
+                    </div>
+
+                    <div className="table-wrap">
+                      <table className="data">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>N. disp.</th>
+                            <th>Riga disp.</th>
+                            <th>N. offerta</th>
+                            <th>Articolo</th>
+                            <th>Colore</th>
+                            <th>Kg consegnati</th>
+                            <th>Capi consegnati</th>
+                            <th>Importo riga</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bollaDetail.lines.map((line) => (
+                            <tr key={line.riga_num}>
+                              <td>{line.riga_num}</td>
+                              <td>{line.numero_disposizione}</td>
+                              <td>{line.riga_disposizione}</td>
+                              <td>{line.numero_offerta}</td>
+                              <td><strong>{line.articolo}</strong></td>
+                              <td>{line.colore}</td>
+                              <td>{line.kg_consegnati}</td>
+                              <td>{line.capi_consegnati}</td>
+                              <td>{formatEuro(line.importo_riga)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedOffertaId && offertaDetail?.header && (
+                <div className="panel">
+                  <div className="panel__head">
+                    <span>Dettaglio Ordine/Cartellino — N. {offertaDetail.header.numero_offerta}</span>
+                    <button className="btn" onClick={() => setSelectedOffertaId(null)}>Chiudi Dettaglio</button>
+                  </div>
+                  <div className="panel__body">
+                    <div className="detail-header-info">
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Cliente</span>
+                        <span className="detail-info-item__value">{offertaDetail.header.cliente} ({offertaDetail.header.codice_cliente})</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Data Ordine</span>
+                        <span className="detail-info-item__value">{offertaDetail.header.data}</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Stagione</span>
+                        <span className="detail-info-item__value">{offertaDetail.header.stagione}</span>
+                      </div>
+                      <div className="detail-info-item">
+                        <span className="detail-info-item__label">Totale Documento</span>
+                        <span className="detail-info-item__value">{formatEuro(offertaDetail.header.importo_totale)}</span>
+                      </div>
+                    </div>
+
+                    <div className="table-wrap">
+                      <table className="data">
+                        <thead>
+                          <tr>
+                            <th>#</th>
+                            <th>Articolo</th>
+                            <th>Colore</th>
+                            <th>Quantità</th>
+                            <th>Prezzo unitario</th>
+                            <th>Importo riga</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {offertaDetail.lines.map((line) => (
+                            <tr key={line.riga_num}>
+                              <td>{line.riga_num}</td>
+                              <td><strong>{line.articolo}</strong></td>
+                              <td>{line.colore}</td>
+                              <td>{line.quantita}</td>
+                              <td>{formatEuro(line.prezzo_unitario)}</td>
+                              <td>{formatEuro(line.importo_riga)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="panel">
+                <div className="panel__head">
+                  <span>Risultati ({listTotal} record)</span>
+                </div>
+                {loading ? (
+                  <div className="loading-indicator">
+                    <div className="spinner"></div>
+                    <span>Recupero dati in corso...</span>
+                  </div>
+                ) : (
+                  <>
+                    <DocumentTable
+                      activeTab={activeTab}
+                      data={data}
+                      totals={listTotals}
+                      onViewDetail={handleViewInvoiceDetail}
+                      onViewBollaDetail={handleViewBollaDetail}
+                      onViewOffertaDetail={handleViewOffertaDetail}
+                    />
+                    <Pagination
+                      page={listPage}
+                      pages={listPages}
+                      total={listTotal}
+                      onPageChange={handleListPageChange}
+                      label="Record"
+                    />
+                  </>
+                )}
+              </div>
+            </>
           )}
         </div>
 
