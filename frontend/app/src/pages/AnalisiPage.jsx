@@ -391,7 +391,10 @@ export default function AnalisiPage({ subTabOverride, scrollTargetOverride }) {
             key={tab.id}
             type="button"
             className={`nav-tab ${activeTab === tab.id ? 'is-active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id)
+              window.scrollTo(0, 0)
+            }}
           >
             {tab.label}
           </button>

@@ -122,6 +122,7 @@ function App() {
   }
 
   const handleTabChange = (tab) => {
+    window.scrollTo(0, 0)
     clearDocumentDetails()
 
     if (tab === 'analisi') {
