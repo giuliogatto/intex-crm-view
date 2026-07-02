@@ -39,6 +39,10 @@
   --danger: #e73827;
   --danger-bg: rgba(231, 56, 39, 0.08);
 
+  /* Sticky header + main nav height (logo, spacing, tab bar, small gap) */
+  --app-header-sticky-offset: calc(48px + 1rem + 0.75rem);
+  --app-sticky-top-offset: calc(48px + 1rem + 2rem + 2.9rem + 0.7rem + 0.75rem);
+
   font-family: 'Roboto', sans-serif;
   color-scheme: light;
 }
@@ -49,6 +53,10 @@ body {
   color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+}
+
+html {
+  scroll-padding-top: var(--app-sticky-top-offset);
 }
 
 #root {
@@ -285,7 +293,7 @@ body {
 }
 
 .analisi-section {
-  scroll-margin-top: 1rem;
+  scroll-margin-top: var(--app-sticky-top-offset);
 }
 
 .analisi-toc {
@@ -483,7 +491,7 @@ body {
 
 .dashboard-chat {
   position: sticky;
-  top: 1rem;
+  top: var(--app-sticky-top-offset);
 }
 
 @media (max-width: 1200px) {
@@ -1096,7 +1104,7 @@ table.data tfoot .table-totals-row:hover td {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 12rem);
+  height: calc(100vh - var(--app-sticky-top-offset) - 2rem);
   min-height: 420px;
   box-shadow: var(--shadow-md);
 }
