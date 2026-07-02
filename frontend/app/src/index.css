@@ -487,6 +487,9 @@ html {
 
 .dashboard-sidebar {
   max-width: 190px;
+  position: sticky;
+  top: var(--app-sticky-top-offset);
+  align-self: start;
 }
 
 .dashboard-chat {
@@ -499,7 +502,8 @@ html {
     grid-template-columns: 1fr;
   }
 
-  .dashboard-chat {
+  .dashboard-chat,
+  .dashboard-sidebar {
     position: static;
   }
 }
@@ -1290,6 +1294,10 @@ table.data tfoot .table-totals-row:hover td {
   border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 0.85rem;
+  max-height: calc(100vh - var(--app-sticky-top-offset) - 2rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .chat-suggestions__title {
@@ -1308,6 +1316,8 @@ table.data tfoot .table-totals-row:hover td {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .chat-suggestion-btn {
