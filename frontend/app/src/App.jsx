@@ -603,17 +603,18 @@ function App() {
   return (
     <div className="app-container">
       {exportingPDF && <LoadingOverlay />}
-      <header className="app-header">
-        <div className="app-title-group">
-          <img src="/logo.webp" alt="Intex" className="app-logo" />
-        </div>
-        <div className="app-header__actions">
-          <UserMenu />
-          {user?.role === 'admin' && <AdminNav />}
-        </div>
-      </header>
+      <div className="app-sticky-top">
+        <header className="app-header">
+          <div className="app-title-group">
+            <img src="/logo.webp" alt="Intex" className="app-logo" />
+          </div>
+          <div className="app-header__actions">
+            <UserMenu />
+            {user?.role === 'admin' && <AdminNav />}
+          </div>
+        </header>
 
-      <nav className="nav-primary">
+        <nav className="nav-primary">
         <button
           className={`nav-tab ${activeTab === 'bolle' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('bolle')}
@@ -644,7 +645,8 @@ function App() {
         >
           📊 Analisi
         </button>
-      </nav>
+        </nav>
+      </div>
 
       <div className="dashboard-grid">
         <div className="dashboard-chat">

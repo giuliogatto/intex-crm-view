@@ -373,7 +373,7 @@ export default function AnalisiPage({ subTabOverride, scrollTargetOverride }) {
     <div className="analisi-dashboard-tab">
       {loading && <LoadingOverlay />}
 
-      {meta?.last_success && (
+      {/* {meta?.last_success && (
         <p className="meta analisi-meta">
           Dati analitici aggiornati al {formatDate(meta.last_success)}
           {meta.elapsed_seconds != null && ` (refresh ${Number(meta.elapsed_seconds).toFixed(1)}s)`}
@@ -383,7 +383,7 @@ export default function AnalisiPage({ subTabOverride, scrollTargetOverride }) {
         <p className="meta analisi-meta analisi-meta--error">
           Ultimo errore analytics: {meta.last_error}
         </p>
-      )}
+      )} */}
 
       <nav className="nav-primary">
             {TABS.map((tab) => (
