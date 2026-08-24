@@ -1896,3 +1896,204 @@ table.data tfoot .table-totals-row:hover td {
   color: var(--success);
   font-size: 0.9rem;
 }
+
+/* DDT Assistente */
+.ddt-assist-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ddt-assist-header__form {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.ddt-assist-header__actions {
+  margin-bottom: 0.2rem;
+}
+
+.ddt-assist-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .ddt-assist-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ddt-input-table th, .ddt-input-table td {
+  padding: 0.5rem;
+  vertical-align: middle;
+}
+
+.ddt-inline-input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.ddt-inline-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.ddt-btn-icon {
+  padding: 0.4rem;
+  line-height: 1;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+.ddt-btn-icon:hover {
+  opacity: 0.8;
+}
+
+.ddt-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--text-secondary);
+  height: 100%;
+}
+
+.ddt-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.ddt-results-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ddt-results-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+}
+
+.ddt-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ddt-result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  border-left: 5px solid var(--border-color);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+
+.ddt-result-card--green {
+  border-left-color: var(--success);
+}
+.ddt-result-card--yellow {
+  border-left-color: var(--warning);
+}
+.ddt-result-card--red {
+  border-left-color: var(--danger);
+}
+.ddt-result-card--gray {
+  border-left-color: var(--text-muted);
+}
+
+.ddt-result-card__header {
+  padding: 1rem 1.25rem;
+  background: var(--bg-muted);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ddt-result-card__title {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.ddt-badge {
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+.ddt-result-card__body {
+  padding: 1.25rem;
+}
+
+.ddt-proposte-table th, .ddt-proposte-table td {
+  padding: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.ddt-result-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.ddt-conf-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.ddt-assist-stats {
+  margin-top: 0.5rem;
+  padding: 1rem;
+  background: var(--bg-muted);
+  border-radius: 12px;
+  display: flex;
+  gap: 2rem;
+  font-weight: 500;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+}
+
+.ddt-error-message {
+  padding: 0.75rem 1rem;
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.ddt-no-proposals {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
+}

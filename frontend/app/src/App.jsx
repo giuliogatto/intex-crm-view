@@ -8,6 +8,7 @@ import UserMenu from './components/UserMenu'
 import AdminNav from './components/AdminNav'
 import Pagination from './components/Pagination'
 import LoadingOverlay from './components/LoadingOverlay'
+import DdtAssistPanel from './components/DdtAssistPanel'
 import { useAuth } from './context/AuthContext'
 import { authFetch, downloadAuthFile } from './utils/auth'
 import {
@@ -641,6 +642,12 @@ function App() {
           ⚖️ Auditing Confronto
         </button>
         <button
+          className={`nav-tab ${activeTab === 'assistente' ? 'is-active' : ''}`}
+          onClick={() => handleTabChange('assistente')}
+        >
+          🤖 Assistente DDT
+        </button>
+        <button
           className={`nav-tab ${activeTab === 'analisi' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('analisi')}
         >
@@ -665,6 +672,8 @@ function App() {
               selectedCustomer={discrepancyCustomer}
               onCustomerChange={setDiscrepancyCustomer}
             />
+          ) : activeTab === 'assistente' ? (
+            <DdtAssistPanel />
           ) : (
             <>
               <div className="panel">
@@ -957,6 +966,13 @@ function App() {
                 >
                   <span className="chat-suggestion-num">9</span>
                   “Confrontami ordine, bolla e fattura per verificare differenze di Prima Srl.”
+                </button>
+                <button
+                  className="chat-suggestion-btn"
+                  onClick={() => handleTabChange('assistente')}
+                >
+                  <span className="chat-suggestion-num">🤖</span>
+                  “Apri assistente DDT”
                 </button>
                 {ANALISI_QUESTION_SHORTCUTS.map((shortcut) => (
                   <button

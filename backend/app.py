@@ -1343,6 +1343,290 @@ def llmrequest():
         response.status = 500
         return {"error": str(e)}
 
+def _ddt_assist_riga(cursor, codice_cliente, articolo, colore, data_ddt):
+    proposte = []
+    cascata_usata = None
+
+
+    # -- 1. Prezzo e Stagione --
+    # Strategia: la stagione e il riferimento cartellino vengono da offerte_testate
+    # (derivate dai DDT). Il prezzo reale viene da fatture_righe (F07_003W),
+    # che contiene prezzo_un_capi / prezzo_un_kg. offerte_righe.prezzo_unitario
+    # e' spesso 0 per clienti a forfait, quindi non e' la fonte corretta.
+    offerte_usata = None
+    rows_offerte = []
+
+    if data_ddt:
+        # Step 1: stagione e cartellino dal listino cliente, prezzo dalle fatture
+        cursor.execute("""
+            SELECT
+                COALESCE(MAX(fr.prezzo_un_capi), 0)  AS prezzo_capi,
+                COALESCE(MAX(fr.prezzo_un_kg), 0)    AS prezzo_kg,
+                t.codice_stagione,
+                t.numero_offerta,
+                TO_CHAR(MAX(t.data_offerta), 'DD/MM/YYYY') AS data_fmt
+            FROM offerte_testate t
+            JOIN offerte_righe r    ON r.numero_offerta = t.numero_offerta
+            LEFT JOIN fatture_righe fr
+                ON fr.codice_cliente = t.codice_cliente
+               AND fr.codice_articolo = r.codice_articolo
+            WHERE t.codice_cliente = %(codice_cliente)s
+              AND r.codice_articolo = %(articolo)s
+              AND t.data_offerta   <= %(data_ddt)s
+            GROUP BY t.numero_offerta, t.codice_stagione
+            ORDER BY MAX(t.data_offerta) DESC
+            LIMIT 5
+        """, {'codice_cliente': codice_cliente, 'articolo': articolo, 'data_ddt': data_ddt})
+        rows_offerte = cursor.fetchall()
+
+    if rows_offerte:
+        offerte_usata = 'listino_cliente'
+    else:
+        if data_ddt:
+            try:
+                cursor.execute("""
+                    SELECT
+                        COALESCE(MAX(fr.prezzo_un_capi), 0),
+                        COALESCE(MAX(fr.prezzo_un_kg), 0),
+                        t.codice_stagione,
+                        t.numero_offerta,
+                        TO_CHAR(MAX(t.data_offerta), 'DD/MM/YYYY')
+                    FROM offerte_testate t
+                    JOIN offerte_righe r    ON r.numero_offerta = t.numero_offerta
+                    LEFT JOIN fatture_righe fr
+                        ON fr.codice_cliente = t.codice_cliente
+                       AND fr.codice_articolo = r.codice_articolo
+                    WHERE t.codice_cliente = %(codice_cliente)s
+                      AND t.data_offerta   <= %(data_ddt)s
+                      AND similarity(r.codice_articolo, %(articolo)s) > 0.3
+                    GROUP BY t.numero_offerta, t.codice_stagione
+                    ORDER BY MAX(similarity(r.codice_articolo, %(articolo)s)) DESC,
+                             MAX(t.data_offerta) DESC
+                    LIMIT 5
+                """, {'codice_cliente': codice_cliente, 'articolo': articolo, 'data_ddt': data_ddt})
+                rows_offerte = cursor.fetchall()
+            except Exception:
+                cursor.connection.rollback()
+                cursor.execute("""
+                    SELECT
+                        COALESCE(MAX(fr.prezzo_un_capi), 0),
+                        COALESCE(MAX(fr.prezzo_un_kg), 0),
+                        t.codice_stagione,
+                        t.numero_offerta,
+                        TO_CHAR(MAX(t.data_offerta), 'DD/MM/YYYY')
+                    FROM offerte_testate t
+                    JOIN offerte_righe r    ON r.numero_offerta = t.numero_offerta
+                    LEFT JOIN fatture_righe fr
+                        ON fr.codice_cliente = t.codice_cliente
+                       AND fr.codice_articolo = r.codice_articolo
+                    WHERE t.codice_cliente = %(codice_cliente)s
+                      AND t.data_offerta   <= %(data_ddt)s
+                      AND r.codice_articolo ILIKE %(articolo_like)s
+                    GROUP BY t.numero_offerta, t.codice_stagione
+                    ORDER BY MAX(t.data_offerta) DESC
+                    LIMIT 5
+                """, {'codice_cliente': codice_cliente, 'data_ddt': data_ddt,
+                       'articolo_like': f"%{articolo}%"})
+                rows_offerte = cursor.fetchall()
+
+        if rows_offerte:
+            offerte_usata = 'similitudine'
+        else:
+            # Step 3: listino generale - aggregato su tutti i clienti
+            cursor.execute("""
+                SELECT
+                    COALESCE(AVG(fr.prezzo_un_capi), 0),
+                    COALESCE(AVG(fr.prezzo_un_kg), 0),
+                    t.codice_stagione,
+                    NULL,
+                    COUNT(*)
+                FROM offerte_testate t
+                JOIN offerte_righe r ON r.numero_offerta = t.numero_offerta
+                LEFT JOIN fatture_righe fr
+                    ON fr.codice_articolo = r.codice_articolo
+                WHERE r.codice_articolo = %(articolo)s
+                GROUP BY t.codice_stagione
+                ORDER BY COUNT(*) DESC
+                LIMIT 5
+            """, {'articolo': articolo})
+            rows_offerte = cursor.fetchall()
+            if rows_offerte:
+                offerte_usata = 'listino_generale'
+
+    if offerte_usata and rows_offerte:
+        cascata_usata = 'listino_cliente' if offerte_usata in ('listino_cliente', 'similitudine') else 'listino_generale'
+        r = rows_offerte[0]
+        prezzo_capi = float(r[0]) if r[0] is not None else 0.0
+        prezzo_kg   = float(r[1]) if r[1] is not None else 0.0
+        stagione    = r[2]
+        rif_num     = r[3]
+        rif_data    = r[4]
+
+        if offerte_usata == 'listino_generale':
+            cnt  = int(r[4]) if r[4] is not None else 0
+            rif  = f"storico generale, {cnt} occorrenze"
+        else:
+            rif  = f"cartellino {rif_num} del {rif_data}" if rif_num else f"del {rif_data}"
+
+        confidenza = "alta" if offerte_usata == 'listino_cliente' else "media"
+        proposte.append({"campo": "prezzo_un_capi", "valore_proposto": prezzo_capi,
+                         "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
+        proposte.append({"campo": "prezzo_un_kg", "valore_proposto": prezzo_kg,
+                         "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
+        # prezzo_unitario = max tra i due (quello non zero e' quello applicato)
+        prezzo_display = prezzo_capi if prezzo_capi > 0 else prezzo_kg
+        proposte.append({"campo": "prezzo_unitario", "valore_proposto": prezzo_display,
+                         "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
+        if stagione:
+            proposte.append({"campo": "codice_stagione", "valore_proposto": stagione,
+                             "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
+
+
+    # -- 2. Lavorazione (da fatture_righe) --
+    lav_usata = None
+    rows_lav = []
+    
+    cursor.execute("""
+        SELECT cd_lavorazione, ds_lavorazione, COUNT(*) as cnt
+        FROM fatture_righe
+        WHERE codice_cliente = %(codice_cliente)s AND codice_articolo = %(articolo)s
+          AND cd_lavorazione IS NOT NULL
+        GROUP BY cd_lavorazione, ds_lavorazione
+        ORDER BY cnt DESC
+        LIMIT 3
+    """, {'codice_cliente': codice_cliente, 'articolo': articolo})
+    rows_lav = cursor.fetchall()
+    
+    if rows_lav:
+        lav_usata = 'storico_fatture'
+    else:
+        try:
+            cursor.execute("""
+                SELECT cd_lavorazione, ds_lavorazione, COUNT(*) as cnt
+                FROM fatture_righe
+                WHERE codice_cliente = %(codice_cliente)s 
+                  AND similarity(codice_articolo, %(articolo)s) > 0.3
+                  AND cd_lavorazione IS NOT NULL
+                GROUP BY cd_lavorazione, ds_lavorazione
+                ORDER BY cnt DESC
+                LIMIT 3
+            """, {'codice_cliente': codice_cliente, 'articolo': articolo})
+            rows_lav = cursor.fetchall()
+        except Exception:
+            cursor.connection.rollback()
+            cursor.execute("""
+                SELECT cd_lavorazione, ds_lavorazione, COUNT(*) as cnt
+                FROM fatture_righe
+                WHERE codice_cliente = %(codice_cliente)s 
+                  AND codice_articolo ILIKE %(articolo_like)s
+                  AND cd_lavorazione IS NOT NULL
+                GROUP BY cd_lavorazione, ds_lavorazione
+                ORDER BY cnt DESC
+                LIMIT 3
+            """, {'codice_cliente': codice_cliente, 'articolo_like': f"%{articolo}%"})
+            rows_lav = cursor.fetchall()
+            
+        if rows_lav:
+            lav_usata = 'storico_fatture_similitudine'
+
+    if lav_usata and rows_lav:
+        if not cascata_usata:
+            cascata_usata = 'storico_fatture'
+        r = rows_lav[0]
+        cd_lav = r[0]
+        ds_lav = r[1]
+        cnt = r[2]
+        rif = f"cliente, {cnt} occorrenze"
+        confidenza = "alta" if lav_usata == 'storico_fatture' else "media"
+        proposte.append({"campo": "cd_lavorazione", "valore_proposto": cd_lav, "valore_descrizione": ds_lav, "fonte": "storico_fatture", "riferimento": rif, "confidenza": confidenza})
+
+    # -- 3. Composizione (da articoli) --
+    cursor.execute("""
+        SELECT composizione
+        FROM articoli
+        WHERE codice = %(articolo)s
+        LIMIT 1
+    """, {'articolo': articolo})
+    rows_comp = cursor.fetchall()
+    if rows_comp and rows_comp[0][0]:
+        comp = rows_comp[0][0]
+        proposte.append({"campo": "composizione", "valore_proposto": comp, "fonte": "articoli", "riferimento": f"articolo {articolo}", "confidenza": "alta"})
+        if not cascata_usata:
+            cascata_usata = 'articoli'
+
+    return {
+        "riga": {"articolo": articolo, "colore": colore, "data_ddt": data_ddt},
+        "proposte": proposte,
+        "cascata_usata": cascata_usata,
+        "nessuno_storico": len(proposte) == 0
+    }
+
+@app.route('/api/ddt/assist', method='GET')
+def ddt_assist():
+    try:
+        codice_cliente = request.query.get('codice_cliente')
+        if not codice_cliente:
+            response.status = 400
+            return {"error": "codice_cliente is required"}
+            
+        articolo = request.query.get('articolo') or ''
+        colore = request.query.get('colore') or ''
+        data_ddt = request.query.get('data_ddt')
+        
+        parsed_date = parse_date(data_ddt) if data_ddt else None
+        
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        
+        result = _ddt_assist_riga(cursor, codice_cliente, articolo, colore, parsed_date)
+        
+        cursor.close()
+        db_pool.release_conn(conn)
+        return result
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+@app.route('/api/ddt/assist/batch', method='POST')
+def ddt_assist_batch():
+    try:
+        data = request.json
+        if not data:
+            response.status = 400
+            return {"error": "Invalid request body"}
+            
+        codice_cliente = data.get('codice_cliente')
+        if not codice_cliente:
+            response.status = 400
+            return {"error": "codice_cliente is required"}
+            
+        data_ddt = data.get('data_ddt')
+        parsed_date = parse_date(data_ddt) if data_ddt else None
+        
+        righe = data.get('righe', [])
+        
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        
+        results = []
+        for r in righe:
+            articolo = r.get('articolo') or ''
+            colore = r.get('colore') or ''
+            res = _ddt_assist_riga(cursor, codice_cliente, articolo, colore, parsed_date)
+            # Include original fields back in the response
+            if 'riga' in r:
+                res['riga']['riga'] = r['riga']
+            if 'quantita' in r:
+                res['riga']['quantita'] = r['quantita']
+            results.append(res)
+            
+        cursor.close()
+        db_pool.release_conn(conn)
+        return {"righe": results}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
 from analisi import register_analisi_routes
 
 register_analisi_routes(app, db_pool)

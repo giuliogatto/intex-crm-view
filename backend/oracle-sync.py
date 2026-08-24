@@ -659,21 +659,37 @@ class OracleSyncProcess:
 
                 # 3. Sync invoice lines
                 line_query = """
-                    INSERT INTO fatture_righe (codice_cliente, numero_disposizione, riga_disposizione, numero_bolla, codice_articolo, colore, kg_fatturati, capi_fatturati, importo_riga)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO fatture_righe (
+                        codice_cliente, numero_disposizione, riga_disposizione,
+                        numero_bolla, codice_articolo, colore,
+                        kg_fatturati, capi_fatturati, importo_riga,
+                        cd_lavorazione, ds_lavorazione,
+                        prezzo_un_capi, prezzo_un_kg
+                    )
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (codice_cliente, numero_disposizione, riga_disposizione) DO UPDATE SET
-                        numero_bolla = EXCLUDED.numero_bolla,
+                        numero_bolla    = EXCLUDED.numero_bolla,
                         codice_articolo = EXCLUDED.codice_articolo,
-                        colore = EXCLUDED.colore,
-                        kg_fatturati = EXCLUDED.kg_fatturati,
-                        capi_fatturati = EXCLUDED.capi_fatturati,
-                        importo_riga = EXCLUDED.importo_riga;
+                        colore          = EXCLUDED.colore,
+                        kg_fatturati    = EXCLUDED.kg_fatturati,
+                        capi_fatturati  = EXCLUDED.capi_fatturati,
+                        importo_riga    = EXCLUDED.importo_riga,
+                        cd_lavorazione  = COALESCE(EXCLUDED.cd_lavorazione, fatture_righe.cd_lavorazione),
+                        ds_lavorazione  = COALESCE(EXCLUDED.ds_lavorazione, fatture_righe.ds_lavorazione),
+                        prezzo_un_capi  = EXCLUDED.prezzo_un_capi,
+                        prezzo_un_kg    = EXCLUDED.prezzo_un_kg;
                 """
                 for item in items:
                     disp_num = item.get('ew2_nr_disposizione')
                     riga_disp = item.get('ew2_riga_disposizione')
                     if not disp_num or not riga_disp:
                         continue
+
+                    cd_lav = (item.get('cd_lavorazione') or '').strip() or None
+                    ds_lav = (item.get('ds_lavorazione') or '').strip() or None
+                    # F07_003W espone prezzi distinti per capo e per kg
+                    prezzo_capi = float(item.get('f07_prezzo_un_capi_euro') or item.get('f07_prezzo_un_capi') or 0.0)
+                    prezzo_kg   = float(item.get('f07_prezzo_un_kg_euro')   or item.get('f07_prezzo_un_kg')   or 0.0)
 
                     cursor.execute(line_query, (
                         str(item.get('ew2_cd_cliente') or 'XXX').strip(),
@@ -684,7 +700,11 @@ class OracleSyncProcess:
                         (item.get('ew2_ds_colore') or 'TUTTI').strip(),
                         float(item.get('f07_kg_fatturati') or 0.0),
                         int(item.get('f07_nr_capi_fatturati') or 0),
-                        float(item.get('f07_importo_riga_euro') or item.get('f07_importo_riga') or 0.0)
+                        float(item.get('f07_importo_riga_euro') or item.get('f07_importo_riga') or 0.0),
+                        cd_lav,
+                        ds_lav,
+                        prezzo_capi,
+                        prezzo_kg,
                     ))
                 
                 uncommitted_count += len(items)
