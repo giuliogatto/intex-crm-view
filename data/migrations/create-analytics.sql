@@ -116,7 +116,12 @@ FROM offerte_testate o
 JOIN ddt_righe dr ON dr.numero_offerta = o.numero_offerta
 JOIN ddt_testate dt ON dt.numero_bolla = dr.numero_bolla
 WHERE dt.data_bolla >= o.data_offerta
-GROUP BY o.numero_offerta, o.codice_cliente, o.data_offerta, o.codice_stagione;
+  -- Filtra date anomale dal gestionale (es. anno 2202, date preistoriche)
+  AND o.data_offerta BETWEEN '1990-01-01' AND CURRENT_DATE
+  AND dt.data_bolla <= CURRENT_DATE
+GROUP BY o.numero_offerta, o.codice_cliente, o.data_offerta, o.codice_stagione
+-- Esclude lead time non plausibili (> 730 giorni / 2 anni)
+HAVING (MAX(dt.data_bolla) - o.data_offerta) <= 730;
 
 CREATE UNIQUE INDEX idx_mv_lead_time_doc_pk
     ON analytics.lead_time_documenti (numero_offerta);
@@ -161,6 +166,8 @@ ordini AS (
         COUNT(*) FILTER (WHERE data_offerta >= date_trunc('year', CURRENT_DATE)::date)::INTEGER AS ordini_ytd,
         AVG(importo_totale) FILTER (WHERE data_offerta >= date_trunc('year', CURRENT_DATE)::date) AS valore_medio_ordine_ytd
     FROM offerte_testate
+    -- Esclude date anomale dal gestionale (es. anno 2202, date preistoriche)
+    WHERE data_offerta BETWEEN '1990-01-01' AND CURRENT_DATE + INTERVAL '30 days'
     GROUP BY codice_cliente
 ),
 gaps AS (
@@ -181,9 +188,14 @@ gaps AS (
                 PARTITION BY codice_cliente ORDER BY data_offerta
             ))::INTEGER AS giorni
         FROM offerte_testate
+        -- Esclude date anomale prima del calcolo dei gap
+        WHERE data_offerta BETWEEN '1990-01-01' AND CURRENT_DATE + INTERVAL '30 days'
     ) sub
     WHERE giorni IS NOT NULL
     GROUP BY codice_cliente
+    -- Soglia minima: almeno 3 ordini nell'ultimo anno per calcolare l'intervallo medio
+    -- (evita Δ estremi su clienti con 1-2 ordini in tutta la storia)
+    HAVING COUNT(*) FILTER (WHERE data_offerta >= CURRENT_DATE - INTERVAL '12 months') >= 3
 ),
 semestre AS (
     SELECT

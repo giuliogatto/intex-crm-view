@@ -434,14 +434,14 @@ def register_analisi_routes(app, db_pool):
             if granularita == "settimanale":
                 cursor.execute(
                     """
-                    SELECT settimana_iso AS settimana, anno,
+                    SELECT settimana_iso AS settimana,
                            SUM(kg_consegnati) FILTER (WHERE anno = EXTRACT(ISOYEAR FROM CURRENT_DATE)::INTEGER) AS kg_quest_anno,
                            SUM(kg_consegnati) FILTER (WHERE anno = EXTRACT(ISOYEAR FROM CURRENT_DATE)::INTEGER - 1) AS kg_anno_scorso,
                            SUM(capi_consegnati) FILTER (WHERE anno = EXTRACT(ISOYEAR FROM CURRENT_DATE)::INTEGER) AS capi_quest_anno,
                            SUM(capi_consegnati) FILTER (WHERE anno = EXTRACT(ISOYEAR FROM CURRENT_DATE)::INTEGER - 1) AS capi_anno_scorso
                     FROM analytics.volume_giornaliero
                     WHERE anno >= EXTRACT(ISOYEAR FROM CURRENT_DATE)::INTEGER - 1
-                    GROUP BY settimana_iso, anno
+                    GROUP BY settimana_iso
                     ORDER BY settimana_iso
                     """
                 )
