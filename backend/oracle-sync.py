@@ -826,7 +826,7 @@ class OracleSyncProcess:
             return
             
         print("\n  Syncing DDT Detail Lines...")
-        filters_l, mappings_l = self._build_date_filters("EW1_DATA_BOLLA_CLI") if start_date_val else ({}, {})
+        filters_l, mappings_l = self._build_date_filters("data_bolla_iso", iso_plain=True) if start_date_val else ({}, {})
             
         endpoint_l = "/ords/intex2/D03_DDT_RIGHE_002W/"
         ords_q_l = None
