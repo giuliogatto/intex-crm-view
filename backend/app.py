@@ -1344,203 +1344,321 @@ def llmrequest():
         return {"error": str(e)}
 
 def _ddt_assist_riga(cursor, codice_cliente, articolo, colore, data_ddt):
+    """Proposte prezzo/stagione/lavorazione per una riga DDT.
+
+    Prezzo e lavorazione: da fatture_righe filtrati per colore (il prezzo
+    dipende da colore/lavorazione). Stagione: dall'offerta/cartellino piu'
+    recente, cercata a parte — non JOIN-ata al prezzo, altrimenti MAX()
+    aggrega su tutti i colori e restituisce sempre lo stesso valore.
+    """
     proposte = []
     cascata_usata = None
+    colore_norm = (colore or '').strip()
+    params_base = {
+        'codice_cliente': codice_cliente,
+        'articolo': articolo,
+        'colore': colore_norm,
+        'data_ddt': data_ddt,
+        'articolo_like': f"%{articolo}%",
+    }
 
+    def _colore_clause(alias='fr'):
+        # Match case-insensitive; se colore assente non filtra
+        if not colore_norm:
+            return ''
+        return f" AND UPPER(TRIM(COALESCE({alias}.colore, ''))) = UPPER(%(colore)s)"
 
-    # -- 1. Prezzo e Stagione --
-    # Strategia: la stagione e il riferimento cartellino vengono da offerte_testate
-    # (derivate dai DDT). Il prezzo reale viene da fatture_righe (F07_003W),
-    # che contiene prezzo_un_capi / prezzo_un_kg. offerte_righe.prezzo_unitario
-    # e' spesso 0 per clienti a forfait, quindi non e' la fonte corretta.
-    offerte_usata = None
-    rows_offerte = []
+    def _data_fattura_clause():
+        if not data_ddt:
+            return ''
+        return " AND ft.data_fattura <= %(data_ddt)s"
 
-    if data_ddt:
-        # Step 1: stagione e cartellino dal listino cliente, prezzo dalle fatture
-        cursor.execute("""
-            SELECT
-                COALESCE(MAX(fr.prezzo_un_capi), 0)  AS prezzo_capi,
-                COALESCE(MAX(fr.prezzo_un_kg), 0)    AS prezzo_kg,
-                t.codice_stagione,
-                t.numero_offerta,
-                TO_CHAR(MAX(t.data_offerta), 'DD/MM/YYYY') AS data_fmt
-            FROM offerte_testate t
-            JOIN offerte_righe r    ON r.numero_offerta = t.numero_offerta
-            LEFT JOIN fatture_righe fr
-                ON fr.codice_cliente = t.codice_cliente
-               AND fr.codice_articolo = r.codice_articolo
-            WHERE t.codice_cliente = %(codice_cliente)s
-              AND r.codice_articolo = %(articolo)s
-              AND t.data_offerta   <= %(data_ddt)s
-            GROUP BY t.numero_offerta, t.codice_stagione
-            ORDER BY MAX(t.data_offerta) DESC
-            LIMIT 5
-        """, {'codice_cliente': codice_cliente, 'articolo': articolo, 'data_ddt': data_ddt})
-        rows_offerte = cursor.fetchall()
+    def _data_offerta_clause():
+        if not data_ddt:
+            return ''
+        return " AND t.data_offerta <= %(data_ddt)s"
 
-    if rows_offerte:
-        offerte_usata = 'listino_cliente'
-    else:
-        if data_ddt:
-            try:
-                cursor.execute("""
-                    SELECT
-                        COALESCE(MAX(fr.prezzo_un_capi), 0),
-                        COALESCE(MAX(fr.prezzo_un_kg), 0),
-                        t.codice_stagione,
-                        t.numero_offerta,
-                        TO_CHAR(MAX(t.data_offerta), 'DD/MM/YYYY')
-                    FROM offerte_testate t
-                    JOIN offerte_righe r    ON r.numero_offerta = t.numero_offerta
-                    LEFT JOIN fatture_righe fr
-                        ON fr.codice_cliente = t.codice_cliente
-                       AND fr.codice_articolo = r.codice_articolo
-                    WHERE t.codice_cliente = %(codice_cliente)s
-                      AND t.data_offerta   <= %(data_ddt)s
-                      AND similarity(r.codice_articolo, %(articolo)s) > 0.3
-                    GROUP BY t.numero_offerta, t.codice_stagione
-                    ORDER BY MAX(similarity(r.codice_articolo, %(articolo)s)) DESC,
-                             MAX(t.data_offerta) DESC
-                    LIMIT 5
-                """, {'codice_cliente': codice_cliente, 'articolo': articolo, 'data_ddt': data_ddt})
-                rows_offerte = cursor.fetchall()
-            except Exception:
-                cursor.connection.rollback()
-                cursor.execute("""
-                    SELECT
-                        COALESCE(MAX(fr.prezzo_un_capi), 0),
-                        COALESCE(MAX(fr.prezzo_un_kg), 0),
-                        t.codice_stagione,
-                        t.numero_offerta,
-                        TO_CHAR(MAX(t.data_offerta), 'DD/MM/YYYY')
-                    FROM offerte_testate t
-                    JOIN offerte_righe r    ON r.numero_offerta = t.numero_offerta
-                    LEFT JOIN fatture_righe fr
-                        ON fr.codice_cliente = t.codice_cliente
-                       AND fr.codice_articolo = r.codice_articolo
-                    WHERE t.codice_cliente = %(codice_cliente)s
-                      AND t.data_offerta   <= %(data_ddt)s
-                      AND r.codice_articolo ILIKE %(articolo_like)s
-                    GROUP BY t.numero_offerta, t.codice_stagione
-                    ORDER BY MAX(t.data_offerta) DESC
-                    LIMIT 5
-                """, {'codice_cliente': codice_cliente, 'data_ddt': data_ddt,
-                       'articolo_like': f"%{articolo}%"})
-                rows_offerte = cursor.fetchall()
+    # -- 1. Prezzo (fatture_righe, specifico per colore) --
+    # Prende l'ultima fattura con prezzo > 0 per cliente+articolo[+colore],
+    # non MAX su tutte le fatture (che ignorava il colore e collassava a 150).
+    prezzo_usata = None
+    row_prezzo = None
 
-        if rows_offerte:
-            offerte_usata = 'similitudine'
-        else:
-            # Step 3: listino generale - aggregato su tutti i clienti
-            cursor.execute("""
-                SELECT
-                    COALESCE(AVG(fr.prezzo_un_capi), 0),
-                    COALESCE(AVG(fr.prezzo_un_kg), 0),
-                    t.codice_stagione,
-                    NULL,
-                    COUNT(*)
-                FROM offerte_testate t
-                JOIN offerte_righe r ON r.numero_offerta = t.numero_offerta
-                LEFT JOIN fatture_righe fr
-                    ON fr.codice_articolo = r.codice_articolo
-                WHERE r.codice_articolo = %(articolo)s
-                GROUP BY t.codice_stagione
-                ORDER BY COUNT(*) DESC
-                LIMIT 5
-            """, {'articolo': articolo})
-            rows_offerte = cursor.fetchall()
-            if rows_offerte:
-                offerte_usata = 'listino_generale'
+    # Colonne: 0 prezzo_capi, 1 prezzo_kg, 2 colore, 3 num_disp, 4 data,
+    #          5 cd_lavorazione, 6 ds_lavorazione  (listino_generale: 4=count)
+    select_prezzo = """
+        SELECT fr.prezzo_un_capi, fr.prezzo_un_kg, fr.colore,
+               ft.numero_disposizione, TO_CHAR(ft.data_fattura, 'DD/MM/YYYY'),
+               fr.cd_lavorazione, fr.ds_lavorazione
+        FROM fatture_righe fr
+        JOIN fatture_testate ft
+          ON ft.codice_cliente = fr.codice_cliente
+         AND ft.numero_disposizione = fr.numero_disposizione
+    """
 
-    if offerte_usata and rows_offerte:
-        cascata_usata = 'listino_cliente' if offerte_usata in ('listino_cliente', 'similitudine') else 'listino_generale'
-        r = rows_offerte[0]
-        prezzo_capi = float(r[0]) if r[0] is not None else 0.0
-        prezzo_kg   = float(r[1]) if r[1] is not None else 0.0
-        stagione    = r[2]
-        rif_num     = r[3]
-        rif_data    = r[4]
+    cursor.execute(f"""
+        {select_prezzo}
+        WHERE fr.codice_cliente = %(codice_cliente)s
+          AND fr.codice_articolo = %(articolo)s
+          AND (fr.prezzo_un_capi > 0 OR fr.prezzo_un_kg > 0)
+          {_colore_clause('fr')}
+          {_data_fattura_clause()}
+        ORDER BY ft.data_fattura DESC
+        LIMIT 1
+    """, params_base)
+    row_prezzo = cursor.fetchone()
+    if row_prezzo:
+        prezzo_usata = 'storico_fatture'
 
-        if offerte_usata == 'listino_generale':
-            cnt  = int(r[4]) if r[4] is not None else 0
-            rif  = f"storico generale, {cnt} occorrenze"
-        else:
-            rif  = f"cartellino {rif_num} del {rif_data}" if rif_num else f"del {rif_data}"
-
-        confidenza = "alta" if offerte_usata == 'listino_cliente' else "media"
-        proposte.append({"campo": "prezzo_un_capi", "valore_proposto": prezzo_capi,
-                         "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
-        proposte.append({"campo": "prezzo_un_kg", "valore_proposto": prezzo_kg,
-                         "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
-        # prezzo_unitario = max tra i due (quello non zero e' quello applicato)
-        prezzo_display = prezzo_capi if prezzo_capi > 0 else prezzo_kg
-        proposte.append({"campo": "prezzo_unitario", "valore_proposto": prezzo_display,
-                         "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
-        if stagione:
-            proposte.append({"campo": "codice_stagione", "valore_proposto": stagione,
-                             "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza})
-
-
-    # -- 2. Lavorazione (da fatture_righe) --
-    lav_usata = None
-    rows_lav = []
-    
-    cursor.execute("""
-        SELECT cd_lavorazione, ds_lavorazione, COUNT(*) as cnt
-        FROM fatture_righe
-        WHERE codice_cliente = %(codice_cliente)s AND codice_articolo = %(articolo)s
-          AND cd_lavorazione IS NOT NULL
-        GROUP BY cd_lavorazione, ds_lavorazione
-        ORDER BY cnt DESC
-        LIMIT 3
-    """, {'codice_cliente': codice_cliente, 'articolo': articolo})
-    rows_lav = cursor.fetchall()
-    
-    if rows_lav:
-        lav_usata = 'storico_fatture'
-    else:
+    if not row_prezzo:
         try:
-            cursor.execute("""
-                SELECT cd_lavorazione, ds_lavorazione, COUNT(*) as cnt
-                FROM fatture_righe
-                WHERE codice_cliente = %(codice_cliente)s 
-                  AND similarity(codice_articolo, %(articolo)s) > 0.3
-                  AND cd_lavorazione IS NOT NULL
-                GROUP BY cd_lavorazione, ds_lavorazione
-                ORDER BY cnt DESC
-                LIMIT 3
-            """, {'codice_cliente': codice_cliente, 'articolo': articolo})
-            rows_lav = cursor.fetchall()
+            cursor.execute(f"""
+                {select_prezzo}
+                WHERE fr.codice_cliente = %(codice_cliente)s
+                  AND similarity(fr.codice_articolo, %(articolo)s) > 0.3
+                  AND (fr.prezzo_un_capi > 0 OR fr.prezzo_un_kg > 0)
+                  {_colore_clause('fr')}
+                  {_data_fattura_clause()}
+                ORDER BY similarity(fr.codice_articolo, %(articolo)s) DESC,
+                         ft.data_fattura DESC
+                LIMIT 1
+            """, params_base)
+            row_prezzo = cursor.fetchone()
         except Exception:
             cursor.connection.rollback()
+            cursor.execute(f"""
+                {select_prezzo}
+                WHERE fr.codice_cliente = %(codice_cliente)s
+                  AND fr.codice_articolo ILIKE %(articolo_like)s
+                  AND (fr.prezzo_un_capi > 0 OR fr.prezzo_un_kg > 0)
+                  {_colore_clause('fr')}
+                  {_data_fattura_clause()}
+                ORDER BY ft.data_fattura DESC
+                LIMIT 1
+            """, params_base)
+            row_prezzo = cursor.fetchone()
+        if row_prezzo:
+            prezzo_usata = 'storico_fatture_similitudine'
+
+    # Fallback senza colore solo se il colore era richiesto ma non ha match
+    if not row_prezzo and colore_norm:
+        cursor.execute(f"""
+            {select_prezzo}
+            WHERE fr.codice_cliente = %(codice_cliente)s
+              AND fr.codice_articolo = %(articolo)s
+              AND (fr.prezzo_un_capi > 0 OR fr.prezzo_un_kg > 0)
+              {_data_fattura_clause()}
+            ORDER BY ft.data_fattura DESC
+            LIMIT 1
+        """, params_base)
+        row_prezzo = cursor.fetchone()
+        if row_prezzo:
+            prezzo_usata = 'storico_fatture_senza_colore'
+
+    if not row_prezzo:
+        # Listino generale: media dei prezzi per articolo[+colore] su tutti i clienti
+        cursor.execute(f"""
+            SELECT COALESCE(AVG(fr.prezzo_un_capi), 0),
+                   COALESCE(AVG(fr.prezzo_un_kg), 0),
+                   NULL, NULL, COUNT(*), NULL, NULL
+            FROM fatture_righe fr
+            WHERE fr.codice_articolo = %(articolo)s
+              AND (fr.prezzo_un_capi > 0 OR fr.prezzo_un_kg > 0)
+              {_colore_clause('fr')}
+        """, params_base)
+        row_prezzo = cursor.fetchone()
+        if row_prezzo and int(row_prezzo[4] or 0) > 0:
+            prezzo_usata = 'listino_generale'
+        else:
+            row_prezzo = None
+
+    lav_from_prezzo = None  # (cd, ds, rif, confidenza) se presa dalla stessa riga prezzo
+
+    if prezzo_usata and row_prezzo:
+        cascata_usata = (
+            'listino_generale' if prezzo_usata == 'listino_generale'
+            else 'storico_fatture'
+        )
+        prezzo_capi = float(row_prezzo[0] or 0)
+        prezzo_kg = float(row_prezzo[1] or 0)
+        if prezzo_usata == 'listino_generale':
+            cnt = int(row_prezzo[4] or 0)
+            rif = f"storico generale, {cnt} occorrenze"
+            confidenza = 'bassa'
+        else:
+            col_rif = (row_prezzo[2] or '').strip()
+            disp = row_prezzo[3]
+            data_fmt = row_prezzo[4]
+            col_part = f", colore {col_rif}" if col_rif else ''
+            rif = f"fattura {disp} del {data_fmt}{col_part}" if disp else f"del {data_fmt}{col_part}"
+            if prezzo_usata == 'storico_fatture':
+                confidenza = 'alta'
+            elif prezzo_usata == 'storico_fatture_similitudine':
+                confidenza = 'media'
+            else:
+                confidenza = 'bassa'
+            if row_prezzo[5]:
+                lav_from_prezzo = (row_prezzo[5], row_prezzo[6], rif, confidenza)
+
+        proposte.append({
+            "campo": "prezzo_un_capi", "valore_proposto": prezzo_capi,
+            "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza,
+        })
+        proposte.append({
+            "campo": "prezzo_un_kg", "valore_proposto": prezzo_kg,
+            "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza,
+        })
+        prezzo_display = prezzo_capi if prezzo_capi > 0 else prezzo_kg
+        proposte.append({
+            "campo": "prezzo_unitario", "valore_proposto": prezzo_display,
+            "fonte": cascata_usata, "riferimento": rif, "confidenza": confidenza,
+        })
+
+    # -- 2. Stagione (offerte_testate, indipendente dal prezzo) --
+    row_stagione = None
+    stagione_usata = None
+
+    cursor.execute(f"""
+        SELECT t.codice_stagione, t.numero_offerta,
+               TO_CHAR(t.data_offerta, 'DD/MM/YYYY')
+        FROM offerte_testate t
+        JOIN offerte_righe r ON r.numero_offerta = t.numero_offerta
+        WHERE t.codice_cliente = %(codice_cliente)s
+          AND r.codice_articolo = %(articolo)s
+          {_colore_clause('r')}
+          {_data_offerta_clause()}
+        ORDER BY t.data_offerta DESC
+        LIMIT 1
+    """, params_base)
+    row_stagione = cursor.fetchone()
+    if row_stagione and row_stagione[0]:
+        stagione_usata = 'listino_cliente'
+
+    if not row_stagione or not row_stagione[0]:
+        # Riprova senza filtro colore
+        cursor.execute(f"""
+            SELECT t.codice_stagione, t.numero_offerta,
+                   TO_CHAR(t.data_offerta, 'DD/MM/YYYY')
+            FROM offerte_testate t
+            JOIN offerte_righe r ON r.numero_offerta = t.numero_offerta
+            WHERE t.codice_cliente = %(codice_cliente)s
+              AND r.codice_articolo = %(articolo)s
+              {_data_offerta_clause()}
+            ORDER BY t.data_offerta DESC
+            LIMIT 1
+        """, params_base)
+        row_stagione = cursor.fetchone()
+        if row_stagione and row_stagione[0]:
+            stagione_usata = 'listino_cliente'
+
+    if stagione_usata and row_stagione and row_stagione[0]:
+        if not cascata_usata:
+            cascata_usata = 'listino_cliente'
+        stagione = row_stagione[0]
+        rif_num = row_stagione[1]
+        rif_data = row_stagione[2]
+        rif = f"cartellino {rif_num} del {rif_data}" if rif_num else f"del {rif_data}"
+        proposte.append({
+            "campo": "codice_stagione", "valore_proposto": stagione,
+            "fonte": "listino_cliente", "riferimento": rif, "confidenza": "alta",
+        })
+
+    # -- 3. Lavorazione (preferisci la stessa riga fattura del prezzo) --
+    if lav_from_prezzo:
+        if not cascata_usata:
+            cascata_usata = 'storico_fatture'
+        cd_lav, ds_lav, rif_lav, conf_lav = lav_from_prezzo
+        proposte.append({
+            "campo": "cd_lavorazione",
+            "valore_proposto": cd_lav,
+            "valore_descrizione": ds_lav,
+            "fonte": "storico_fatture",
+            "riferimento": rif_lav,
+            "confidenza": conf_lav,
+        })
+    else:
+        lav_usata = None
+        rows_lav = []
+
+        cursor.execute(f"""
+            SELECT cd_lavorazione, ds_lavorazione, COUNT(*) AS cnt
+            FROM fatture_righe fr
+            WHERE fr.codice_cliente = %(codice_cliente)s
+              AND fr.codice_articolo = %(articolo)s
+              AND fr.cd_lavorazione IS NOT NULL
+              {_colore_clause('fr')}
+            GROUP BY cd_lavorazione, ds_lavorazione
+            ORDER BY cnt DESC
+            LIMIT 3
+        """, params_base)
+        rows_lav = cursor.fetchall()
+
+        if rows_lav:
+            lav_usata = 'storico_fatture'
+        else:
+            try:
+                cursor.execute(f"""
+                    SELECT cd_lavorazione, ds_lavorazione, COUNT(*) AS cnt
+                    FROM fatture_righe fr
+                    WHERE fr.codice_cliente = %(codice_cliente)s
+                      AND similarity(fr.codice_articolo, %(articolo)s) > 0.3
+                      AND fr.cd_lavorazione IS NOT NULL
+                      {_colore_clause('fr')}
+                    GROUP BY cd_lavorazione, ds_lavorazione
+                    ORDER BY cnt DESC
+                    LIMIT 3
+                """, params_base)
+                rows_lav = cursor.fetchall()
+            except Exception:
+                cursor.connection.rollback()
+                cursor.execute(f"""
+                    SELECT cd_lavorazione, ds_lavorazione, COUNT(*) AS cnt
+                    FROM fatture_righe fr
+                    WHERE fr.codice_cliente = %(codice_cliente)s
+                      AND fr.codice_articolo ILIKE %(articolo_like)s
+                      AND fr.cd_lavorazione IS NOT NULL
+                      {_colore_clause('fr')}
+                    GROUP BY cd_lavorazione, ds_lavorazione
+                    ORDER BY cnt DESC
+                    LIMIT 3
+                """, params_base)
+                rows_lav = cursor.fetchall()
+            if rows_lav:
+                lav_usata = 'storico_fatture_similitudine'
+
+        if not rows_lav and colore_norm:
             cursor.execute("""
-                SELECT cd_lavorazione, ds_lavorazione, COUNT(*) as cnt
+                SELECT cd_lavorazione, ds_lavorazione, COUNT(*) AS cnt
                 FROM fatture_righe
-                WHERE codice_cliente = %(codice_cliente)s 
-                  AND codice_articolo ILIKE %(articolo_like)s
+                WHERE codice_cliente = %(codice_cliente)s
+                  AND codice_articolo = %(articolo)s
                   AND cd_lavorazione IS NOT NULL
                 GROUP BY cd_lavorazione, ds_lavorazione
                 ORDER BY cnt DESC
                 LIMIT 3
-            """, {'codice_cliente': codice_cliente, 'articolo_like': f"%{articolo}%"})
+            """, params_base)
             rows_lav = cursor.fetchall()
-            
-        if rows_lav:
-            lav_usata = 'storico_fatture_similitudine'
+            if rows_lav:
+                lav_usata = 'storico_fatture_senza_colore'
 
-    if lav_usata and rows_lav:
-        if not cascata_usata:
-            cascata_usata = 'storico_fatture'
-        r = rows_lav[0]
-        cd_lav = r[0]
-        ds_lav = r[1]
-        cnt = r[2]
-        rif = f"cliente, {cnt} occorrenze"
-        confidenza = "alta" if lav_usata == 'storico_fatture' else "media"
-        proposte.append({"campo": "cd_lavorazione", "valore_proposto": cd_lav, "valore_descrizione": ds_lav, "fonte": "storico_fatture", "riferimento": rif, "confidenza": confidenza})
+        if lav_usata and rows_lav:
+            if not cascata_usata:
+                cascata_usata = 'storico_fatture'
+            r = rows_lav[0]
+            cd_lav, ds_lav, cnt = r[0], r[1], r[2]
+            col_part = f", colore {colore_norm}" if colore_norm and lav_usata != 'storico_fatture_senza_colore' else ''
+            rif = f"cliente, {cnt} occorrenze{col_part}"
+            confidenza = "alta" if lav_usata == 'storico_fatture' else "media"
+            proposte.append({
+                "campo": "cd_lavorazione",
+                "valore_proposto": cd_lav,
+                "valore_descrizione": ds_lav,
+                "fonte": "storico_fatture",
+                "riferimento": rif,
+                "confidenza": confidenza,
+            })
 
-    # -- 3. Composizione (da articoli) --
+    # -- 4. Composizione (da articoli) --
     cursor.execute("""
         SELECT composizione
         FROM articoli
@@ -1550,7 +1668,10 @@ def _ddt_assist_riga(cursor, codice_cliente, articolo, colore, data_ddt):
     rows_comp = cursor.fetchall()
     if rows_comp and rows_comp[0][0]:
         comp = rows_comp[0][0]
-        proposte.append({"campo": "composizione", "valore_proposto": comp, "fonte": "articoli", "riferimento": f"articolo {articolo}", "confidenza": "alta"})
+        proposte.append({
+            "campo": "composizione", "valore_proposto": comp,
+            "fonte": "articoli", "riferimento": f"articolo {articolo}", "confidenza": "alta",
+        })
         if not cascata_usata:
             cascata_usata = 'articoli'
 
@@ -1558,7 +1679,7 @@ def _ddt_assist_riga(cursor, codice_cliente, articolo, colore, data_ddt):
         "riga": {"articolo": articolo, "colore": colore, "data_ddt": data_ddt},
         "proposte": proposte,
         "cascata_usata": cascata_usata,
-        "nessuno_storico": len(proposte) == 0
+        "nessuno_storico": len(proposte) == 0,
     }
 
 @app.route('/api/ddt/assist', method='GET')
