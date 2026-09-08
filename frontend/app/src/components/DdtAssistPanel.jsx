@@ -173,7 +173,7 @@ export default function DdtAssistPanel() {
 
         <div className="ddt-assist-output panel">
           <div className="panel__head">Riconciliazione</div>
-          <div className="panel__body" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <div className="panel__body">
             {!results ? (
               <div className="ddt-empty-state">
                 <div className="ddt-empty-icon">🤖</div>
