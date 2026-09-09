@@ -186,9 +186,9 @@ export default function DdtAssistPanel() {
               </div>
             ) : (
               <div className="ddt-results-container">
-                <div className="ddt-results-actions">
+               {/*  <div className="ddt-results-actions">
                   <button className="btn btn--primary" onClick={handleAccettaTutto}>Accetta tutto</button>
-                </div>
+                </div> */}
                 <div className="ddt-cards-list">
                   {results.map((res, i) => (
                     <DdtResultCard
@@ -288,10 +288,10 @@ function DdtResultCard({ data, onAccetta }) {
         ) : (
           <p className="ddt-no-proposals">Nessuna proposta disponibile per questa riga.</p>
         )}
-        <div className="ddt-result-card__actions">
+       {/*  <div className="ddt-result-card__actions">
            <button className="btn" onClick={() => alert('Riga rifiutata')}>Rifiuta</button>
            <button className="btn btn--primary" onClick={onAccetta}>Accetta</button>
-        </div>
+        </div> */}
       </div>
     </div>
   )
