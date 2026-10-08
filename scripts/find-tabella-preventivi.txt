@@ -1,0 +1,323 @@
+# Offerte/preventivi = Listino Clienti + Prototipi + Disposizioni
+# Connessione: sqlplus INTEX2/SD@192.168.1.10:1521/INT2DB
+#
+# Se SELECT * FROM C30_LISTINO_CLIENTI → "no rows selected":
+# la tabella esiste in INTEX2 ma può essere VUOTA. Esegui prima la
+# sezione 0 (diagnosi), poi struttura, poi sample.
+#
+# Setup sessione:
+#   SET PAGESIZE 200
+#   SET LINESIZE 300
+#   SET LONG 10000
+#   SET TRIMSPOOL ON
+
+# =============================================================================
+# 0) DIAGNOSI: perché C30 è vuota?
+# =============================================================================
+
+-- 0a) Quante righe (tutte le tabelle chiave)
+SELECT 'INTEX2.C30_LISTINO_CLIENTI' AS tabella, COUNT(*) AS n FROM INTEX2.C30_LISTINO_CLIENTI
+UNION ALL SELECT 'INTEX2.C31_LISTINO_CLIENTI_FASI', COUNT(*) FROM INTEX2.C31_LISTINO_CLIENTI_FASI
+UNION ALL SELECT 'INTEX2.C33_LISTINO_CLIENTI_CICLI', COUNT(*) FROM INTEX2.C33_LISTINO_CLIENTI_CICLI
+UNION ALL SELECT 'INTEX2.CX3_LISTINO_CLIENTI_CICLI', COUNT(*) FROM INTEX2.CX3_LISTINO_CLIENTI_CICLI
+UNION ALL SELECT 'INTEX2.C35_LISTINO_FASI_STAGIONI', COUNT(*) FROM INTEX2.C35_LISTINO_FASI_STAGIONI
+UNION ALL SELECT 'INTEX2.C39_LISTINO_CLI_FASI_STAG', COUNT(*) FROM INTEX2.C39_LISTINO_CLI_FASI_STAG
+UNION ALL SELECT 'INTEX2.C52_PROTOTIPI_ATMAN', COUNT(*) FROM INTEX2.C52_PROTOTIPI_ATMAN
+UNION ALL SELECT 'INTEX2.C52_PROTOTIPI_ATMAN_BK', COUNT(*) FROM INTEX2.C52_PROTOTIPI_ATMAN_BK
+UNION ALL SELECT 'INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE
+UNION ALL SELECT 'INTEX2.Z07_CICLI_MATERIALI', COUNT(*) FROM INTEX2.Z07_CICLI_MATERIALI
+UNION ALL SELECT 'INTEX2.Z08_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z08_CICLI_LAVORAZIONE
+UNION ALL SELECT 'INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE
+UNION ALL SELECT 'INTEX2.EW1_TESTATA_DISPOSIZIONI', COUNT(*) FROM INTEX2.EW1_TESTATA_DISPOSIZIONI
+UNION ALL SELECT 'INTEX2.EW2_RIGHE_DISPOSIZIONI', COUNT(*) FROM INTEX2.EW2_RIGHE_DISPOSIZIONI
+UNION ALL SELECT 'INTEX2.STORICO_DISPOSIZIONI', COUNT(*) FROM INTEX2.STORICO_DISPOSIZIONI;
+
+-- 0b) Statistiche Oracle (NUM_ROWS può essere stantio, ma indica se c'erano dati)
+SELECT owner, table_name, num_rows, last_analyzed
+FROM all_tables
+WHERE table_name IN (
+  'C30_LISTINO_CLIENTI','C31_LISTINO_CLIENTI_FASI','C33_LISTINO_CLIENTI_CICLI',
+  'CX3_LISTINO_CLIENTI_CICLI','C35_LISTINO_FASI_STAGIONI','C39_LISTINO_CLI_FASI_STAG',
+  'C52_PROTOTIPI_ATMAN','C52_PROTOTIPI_ATMAN_BK',
+  'Z06_GRUPPI_CICLI_LAVORAZIONE','Z07_CICLI_MATERIALI','Z08_CICLI_LAVORAZIONE',
+  'Z09_TESTATE_CICLI_LAVORAZIONE',
+  'EW1_TESTATA_DISPOSIZIONI','EW2_RIGHE_DISPOSIZIONI','STORICO_DISPOSIZIONI'
+)
+ORDER BY owner, table_name;
+
+-- 0c) Stessa tabella in altri schema? (dal catalogo risultava solo INTEX2)
+SELECT owner, table_name
+FROM all_tables
+WHERE table_name LIKE '%LISTINO_CLIENTI%'
+   OR table_name LIKE 'C30_%'
+   OR table_name LIKE 'C52_%'
+   OR table_name LIKE 'Z09_%'
+ORDER BY owner, table_name;
+
+-- 0d) Sinonimi (il gestionale potrebbe leggere un synonym, non la tabella locale)
+SELECT owner, synonym_name, table_owner, table_name, db_link
+FROM all_synonyms
+WHERE synonym_name IN (
+  'C30_LISTINO_CLIENTI','C31_LISTINO_CLIENTI_FASI','C33_LISTINO_CLIENTI_CICLI',
+  'CX3_LISTINO_CLIENTI_CICLI','C52_PROTOTIPI_ATMAN','STORICO_DISPOSIZIONI',
+  'Z08_CICLI_LAVORAZIONE','Z09_TESTATE_CICLI_LAVORAZIONE'
+)
+ORDER BY owner, synonym_name;
+
+-- 0e) View con nome simile (dati "vivi" dietro a una view?)
+SELECT owner, view_name
+FROM all_views
+WHERE view_name LIKE '%LISTINO_CLIENTI%'
+   OR view_name LIKE '%OFFERT%'
+   OR view_name LIKE '%PREVENT%'
+   OR view_name LIKE 'C30%'
+   OR view_name LIKE 'C52%'
+ORDER BY owner, view_name;
+
+-- 0f) Utente corrente e schema di default
+SELECT USER AS utente_corrente, SYS_CONTEXT('USERENV','CURRENT_SCHEMA') AS current_schema FROM dual;
+
+
+# =============================================================================
+# 1) C30_LISTINO_CLIENTI — Offerte a Clienti (struttura + sample)
+# =============================================================================
+
+SELECT column_id, column_name, data_type, data_length, data_precision, data_scale, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C30_LISTINO_CLIENTI'
+ORDER BY column_id;
+
+DESC INTEX2.C30_LISTINO_CLIENTI;
+
+-- Sample (se COUNT > 0). Dopo DESC, sostituisci ORDER BY con colonna data/key reale.
+SELECT * FROM (
+    SELECT * FROM INTEX2.C30_LISTINO_CLIENTI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+# =============================================================================
+# 2) Tabelle collegate al listino / offerte
+# =============================================================================
+
+-- C31 fasi
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C31_LISTINO_CLIENTI_FASI'
+ORDER BY column_id;
+
+DESC INTEX2.C31_LISTINO_CLIENTI_FASI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.C31_LISTINO_CLIENTI_FASI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+-- C33 cicli
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C33_LISTINO_CLIENTI_CICLI'
+ORDER BY column_id;
+
+DESC INTEX2.C33_LISTINO_CLIENTI_CICLI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.C33_LISTINO_CLIENTI_CICLI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+-- CX3 cicli (variante)
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'CX3_LISTINO_CLIENTI_CICLI'
+ORDER BY column_id;
+
+DESC INTEX2.CX3_LISTINO_CLIENTI_CICLI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.CX3_LISTINO_CLIENTI_CICLI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+-- C35 fasi stagioni
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C35_LISTINO_FASI_STAGIONI'
+ORDER BY column_id;
+
+DESC INTEX2.C35_LISTINO_FASI_STAGIONI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.C35_LISTINO_FASI_STAGIONI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+-- C39 cli fasi stag
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C39_LISTINO_CLI_FASI_STAG'
+ORDER BY column_id;
+
+DESC INTEX2.C39_LISTINO_CLI_FASI_STAG;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.C39_LISTINO_CLI_FASI_STAG ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+# =============================================================================
+# 3) C52_PROTOTIPI_ATMAN — Scheda lavorazione prototipi
+# =============================================================================
+
+SELECT column_id, column_name, data_type, data_length, data_precision, data_scale, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C52_PROTOTIPI_ATMAN'
+ORDER BY column_id;
+
+DESC INTEX2.C52_PROTOTIPI_ATMAN;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.C52_PROTOTIPI_ATMAN ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+-- Backup
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C52_PROTOTIPI_ATMAN_BK'
+ORDER BY column_id;
+
+DESC INTEX2.C52_PROTOTIPI_ATMAN_BK;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.C52_PROTOTIPI_ATMAN_BK ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+# =============================================================================
+# 4) Cicli di lavorazione (Z06–Z09)
+# =============================================================================
+
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'Z09_TESTATE_CICLI_LAVORAZIONE'
+ORDER BY column_id;
+
+DESC INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'Z08_CICLI_LAVORAZIONE'
+ORDER BY column_id;
+
+DESC INTEX2.Z08_CICLI_LAVORAZIONE;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.Z08_CICLI_LAVORAZIONE ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'Z06_GRUPPI_CICLI_LAVORAZIONE'
+ORDER BY column_id;
+
+DESC INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'Z07_CICLI_MATERIALI'
+ORDER BY column_id;
+
+DESC INTEX2.Z07_CICLI_MATERIALI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.Z07_CICLI_MATERIALI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+# =============================================================================
+# 5) Disposizioni / storico (offerta → produzione)
+# =============================================================================
+
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'EW1_TESTATA_DISPOSIZIONI'
+ORDER BY column_id;
+
+DESC INTEX2.EW1_TESTATA_DISPOSIZIONI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.EW1_TESTATA_DISPOSIZIONI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'EW2_RIGHE_DISPOSIZIONI'
+ORDER BY column_id;
+
+DESC INTEX2.EW2_RIGHE_DISPOSIZIONI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.EW2_RIGHE_DISPOSIZIONI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'STORICO_DISPOSIZIONI'
+ORDER BY column_id;
+
+DESC INTEX2.STORICO_DISPOSIZIONI;
+
+SELECT * FROM (
+    SELECT * FROM INTEX2.STORICO_DISPOSIZIONI ORDER BY 1 DESC
+) WHERE ROWNUM <= 100;
+
+
+# =============================================================================
+# 6) JOIN di verifica (solo se C30 e C33/Z09 hanno righe)
+#     Attenzione: i nomi colonna FK (C30_ID, C33_ID_LISTINO, …) vanno
+#     confermati dal DESC — se fallisce, correggi dopo la sezione struttura.
+# =============================================================================
+
+-- 6a) Colonne di join candidate (cercalesul catalogo)
+SELECT table_name, column_name, data_type
+FROM all_tab_columns
+WHERE owner = 'INTEX2'
+  AND table_name IN (
+    'C30_LISTINO_CLIENTI','C33_LISTINO_CLIENTI_CICLI','CX3_LISTINO_CLIENTI_CICLI',
+    'Z09_TESTATE_CICLI_LAVORAZIONE','C31_LISTINO_CLIENTI_FASI'
+  )
+  AND (
+       UPPER(column_name) LIKE '%ID%'
+    OR UPPER(column_name) LIKE '%KEY%'
+    OR UPPER(column_name) LIKE '%CLIENTE%'
+    OR UPPER(column_name) LIKE '%STAGIONE%'
+    OR UPPER(column_name) LIKE '%CICLO%'
+    OR UPPER(column_name) LIKE '%UNIVOC%'
+    OR UPPER(column_name) LIKE '%PREZZO%'
+  )
+ORDER BY table_name, column_id;
+
+-- 6b) Tentativo join (adatta i nomi colonna dopo 6a / DESC)
+-- SELECT
+--     C.C30_CD_CLIENTE,
+--     C.C30_STAGIONE,
+--     C.C30_COD_UNIVOCO,
+--     C.C30_PREZZO_CAPO,
+--     Z.Z09_COD_CICLO,
+--     Z.Z09_DESCR_CICLO
+-- FROM INTEX2.C30_LISTINO_CLIENTI C
+-- LEFT JOIN INTEX2.C33_LISTINO_CLIENTI_CICLI CC ON C.C30_ID = CC.C33_ID_LISTINO
+-- LEFT JOIN INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE Z ON CC.C33_ID_CICLO = Z.Z09_ID
+-- WHERE ROWNUM <= 100;

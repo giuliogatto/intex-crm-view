@@ -1,0 +1,41 @@
+# Comandi sqlplus di test (stesse query di extract_upload_tables.py)
+# Connessione: INTEX2/SD@192.168.1.10:1521/INT2DB
+
+# --- Connessione interattiva ---
+sqlplus INTEX2/SD@192.168.1.10:1521/INT2DB
+
+# Una volta dentro sqlplus, esegui le query sotto (termina ogni statement con ;)
+
+# --- 1) c30_listino_clienti (ultimi 2000) ---
+SELECT * FROM (
+    SELECT * FROM INTEX2.C30_LISTINO_CLIENTI
+    ORDER BY ROWNUM DESC
+) WHERE ROWNUM <= 2000;
+
+# --- 2) c33_listino_cicli (ultimi 2000) ---
+SELECT * FROM (
+    SELECT * FROM INTEX2.C33_LISTINO_CLIENTI_CICLI
+    ORDER BY ROWNUM DESC
+) WHERE ROWNUM <= 2000;
+
+# --- 3) storico_disposizioni (ultimi 2000) ---
+SELECT * FROM (
+    SELECT * FROM INTEX2.STORICO_DISPOSIZIONI
+    ORDER BY ROWNUM DESC
+) WHERE ROWNUM <= 2000;
+
+# --- Conta righe (smoke test veloce) ---
+SELECT COUNT(*) FROM INTEX2.C30_LISTINO_CLIENTI;
+SELECT COUNT(*) FROM INTEX2.C33_LISTINO_CLIENTI_CICLI;
+SELECT COUNT(*) FROM INTEX2.STORICO_DISPOSIZIONI;
+
+# --- One-liner da terminale (senza sessione interattiva) ---
+# Windows CMD:
+echo SELECT COUNT(*) FROM INTEX2.C30_LISTINO_CLIENTI; | sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB
+echo SELECT COUNT(*) FROM INTEX2.C33_LISTINO_CLIENTI_CICLI; | sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB
+echo SELECT COUNT(*) FROM INTEX2.STORICO_DISPOSIZIONI; | sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB
+
+# Linux / macOS / Git Bash:
+sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB <<< "SELECT COUNT(*) FROM INTEX2.C30_LISTINO_CLIENTI;"
+sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB <<< "SELECT COUNT(*) FROM INTEX2.C33_LISTINO_CLIENTI_CICLI;"
+sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB <<< "SELECT COUNT(*) FROM INTEX2.STORICO_DISPOSIZIONI;"
