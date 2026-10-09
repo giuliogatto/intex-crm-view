@@ -261,30 +261,30 @@ Script completi in repo: `scripts/offerte-query-definitive.txt`, `scripts/offert
 
 ```sql
 SELECT * FROM (
-  SELECT v.C37_PRG                 AS cod_univoco,
+  SELECT v.C37_PRG AS cod_univoco,
          CASE v.C37_FLAG_VISIBILE
            WHEN 'P' THEN 'DA ACCETTARE'
            WHEN 'S' THEN 'ACCETTATA'
            ELSE v.C37_FLAG_VISIBILE
-         END                       AS stato,
-         v.C37_CD_CLIENTE          AS cliente,
-         v.R07_RAGIONE_SOC         AS ragione_sociale,
-         v.C37_CD_CICLO            AS ciclo,
-         v.C37_CD_CICLO_CLI        AS ciclo_cli,
-         v.Z09_DS_CICLO            AS ds_ciclo,
-         v.C37_CD_LINEA            AS linea,
-         v.CW0_DS_LINEA            AS ds_linea,
-         v.C37_CD_STAGIONE         AS stagione,
-         v.Z11_DS_STAGIONE         AS ds_stagione,
-         v.C37_CD_COMPOSIZIONE     AS composizione,
-         v.CW4_DS_COMPOSIZIONE     AS ds_composizione,
-         v.C37_CD_ARTICOLO         AS articolo,
+         END AS stato,
+         v.C37_CD_CLIENTE AS cliente,
+         v.R07_RAGIONE_SOC AS ragione_sociale,
+         v.C37_CD_CICLO AS ciclo,
+         v.C37_CD_CICLO_CLI AS ciclo_cli,
+         v.Z09_DS_CICLO AS ds_ciclo,
+         v.C37_CD_LINEA AS linea,
+         v.CW0_DS_LINEA AS ds_linea,
+         v.C37_CD_STAGIONE AS stagione,
+         v.Z11_DS_STAGIONE AS ds_stagione,
+         v.C37_CD_COMPOSIZIONE AS composizione,
+         v.CW4_DS_COMPOSIZIONE AS ds_composizione,
+         v.C37_CD_ARTICOLO AS articolo,
          v.CWA_DS_ARTICOLO_CLIENTE AS ds_articolo,
-         v.Z01_DS_REPARTO          AS reparto,
+         v.Z01_DS_REPARTO AS reparto,
          v.C37_PZ_TOT_CAPO,
          v.C37_PZ_TOT_KG,
          v.Z09_PERC_FALLOSITA,
-         v.Z09_UTENTE_INSERIMENTO  AS utente,
+         v.Z09_UTENTE_INSERIMENTO AS utente,
          v.Z09_DATA_INS
   FROM INTEX2.C37_001W v
   WHERE v.C37_PRG IS NOT NULL
@@ -292,6 +292,30 @@ SELECT * FROM (
   ORDER BY v.C37_PRG DESC
 ) WHERE ROWNUM <= 100;
 ```
+
+> **sqlplus:** se compare `ORA-00923`, di solito è un apice “curvo” (tipografico) al posto di `'` ASCII — soprattutto su `'pe/ai'`. In quel caso Oracle interpreta `/` come divisione e fallisce il parse. Incolla da file `.txt` o ri-digita gli apici. Alternativa più compatta (già verificata):
+
+```sql
+SELECT * FROM (
+  SELECT v.C37_PRG AS cod_univoco,
+         CASE v.C37_FLAG_VISIBILE WHEN 'P' THEN 'DA ACCETTARE'
+                                  WHEN 'S' THEN 'ACCETTATA'
+                                  ELSE v.C37_FLAG_VISIBILE END AS stato,
+         v.C37_CD_CLIENTE AS cliente, v.R07_RAGIONE_SOC AS ragione_sociale,
+         v.C37_CD_CICLO AS ciclo, v.C37_CD_CICLO_CLI AS ciclo_cli, v.Z09_DS_CICLO AS ds_ciclo,
+         v.C37_CD_LINEA AS linea, v.CW0_DS_LINEA AS ds_linea,
+         v.C37_CD_STAGIONE AS stagione, v.Z11_DS_STAGIONE AS ds_stagione,
+         v.C37_CD_COMPOSIZIONE AS composizione, v.CW4_DS_COMPOSIZIONE AS ds_composizione,
+         v.C37_CD_ARTICOLO AS articolo, v.CWA_DS_ARTICOLO_CLIENTE AS ds_articolo,
+         v.Z01_DS_REPARTO AS reparto, v.C37_PZ_TOT_CAPO, v.C37_PZ_TOT_KG,
+         v.Z09_PERC_FALLOSITA, v.Z09_UTENTE_INSERIMENTO AS utente, v.Z09_DATA_INS
+  FROM INTEX2.C37_001W v
+  WHERE v.C37_PRG IS NOT NULL
+    AND v.C37_CD_STAGIONE NOT IN ('pe/ai', '*')
+  ORDER BY v.C37_PRG DESC
+) WHERE ROWNUM <= 100;
+```
+
 
 ### 8.2 Dettaglio fasi di un'offerta (es. 39770)
 

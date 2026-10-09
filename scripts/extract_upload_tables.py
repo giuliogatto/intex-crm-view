@@ -22,25 +22,55 @@ DEBIAN_REMOTE_DIR = "/intex/"
 LOCAL_DIR = r"C:\Automazioni\export_temp"
 os.makedirs(LOCAL_DIR, exist_ok=True)
 
-# Elenco tabelle da esportare con query per estrarre le modifiche recenti/ultimi record
+# Finestra incrementale (giorni). Vedi documentation/analisi-export-offerte.md
+LOOKBACK_DAYS = 14
+
+# Offerte commerciali Wi@sh3: testate (C37_001W, cliente incluso) + righe fasi (C38+Z08+Z02)
 QUERIES = {
-    "c30_listino_clienti.csv": """
-        SELECT * FROM (
-            SELECT * FROM INTEX2.C30_LISTINO_CLIENTI 
-            ORDER BY ROWNUM DESC
-        ) WHERE ROWNUM <= 2000
+    "c37_offerte_testate.csv": f"""
+        SELECT v.*
+        FROM INTEX2.C37_001W v
+        WHERE v.C37_PRG IS NOT NULL
+          AND v.C37_CD_STAGIONE NOT IN ('pe/ai', '*')
+          AND v.Z09_DATA_INS >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}
     """,
-    "c33_listino_cicli.csv": """
-        SELECT * FROM (
-            SELECT * FROM INTEX2.C33_LISTINO_CLIENTI_CICLI 
-            ORDER BY ROWNUM DESC
-        ) WHERE ROWNUM <= 2000
-    """,
-    "storico_disposizioni.csv": """
-        SELECT * FROM (
-            SELECT * FROM INTEX2.STORICO_DISPOSIZIONI 
-            ORDER BY ROWNUM DESC
-        ) WHERE ROWNUM <= 2000
+    "c38_offerte_righe.csv": f"""
+        SELECT r.*,
+               z8.Z08_CD_FASE,
+               z2.Z02_DS_FASE,
+               z8.Z08_CD_UNITA_MIS
+        FROM INTEX2.C37_TESTATA_LISTINI t
+        JOIN INTEX2.C38_RIGHE_LISTINI r
+          ON  r.C38_CD_CLIENTE      = t.C37_CD_CLIENTE
+          AND r.C38_CD_LINEA        = t.C37_CD_LINEA
+          AND r.C38_CD_STAGIONE     = t.C37_CD_STAGIONE
+          AND r.C38_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+          AND r.C38_CD_ARTICOLO     = t.C37_CD_ARTICOLO
+          AND r.C38_CD_CICLO        = t.C37_CD_CICLO
+          AND r.C38_CD_VALUTA       = t.C37_CD_VALUTA
+        LEFT JOIN INTEX2.Z08_CICLI_LAVORAZIONE z8
+          ON  z8.Z08_CD_CLIENTE          = t.C37_CD_CLIENTE
+          AND z8.Z08_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+          AND z8.Z08_CD_CICLO            = t.C37_CD_CICLO
+          AND z8.Z08_CD_LINEA            = t.C37_CD_LINEA
+          AND z8.Z08_CD_STAGIONE         = t.C37_CD_STAGIONE
+          AND z8.Z08_CD_COMPOSIZIONE     = t.C37_CD_COMPOSIZIONE
+          AND z8.Z08_SEQUENZA            = r.C38_SEQUENZA
+        LEFT JOIN INTEX2.Z02_FASI_DI_LAVORO z2
+          ON z2.Z02_CD_FASE = z8.Z08_CD_FASE
+        WHERE t.C37_PRG IS NOT NULL
+          AND t.C37_CD_STAGIONE NOT IN ('pe/ai', '*')
+          AND EXISTS (
+                SELECT 1 FROM INTEX2.C37_001W v
+                WHERE v.C37_CD_CLIENTE      = t.C37_CD_CLIENTE
+                  AND v.C37_CD_LINEA        = t.C37_CD_LINEA
+                  AND v.C37_CD_STAGIONE     = t.C37_CD_STAGIONE
+                  AND v.C37_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+                  AND v.C37_CD_ARTICOLO     = t.C37_CD_ARTICOLO
+                  AND v.C37_CD_CICLO        = t.C37_CD_CICLO
+                  AND v.C37_CD_VALUTA       = t.C37_CD_VALUTA
+                  AND v.Z09_DATA_INS >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}
+              )
     """,
 }
 
