@@ -1775,6 +1775,7 @@ def _cicli_filters():
         'articolo': (request.query.get('articolo') or '').strip() or None,
         'composizione': (request.query.get('composizione') or '').strip() or None,
         'descrizione': (request.query.get('descrizione') or '').strip() or None,
+        'codice_ciclo': (request.query.get('codice_ciclo') or '').strip() or None,
     }
 
 
@@ -1804,6 +1805,16 @@ def _cicli_from_where(filters):
     if filters.get('stagione'):
         query += " AND t.codice_stagione = %(stagione)s"
         params['stagione'] = filters['stagione']
+
+    codice_ciclo_pat = _broad_like_pattern(filters.get('codice_ciclo'))
+    if codice_ciclo_pat:
+        query += """
+          AND (
+            t.codice_ciclo ILIKE %(codice_ciclo_pat)s ESCAPE '\\'
+            OR COALESCE(t.codice_ciclo_cli, '') ILIKE %(codice_ciclo_pat)s ESCAPE '\\'
+          )
+        """
+        params['codice_ciclo_pat'] = codice_ciclo_pat
 
     articolo_pat = _broad_like_pattern(filters.get('articolo'))
     if articolo_pat:

@@ -10,6 +10,7 @@ const PAGE_SIZE = 50
 const EMPTY_FILTERS = {
   codice_cliente: '',
   stagione: '',
+  codice_ciclo: '',
   articolo: '',
   composizione: '',
   descrizione: '',
@@ -43,6 +44,7 @@ export default function CicliPage() {
     const params = new URLSearchParams()
     if (nextFilters.codice_cliente) params.append('codice_cliente', nextFilters.codice_cliente)
     if (nextFilters.stagione) params.append('stagione', nextFilters.stagione)
+    if (nextFilters.codice_ciclo) params.append('codice_ciclo', nextFilters.codice_ciclo)
     if (nextFilters.articolo) params.append('articolo', nextFilters.articolo)
     if (nextFilters.composizione) params.append('composizione', nextFilters.composizione)
     if (nextFilters.descrizione) params.append('descrizione', nextFilters.descrizione)
@@ -149,6 +151,16 @@ export default function CicliPage() {
                   onChange={handleChange}
                   placeholder="Cerca stagione..."
                   allowClear
+                />
+              </div>
+              <div className="field">
+                <label>Codice ciclo</label>
+                <input
+                  type="text"
+                  name="codice_ciclo"
+                  value={filters.codice_ciclo}
+                  onChange={handleChange}
+                  placeholder="Es. T139..."
                 />
               </div>
               <div className="field">
