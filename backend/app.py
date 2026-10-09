@@ -2,6 +2,7 @@ from bottle import Bottle, request, response, HTTPResponse
 from database import DatabasePool
 from datetime import datetime
 import json
+import re
 
 from auth import authenticate_user, create_token, get_current_user, hash_password
 from prompts import genericPrompt, replace_oggi_placeholder
@@ -1747,6 +1748,295 @@ def ddt_assist_batch():
     except Exception as e:
         response.status = 500
         return {"error": str(e)}
+
+def _escape_like(value):
+    return (
+        str(value)
+        .replace('\\', '\\\\')
+        .replace('%', '\\%')
+        .replace('_', '\\_')
+    )
+
+
+def _broad_like_pattern(value):
+    """Match allargato: 'tinto stretch' -> %tinto%stretch%."""
+    if not value or not str(value).strip():
+        return None
+    parts = [_escape_like(p) for p in re.split(r'\s+', str(value).strip()) if p]
+    if not parts:
+        return None
+    return '%' + '%'.join(parts) + '%'
+
+
+def _cicli_filters():
+    return {
+        'codice_cliente': (request.query.get('codice_cliente') or '').strip() or None,
+        'stagione': (request.query.get('stagione') or '').strip() or None,
+        'articolo': (request.query.get('articolo') or '').strip() or None,
+        'composizione': (request.query.get('composizione') or '').strip() or None,
+        'descrizione': (request.query.get('descrizione') or '').strip() or None,
+    }
+
+
+def _cicli_from_where(filters):
+    query = """
+        FROM cicli_testate t
+        LEFT JOIN cicli_clienti cl
+          ON cl.codice_cliente = t.codice_cliente
+        LEFT JOIN cicli_stagioni st
+          ON st.codice_stagione = t.codice_stagione
+        LEFT JOIN composizioni co
+          ON co.codice_composizione = t.codice_composizione
+        LEFT JOIN articoli_cliente ar
+          ON ar.codice_cliente = t.codice_cliente
+         AND ar.codice_articolo = t.codice_articolo
+        LEFT JOIN linee_tintoria li
+          ON li.codice_cliente = t.codice_cliente
+         AND li.codice_linea = t.codice_linea
+        WHERE 1=1
+    """
+    params = {}
+
+    if filters.get('codice_cliente'):
+        query += " AND t.codice_cliente = %(codice_cliente)s"
+        params['codice_cliente'] = filters['codice_cliente']
+
+    if filters.get('stagione'):
+        query += " AND t.codice_stagione = %(stagione)s"
+        params['stagione'] = filters['stagione']
+
+    articolo_pat = _broad_like_pattern(filters.get('articolo'))
+    if articolo_pat:
+        query += """
+          AND (
+            COALESCE(ar.ds_articolo, '') ILIKE %(articolo_pat)s ESCAPE '\\'
+            OR t.codice_articolo ILIKE %(articolo_pat)s ESCAPE '\\'
+          )
+        """
+        params['articolo_pat'] = articolo_pat
+
+    composizione_pat = _broad_like_pattern(filters.get('composizione'))
+    if composizione_pat:
+        query += """
+          AND (
+            COALESCE(co.ds_composizione, '') ILIKE %(composizione_pat)s ESCAPE '\\'
+            OR t.codice_composizione ILIKE %(composizione_pat)s ESCAPE '\\'
+          )
+        """
+        params['composizione_pat'] = composizione_pat
+
+    descrizione_pat = _broad_like_pattern(filters.get('descrizione'))
+    if descrizione_pat:
+        query += """
+          AND (
+            COALESCE(t.ds_ciclo, '') ILIKE %(descrizione_pat)s ESCAPE '\\'
+            OR COALESCE(t.ds_ciclo_bolle_fat, '') ILIKE %(descrizione_pat)s ESCAPE '\\'
+          )
+        """
+        params['descrizione_pat'] = descrizione_pat
+
+    return query, params
+
+
+@app.route('/api/cicli/clienti', method='GET')
+def get_cicli_clienti():
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT codice_cliente, ragione_sociale
+            FROM cicli_clienti
+            ORDER BY ragione_sociale
+            """
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+        data = [{"codice": r[0], "ragione_sociale": r[1]} for r in rows]
+        return {"total": len(data), "data": data}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
+@app.route('/api/cicli/stagioni', method='GET')
+def get_cicli_stagioni():
+    try:
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT codice_stagione, ds_stagione
+            FROM cicli_stagioni
+            ORDER BY codice_stagione DESC
+            """
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+        data = [{"codice": r[0], "descrizione": r[1] or r[0]} for r in rows]
+        return {"total": len(data), "data": data}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
+@app.route('/api/cicli', method='GET')
+def get_cicli():
+    try:
+        page, limit, offset = parse_pagination(default_limit=50, max_limit=200)
+        filters = _cicli_filters()
+        from_where, params = _cicli_from_where(filters)
+
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+
+        cursor.execute(f"SELECT COUNT(*) {from_where}", params)
+        total = cursor.fetchone()[0]
+
+        params_page = dict(params)
+        params_page['limit'] = limit
+        params_page['offset'] = offset
+
+        cursor.execute(
+            f"""
+            SELECT
+              t.codice_cliente,
+              cl.ragione_sociale,
+              t.codice_articolo,
+              ar.ds_articolo,
+              t.codice_ciclo,
+              t.codice_ciclo_cli,
+              t.ds_ciclo,
+              t.ds_ciclo_bolle_fat,
+              t.codice_linea,
+              li.ds_linea,
+              t.codice_stagione,
+              st.ds_stagione,
+              t.codice_composizione,
+              co.ds_composizione,
+              t.codice_reparto,
+              t.codice_gruppo,
+              t.st_record,
+              t.nr_revisione,
+              t.data_ins
+            {from_where}
+            ORDER BY cl.ragione_sociale NULLS LAST, t.codice_ciclo, t.codice_stagione
+            LIMIT %(limit)s OFFSET %(offset)s
+            """,
+            params_page,
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        items = []
+        for r in rows:
+            items.append({
+                "codice_cliente": r[0],
+                "ragione_sociale": r[1],
+                "codice_articolo": r[2],
+                "ds_articolo": r[3],
+                "codice_ciclo": r[4],
+                "codice_ciclo_cli": r[5],
+                "ds_ciclo": r[6],
+                "ds_ciclo_bolle_fat": r[7],
+                "codice_linea": r[8],
+                "ds_linea": r[9],
+                "codice_stagione": r[10],
+                "ds_stagione": r[11],
+                "codice_composizione": r[12],
+                "ds_composizione": r[13],
+                "codice_reparto": r[14],
+                "codice_gruppo": r[15],
+                "st_record": r[16],
+                "nr_revisione": r[17],
+                "data_ins": r[18].isoformat() if r[18] else None,
+            })
+
+        return _paginated_list_response(items, total, page, limit)
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
+
+@app.route('/api/cicli/fasi', method='GET')
+def get_cicli_fasi():
+    try:
+        codice_cliente = (request.query.get('codice_cliente') or '').strip()
+        codice_articolo = (request.query.get('codice_articolo') or '').strip()
+        codice_ciclo = (request.query.get('codice_ciclo') or '').strip()
+        codice_linea = (request.query.get('codice_linea') or '').strip()
+        codice_stagione = (request.query.get('codice_stagione') or '').strip()
+        codice_composizione = (request.query.get('codice_composizione') or '').strip()
+
+        missing = [
+            name for name, val in [
+                ('codice_cliente', codice_cliente),
+                ('codice_articolo', codice_articolo),
+                ('codice_ciclo', codice_ciclo),
+                ('codice_linea', codice_linea),
+                ('codice_stagione', codice_stagione),
+                ('codice_composizione', codice_composizione),
+            ] if not val
+        ]
+        if missing:
+            response.status = 400
+            return {"error": f"Missing required params: {', '.join(missing)}"}
+
+        conn = db_pool.get_conn()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT
+              f.sequenza,
+              f.codice_fase,
+              z.ds_fase,
+              f.codice_macrofase,
+              f.codice_unita_mis,
+              f.note,
+              f.st_record
+            FROM cicli_fasi f
+            LEFT JOIN fasi_lavoro z ON z.codice_fase = f.codice_fase
+            WHERE f.codice_cliente = %(codice_cliente)s
+              AND f.codice_articolo = %(codice_articolo)s
+              AND f.codice_ciclo = %(codice_ciclo)s
+              AND f.codice_linea = %(codice_linea)s
+              AND f.codice_stagione = %(codice_stagione)s
+              AND f.codice_composizione = %(codice_composizione)s
+            ORDER BY f.sequenza
+            """,
+            {
+                'codice_cliente': codice_cliente,
+                'codice_articolo': codice_articolo,
+                'codice_ciclo': codice_ciclo,
+                'codice_linea': codice_linea,
+                'codice_stagione': codice_stagione,
+                'codice_composizione': codice_composizione,
+            },
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        db_pool.release_conn(conn)
+
+        data = [
+            {
+                "sequenza": r[0],
+                "codice_fase": r[1],
+                "ds_fase": r[2],
+                "codice_macrofase": r[3],
+                "codice_unita_mis": r[4],
+                "note": r[5],
+                "st_record": r[6],
+            }
+            for r in rows
+        ]
+        return {"total": len(data), "data": data}
+    except Exception as e:
+        response.status = 500
+        return {"error": str(e)}
+
 
 from analisi import register_analisi_routes
 

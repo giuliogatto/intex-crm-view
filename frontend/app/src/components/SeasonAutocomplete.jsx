@@ -2,30 +2,33 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { authFetch } from '../utils/auth'
 
-const MAX_RESULTS = 20
+const MAX_RESULTS = 30
 
-function formatCustomerLabel(customer) {
-  return `${customer.ragione_sociale} (${customer.codice})`
+function formatSeasonLabel(season) {
+  if (season.descrizione) {
+    return `${season.codice} — ${season.descrizione}`
+  }
+  return season.codice
 }
 
-function matchesCustomer(customer, query) {
+function matchesSeason(season, query) {
   const q = query.trim().toLowerCase()
   if (!q) return true
   return (
-    customer.ragione_sociale.toLowerCase().includes(q) ||
-    String(customer.codice).toLowerCase().includes(q)
+    String(season.codice).toLowerCase().includes(q) ||
+    String(season.descrizione || '').toLowerCase().includes(q)
   )
 }
 
-export default function CustomerAutocomplete({
+export default function SeasonAutocomplete({
   name,
   value,
   onChange,
-  placeholder = 'Cerca per nome o codice cliente',
+  placeholder = 'Cerca stagione...',
   allowClear = false,
-  endpoint = '/api/clienti',
+  endpoint = '/api/cicli/stagioni',
 }) {
-  const [customers, setCustomers] = useState([])
+  const [seasons, setSeasons] = useState([])
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -36,20 +39,20 @@ export default function CustomerAutocomplete({
   const listRef = useRef(null)
   const inputRef = useRef(null)
 
-  const selectedCustomer = useMemo(
-    () => customers.find((customer) => customer.codice === value) ?? null,
-    [customers, value]
+  const selectedSeason = useMemo(
+    () => seasons.find((season) => season.codice === value) ?? null,
+    [seasons, value]
   )
 
   const results = useMemo(() => {
     if (!open) return []
-    return customers.filter((customer) => matchesCustomer(customer, query)).slice(0, MAX_RESULTS)
-  }, [customers, query, open])
+    return seasons.filter((season) => matchesSeason(season, query)).slice(0, MAX_RESULTS)
+  }, [seasons, query, open])
 
   const updateListPosition = () => {
     if (!controlRef.current) return
     const rect = controlRef.current.getBoundingClientRect()
-    const width = Math.max(rect.width, 280)
+    const width = Math.max(rect.width, 240)
     let left = rect.left
     const maxLeft = window.innerWidth - width - 12
     if (left > maxLeft) left = Math.max(12, maxLeft)
@@ -65,19 +68,19 @@ export default function CustomerAutocomplete({
     authFetch(endpoint)
       .then((res) => res.json())
       .then((resData) => {
-        if (resData.data) setCustomers(resData.data)
+        if (resData.data) setSeasons(resData.data)
       })
-      .catch((err) => console.error('Error fetching customers:', err))
+      .catch((err) => console.error('Error fetching seasons:', err))
   }, [endpoint])
 
   useEffect(() => {
     if (isEditing) return
-    if (selectedCustomer) {
-      setQuery(formatCustomerLabel(selectedCustomer))
+    if (selectedSeason) {
+      setQuery(formatSeasonLabel(selectedSeason))
     } else {
       setQuery('')
     }
-  }, [selectedCustomer, isEditing])
+  }, [selectedSeason, isEditing])
 
   useEffect(() => {
     if (!open) return undefined
@@ -108,7 +111,7 @@ export default function CustomerAutocomplete({
       window.removeEventListener('resize', handleReposition)
       window.removeEventListener('scroll', handleReposition, true)
     }
-  }, [open, selectedCustomer])
+  }, [open, selectedSeason])
 
   const emitChange = (codice) => {
     if (name) {
@@ -121,16 +124,16 @@ export default function CustomerAutocomplete({
   const closeList = () => {
     setOpen(false)
     setIsEditing(false)
-    if (selectedCustomer) {
-      setQuery(formatCustomerLabel(selectedCustomer))
+    if (selectedSeason) {
+      setQuery(formatSeasonLabel(selectedSeason))
     } else {
       setQuery('')
     }
   }
 
-  const selectCustomer = (customer) => {
-    emitChange(customer.codice)
-    setQuery(formatCustomerLabel(customer))
+  const selectSeason = (season) => {
+    emitChange(season.codice)
+    setQuery(formatSeasonLabel(season))
     setIsEditing(false)
     setOpen(false)
     inputRef.current?.blur()
@@ -158,7 +161,7 @@ export default function CustomerAutocomplete({
   const handleFocus = () => {
     setIsEditing(true)
     setOpen(true)
-    if (selectedCustomer) {
+    if (selectedSeason) {
       setQuery('')
     }
   }
@@ -176,20 +179,20 @@ export default function CustomerAutocomplete({
       }}
     >
       {results.length === 0 ? (
-        <div className="customer-autocomplete__empty">Nessun cliente trovato</div>
+        <div className="customer-autocomplete__empty">Nessuna stagione trovata</div>
       ) : (
-        results.map((customer) => (
+        results.map((season) => (
           <button
-            key={customer.codice}
+            key={season.codice}
             type="button"
             role="option"
-            aria-selected={customer.codice === value}
-            className={`customer-autocomplete__option${customer.codice === value ? ' customer-autocomplete__option--selected' : ''}`}
+            aria-selected={season.codice === value}
+            className={`customer-autocomplete__option${season.codice === value ? ' customer-autocomplete__option--selected' : ''}`}
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => selectCustomer(customer)}
+            onClick={() => selectSeason(season)}
           >
-            <span className="customer-autocomplete__name">{customer.ragione_sociale}</span>
-            <span className="customer-autocomplete__code">{customer.codice}</span>
+            <span className="customer-autocomplete__name">{formatSeasonLabel(season)}</span>
+            <span className="customer-autocomplete__code">{season.codice}</span>
           </button>
         ))
       )}
@@ -215,7 +218,7 @@ export default function CustomerAutocomplete({
             type="button"
             className="customer-autocomplete__clear"
             onClick={clearSelection}
-            aria-label="Cancella cliente selezionato"
+            aria-label="Cancella stagione selezionata"
           >
             ×
           </button>

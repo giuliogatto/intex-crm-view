@@ -3,6 +3,7 @@ import Filters from './components/Filters'
 import DocumentTable from './components/DocumentTable'
 import DiscrepancyPanel from './components/DiscrepancyPanel'
 import AnalisiPage from './pages/AnalisiPage'
+import CicliPage from './pages/CicliPage'
 import ChatPanel from './components/ChatPanel'
 import UserMenu from './components/UserMenu'
 import AdminNav from './components/AdminNav'
@@ -40,6 +41,7 @@ function App() {
   const [activeTab, setActiveTab] = useState(() => {
     const pathname = window.location.pathname
     if (pathname === '/analisi') return 'analisi'
+    if (pathname === '/cicli') return 'cicli'
     return 'bolle'
   })
   const [analisiSubTab, setAnalisiSubTab] = useState(null)
@@ -134,9 +136,21 @@ function App() {
       return
     }
 
+    if (tab === 'cicli') {
+      window.history.replaceState({}, document.title, '/cicli')
+      setData([])
+      setListPage(1)
+      setListTotal(0)
+      setListPages(1)
+      setListTotals(null)
+      setLoading(false)
+      setActiveTab(tab)
+      return
+    }
+
     window.history.replaceState({}, document.title, '/')
 
-    if (tab === 'discrepanze') {
+    if (tab === 'discrepanze' || tab === 'assistente') {
       setData([])
       setListPage(1)
       setListTotal(0)
@@ -161,7 +175,12 @@ function App() {
 
   // Fetch list data when activeTab changes
   useEffect(() => {
-    if (activeTab !== 'discrepanze' && activeTab !== 'analisi') {
+    if (
+      activeTab !== 'discrepanze' &&
+      activeTab !== 'analisi' &&
+      activeTab !== 'assistente' &&
+      activeTab !== 'cicli'
+    ) {
       if (skipNextTabFetch.current) {
         skipNextTabFetch.current = false
         return
@@ -648,6 +667,12 @@ function App() {
           🤖 Assistente DDT
         </button>
         <button
+          className={`nav-tab ${activeTab === 'cicli' ? 'is-active' : ''}`}
+          onClick={() => handleTabChange('cicli')}
+        >
+          🧵 Cicli
+        </button>
+        <button
           className={`nav-tab ${activeTab === 'analisi' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('analisi')}
         >
@@ -667,6 +692,8 @@ function App() {
               subTabOverride={analisiSubTab} 
               scrollTargetOverride={analisiScrollTarget} 
             />
+          ) : activeTab === 'cicli' ? (
+            <CicliPage />
           ) : activeTab === 'discrepanze' ? (
             <DiscrepancyPanel
               selectedCustomer={discrepancyCustomer}
