@@ -1,0 +1,8 @@
+SET PAGESIZE 0
+SET LINESIZE 200
+SET TRIMSPOOL ON
+SET FEEDBACK OFF
+SPOOL all-tables.txt
+SELECT owner || ' ' || table_name FROM all_tables ORDER BY owner, table_name;
+SPOOL OFF
+EXIT

@@ -1,0 +1,2478 @@
+=== 0a) COUNT tabelle chiave INTEX2 ===
+
+TABELLA 					       N
+--------------------------------------------- ----------
+C30_LISTINO_CLIENTI				       0
+C33_LISTINO_CLIENTI_CICLI			       0
+C52_PROTOTIPI_ATMAN				     448
+Z09_TESTATE_CICLI_LAVORAZIONE			  108043
+Z08_CICLI_LAVORAZIONE				  320905
+EW1_TESTATA_DISPOSIZIONI			  195571
+STORICO_DISPOSIZIONI				  673005
+
+7 rows selected.
+
+Elapsed: 00:00:00.13
+=== 0b) COUNT listino negli altri schema (nomi diversi!) ===
+
+TABELLA 					       N
+--------------------------------------------- ----------
+INTEXGR.C30_TEST_LIST_CLI			      35
+INTEXGRIFFE.C30_TEST_LIST_CLI			      27
+NEXSTYLE.C30_TEST_LIST_CLI			      40
+INTEXGR.C52_DETT_LIST_CL			       0
+INTEXGRIFFE.C52_DETT_LIST_CL			       0
+NEXSTYLE.C52_DETT_LIST_CL			       0
+INTEXGR.Z09_CICLI				       0
+INTEXGRIFFE.Z09_CICLI				       0
+NEXSTYLE.Z09_CICLI				       0
+
+9 rows selected.
+
+Elapsed: 00:00:00.21
+=== 0c) COUNT view ORDS / gestionale ===
+
+TABELLA 					       N
+--------------------------------------------- ----------
+INTEX2.C30_R07_CW0_001W 			       0
+INTEX2.C52_001W 				     448
+INTEXGR.C30_001W				      35
+INTEXGR.C52_001W				       0
+INTEXGRIFFE.C30_001W				      27
+INTEXGRIFFE.C52_001W				       0
+NEXSTYLE.C30_001W				      40
+NEXSTYLE.C52_001W				       0
+
+8 rows selected.
+
+Elapsed: 00:00:03.44
+=== 0d) Catalogo: tabelle/view listino correlate ===
+
+OWNER		     TABLE_NAME
+-------------------- -----------------------------------
+INTEX2		     C30_LISTINO_CLIENTI
+INTEX2		     C33_LISTINO_CLIENTI_CICLI
+INTEX2		     C52_PROTOTIPI_ATMAN
+INTEX2		     C52_PROTOTIPI_ATMAN_BK
+INTEX2		     CX3_LISTINO_CLIENTI_CICLI
+INTEX2		     Z08_CICLI_LAVORAZIONE
+INTEX2		     Z09_TESTATE_CICLI_LAVORAZIONE
+INTEXGR 	     C30_TEST_LIST_CLI
+INTEXGR 	     C52_DETT_LIST_CL
+INTEXGR 	     Z09_CICLI
+INTEXGRIFFE	     C30_TEST_LIST_CLI
+INTEXGRIFFE	     C52_DETT_LIST_CL
+INTEXGRIFFE	     Z09_CICLI
+NEXSTYLE	     C30_TEST_LIST_CLI
+NEXSTYLE	     C52_DETT_LIST_CL
+NEXSTYLE	     Z09_CICLI
+
+16 rows selected.
+
+Elapsed: 00:00:00.23
+
+OWNER		     VIEW_NAME
+-------------------- -----------------------------------
+INTEX2		     C30_R07_CW0_001W
+INTEX2		     C52_001W
+INTEXGR 	     C30_001W
+INTEXGR 	     C52_001W
+INTEXGRIFFE	     C30_001W
+INTEXGRIFFE	     C52_001W
+NEXSTYLE	     C30_001W
+NEXSTYLE	     C52_001W
+
+8 rows selected.
+
+Elapsed: 00:00:00.05
+=== 1a) INTEXGR.C30_TEST_LIST_CLI struttura ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 C30_CD_AZIENDA		       VARCHAR2 		 3 N
+	 2 C30_CD_CLIENTE		       VARCHAR2 		 6 N
+	 3 C30_CD_STAGIONE		       VARCHAR2 		 6 N
+	 4 C30_DT_INI_VAL		       DATE			 7 N
+	 5 C30_DT_FIN_VAL		       DATE			 7 N
+	 6 C30_ST_RECORD		       VARCHAR2 		 1 N
+	 7 C30_ST_MODIFICA		       NUMBER			22 Y
+	 8 C30_FLAG_ATTIVO		       VARCHAR2 		 1 N
+	 9 C30_NOTE			       VARCHAR2 	      4000 Y
+	10 SD_DT_INS			       DATE			 7 N
+	11 SD_DT_MOD			       DATE			 7 N
+	12 C30_ID_LISTINO		       NUMBER			22 N
+
+12 rows selected.
+
+Elapsed: 00:00:00.07
+=== 1a) sample 30 (no sort) ===
+
+C30 C30_CD C30_CD C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- ------ ------ --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD C30_ID_LISTINO
+--------- --------- --------------
+AZ1 131    SS26   01-JUL-25 31-JAN-26 V 	      1 S
+
+11-NOV-25 11-NOV-25		33
+
+AZ1 131    SS26   01-NOV-25 30-JUN-26 V 	      1 S
+
+13-NOV-25 13-NOV-25		34
+
+AZ1 000003 SS26   01-OCT-25 31-MAR-26 V 	      1 S
+
+29-JAN-26 29-JAN-26		35
+
+AZ1 901    FW2324 01-MAR-23 31-AUG-23 V 	      1 S
+
+16-MAR-23 16-MAR-23		21
+
+AZ1 2242   SS23   01-NOV-22 30-APR-23 V 	      1 S
+
+18-NOV-22 18-NOV-22		18
+
+AZ1 2430   SS23   01-OCT-22 31-MAR-23 V 	      2 S
+FALLATI PREZZO PIENO
+05-APR-23 05-APR-23		22
+
+AZ1 2511   .	  02-AUG-23 31-MAR-24 V 	      1 S
+ORDINE OUTLET
+05-SEP-23 05-SEP-23		24
+
+AZ1 2511   SS24   01-JUN-23 11-FEB-24 V 	      1 S
+
+22-JAN-24 22-JAN-24		25
+
+AZ1 2511   FW2425 01-JAN-23 30-JUN-24 V 	      1 S
+
+22-JAN-24 22-JAN-24		26
+
+AZ1 1493   SS23   01-OCT-22 31-MAR-23 V 	      3 S
+CAPI FALLATI ? 10,00 CAD
+31-JAN-23 31-JAN-23		19
+
+AZ1 2313   FW2122 13-JAN-21 31-DEC-21 V 	      2 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21		 4
+
+AZ1 2387   FW2122 01-JUN-21 31-DEC-21 V 	      2 S
+proposta 11/06/2021 Alain - Claudio Parazi
+23-JUN-21 23-JUN-21		 5
+
+AZ1 2432   FW2223 01-JAN-22 31-DEC-22 V 	      1 S
+
+21-JUN-22 21-JUN-22		11
+
+AZ1 1067   FW2122 01-APR-21 31-JUL-21 V 	      2 S
+
+16-APR-21 16-APR-21		 3
+
+AZ1 2242   SS22   01-JUN-21 31-DEC-21 V 	      2 S
+
+27-SEP-21 27-SEP-21		 6
+
+AZ1 2430   FW2223 01-JUN-22 31-DEC-22 V 	      2 S
+
+03-AUG-22 03-AUG-22		15
+
+AZ1 2310   SS21   01-JAN-21 31-DEC-21 V 	      2 S
+
+23-FEB-21 23-FEB-21		 1
+
+AZ1 2478   SS23   01-JUN-22 31-DEC-22 V 	      1 S
+
+04-JUL-22 04-JUL-22		13
+
+AZ1 2313   SS22   01-OCT-21 30-APR-22 V 	      3 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21		 9
+
+AZ1 901    FW2223 01-JUN-22 30-APR-22 V 	      1 S
+
+05-SEP-22 05-SEP-22		17
+
+AZ1 2316   SS21   01-JAN-20 31-DEC-26 V 	      1 S
+
+24-MAR-21 24-MAR-21		 2
+
+AZ1 1067   SS22   15-OCT-21 15-APR-22 V 	      1 S
+
+27-OCT-21 27-OCT-21		 8
+
+AZ1 2242   FW2223 01-JAN-22 31-DEC-22 V 	      1 S
+
+18-MAY-22 18-MAY-22		10
+
+AZ1 2478   FW2223 01-MAR-22 31-DEC-22 V 	      2 S
+
+C30 C30_CD C30_CD C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- ------ ------ --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD C30_ID_LISTINO
+--------- --------- --------------
+
+04-JUL-22 04-JUL-22		12
+
+AZ1 901    SS23   01-JUL-22 31-MAR-23 V 	      1 S
+
+01-SEP-22 01-SEP-22		16
+
+AZ1 2316   SS22   15-OCT-21 15-APR-22 V 	      1 S
+
+26-OCT-21 26-OCT-21		 7
+
+AZ1 2313   FW2223 01-JUN-22 31-DEC-22 V 	      1 S
+
+25-JUL-22 25-JUL-22		14
+
+AZ1 901    SS23   01-SEP-22 31-MAR-23 V 	      1 S
+
+02-FEB-23 02-FEB-23		20
+
+AZ1 2478   FW2324 01-MAY-23 23-DEC-23 V 	      1 S
+
+30-MAY-23 30-MAY-23		23
+
+AZ1 2242   FW2425 01-APR-24 31-OCT-24 V 	      1 S
+
+27-MAY-24 27-MAY-24		27
+
+
+30 rows selected.
+
+Elapsed: 00:00:00.07
+=== 1b) INTEXGRIFFE.C30_TEST_LIST_CLI ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 C30_CD_AZIENDA		       VARCHAR2 		 3 N
+	 2 C30_CD_CLIENTE		       VARCHAR2 		 6 N
+	 3 C30_CD_STAGIONE		       VARCHAR2 		 6 N
+	 4 C30_DT_INI_VAL		       DATE			 7 N
+	 5 C30_DT_FIN_VAL		       DATE			 7 N
+	 6 C30_ST_RECORD		       VARCHAR2 		 1 N
+	 7 C30_ST_MODIFICA		       NUMBER			22 Y
+	 8 C30_FLAG_ATTIVO		       VARCHAR2 		 1 N
+	 9 C30_NOTE			       VARCHAR2 	      4000 Y
+	10 SD_DT_INS			       DATE			 7 N
+	11 SD_DT_MOD			       DATE			 7 N
+	12 C30_ID_LISTINO		       NUMBER			22 N
+
+12 rows selected.
+
+Elapsed: 00:00:00.07
+
+C30 C30_CD C30_CD C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- ------ ------ --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD C30_ID_LISTINO
+--------- --------- --------------
+AZ1 901    FW2324 01-MAR-23 31-AUG-23 V 	      1 S
+
+16-MAR-23 16-MAR-23		21
+
+AZ1 2242   SS23   01-NOV-22 30-APR-23 V 	      1 S
+
+18-NOV-22 18-NOV-22		18
+
+AZ1 2430   SS23   01-OCT-22 31-MAR-23 V 	      2 S
+FALLATI PREZZO PIENO
+05-APR-23 05-APR-23		22
+
+AZ1 2511   .	  02-AUG-23 31-MAR-24 V 	      1 S
+ORDINE OUTLET
+05-SEP-23 05-SEP-23		24
+
+AZ1 2511   SS24   01-JUN-23 11-FEB-24 V 	      1 S
+
+22-JAN-24 22-JAN-24		25
+
+AZ1 2511   FW2425 01-JAN-23 30-JUN-24 V 	      1 S
+
+22-JAN-24 22-JAN-24		26
+
+AZ1 1493   SS23   01-OCT-22 31-MAR-23 V 	      3 S
+CAPI FALLATI ? 10,00 CAD
+31-JAN-23 31-JAN-23		19
+
+AZ1 2313   FW2122 13-JAN-21 31-DEC-21 V 	      2 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21		 4
+
+AZ1 2387   FW2122 01-JUN-21 31-DEC-21 V 	      2 S
+proposta 11/06/2021 Alain - Claudio Parazi
+23-JUN-21 23-JUN-21		 5
+
+AZ1 2432   FW2223 01-JAN-22 31-DEC-22 V 	      1 S
+
+21-JUN-22 21-JUN-22		11
+
+AZ1 1067   FW2122 01-APR-21 31-JUL-21 V 	      2 S
+
+16-APR-21 16-APR-21		 3
+
+AZ1 2242   SS22   01-JUN-21 31-DEC-21 V 	      2 S
+
+27-SEP-21 27-SEP-21		 6
+
+AZ1 2430   FW2223 01-JUN-22 31-DEC-22 V 	      2 S
+
+03-AUG-22 03-AUG-22		15
+
+AZ1 2310   SS21   01-JAN-21 31-DEC-21 V 	      2 S
+
+23-FEB-21 23-FEB-21		 1
+
+AZ1 2478   SS23   01-JUN-22 31-DEC-22 V 	      1 S
+
+04-JUL-22 04-JUL-22		13
+
+AZ1 2313   SS22   01-OCT-21 30-APR-22 V 	      3 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21		 9
+
+AZ1 901    FW2223 01-JUN-22 30-APR-22 V 	      1 S
+
+05-SEP-22 05-SEP-22		17
+
+AZ1 2316   SS21   01-JAN-20 31-DEC-26 V 	      1 S
+
+24-MAR-21 24-MAR-21		 2
+
+AZ1 1067   SS22   15-OCT-21 15-APR-22 V 	      1 S
+
+27-OCT-21 27-OCT-21		 8
+
+AZ1 2242   FW2223 01-JAN-22 31-DEC-22 V 	      1 S
+
+18-MAY-22 18-MAY-22		10
+
+AZ1 2478   FW2223 01-MAR-22 31-DEC-22 V 	      2 S
+
+04-JUL-22 04-JUL-22		12
+
+AZ1 901    SS23   01-JUL-22 31-MAR-23 V 	      1 S
+
+01-SEP-22 01-SEP-22		16
+
+AZ1 2316   SS22   15-OCT-21 15-APR-22 V 	      1 S
+
+26-OCT-21 26-OCT-21		 7
+
+AZ1 2313   FW2223 01-JUN-22 31-DEC-22 V 	      1 S
+
+C30 C30_CD C30_CD C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- ------ ------ --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD C30_ID_LISTINO
+--------- --------- --------------
+
+25-JUL-22 25-JUL-22		14
+
+AZ1 901    SS23   01-SEP-22 31-MAR-23 V 	      1 S
+
+02-FEB-23 02-FEB-23		20
+
+AZ1 2478   FW2324 01-MAY-23 23-DEC-23 V 	      1 S
+
+30-MAY-23 30-MAY-23		23
+
+AZ1 2242   FW2425 01-APR-24 31-OCT-24 V 	      1 S
+
+27-MAY-24 27-MAY-24		27
+
+
+27 rows selected.
+
+Elapsed: 00:00:00.04
+=== 1c) NEXSTYLE.C30_TEST_LIST_CLI ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 C30_CD_AZIENDA		       VARCHAR2 		 3 N
+	 2 C30_CD_CLIENTE		       VARCHAR2 		 6 N
+	 3 C30_CD_STAGIONE		       VARCHAR2 		 6 N
+	 4 C30_DT_INI_VAL		       DATE			 7 N
+	 5 C30_DT_FIN_VAL		       DATE			 7 N
+	 6 C30_ST_RECORD		       VARCHAR2 		 1 N
+	 7 C30_ST_MODIFICA		       NUMBER			22 Y
+	 8 C30_FLAG_ATTIVO		       VARCHAR2 		 1 N
+	 9 C30_NOTE			       VARCHAR2 	      4000 Y
+	10 SD_DT_INS			       DATE			 7 N
+	11 SD_DT_MOD			       DATE			 7 N
+	12 C30_ID_LISTINO		       NUMBER			22 N
+
+12 rows selected.
+
+Elapsed: 00:00:00.08
+
+C30 C30_CD C30_CD C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- ------ ------ --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD C30_ID_LISTINO
+--------- --------- --------------
+AZ1 131    SS26   01-JUL-25 31-JAN-26 V 	      1 S
+
+11-NOV-25 11-NOV-25		33
+
+AZ1 131    SS27   01-MAY-26 31-DEC-26 V 	      4 S
+
+09-JUN-26 09-JUN-26		38
+
+AZ1 2511   SS27   01-SEP-26 31-DEC-26 V 	      1 S
+
+25-SEP-26 25-SEP-26		41
+
+AZ1 131    SS26   01-NOV-25 30-JUN-26 V 	      1 S
+
+13-NOV-25 13-NOV-25		34
+
+AZ1 000003 SS26   01-OCT-25 31-MAR-26 V 	      1 S
+
+29-JAN-26 29-JAN-26		35
+
+AZ1 901    FW2324 01-MAR-23 31-AUG-23 V 	      1 S
+
+16-MAR-23 16-MAR-23		21
+
+AZ1 2242   SS23   01-NOV-22 30-APR-23 V 	      1 S
+
+18-NOV-22 18-NOV-22		18
+
+AZ1 2430   SS23   01-OCT-22 31-MAR-23 V 	      2 S
+FALLATI PREZZO PIENO
+05-APR-23 05-APR-23		22
+
+AZ1 2511   .	  02-AUG-23 31-MAR-24 V 	      1 S
+ORDINE OUTLET
+05-SEP-23 05-SEP-23		24
+
+AZ1 2511   SS24   01-JUN-23 11-FEB-24 V 	      1 S
+
+22-JAN-24 22-JAN-24		25
+
+AZ1 2511   FW2425 01-JAN-23 30-JUN-24 V 	      1 S
+
+22-JAN-24 22-JAN-24		26
+
+AZ1 1493   SS23   01-OCT-22 31-MAR-23 V 	      3 S
+CAPI FALLATI ? 10,00 CAD
+31-JAN-23 31-JAN-23		19
+
+AZ1 2313   FW2122 13-JAN-21 31-DEC-21 V 	      2 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21		 4
+
+AZ1 2387   FW2122 01-JUN-21 31-DEC-21 V 	      2 S
+proposta 11/06/2021 Alain - Claudio Parazi
+23-JUN-21 23-JUN-21		 5
+
+AZ1 2432   FW2223 01-JAN-22 31-DEC-22 V 	      1 S
+
+21-JUN-22 21-JUN-22		11
+
+AZ1 1067   FW2122 01-APR-21 31-JUL-21 V 	      2 S
+
+16-APR-21 16-APR-21		 3
+
+AZ1 2242   SS22   01-JUN-21 31-DEC-21 V 	      2 S
+
+27-SEP-21 27-SEP-21		 6
+
+AZ1 2430   FW2223 01-JUN-22 31-DEC-22 V 	      2 S
+
+03-AUG-22 03-AUG-22		15
+
+AZ1 2310   SS21   01-JAN-21 31-DEC-21 V 	      2 S
+
+23-FEB-21 23-FEB-21		 1
+
+AZ1 2478   SS23   01-JUN-22 31-DEC-22 V 	      1 S
+
+04-JUL-22 04-JUL-22		13
+
+AZ1 2313   SS22   01-OCT-21 30-APR-22 V 	      3 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21		 9
+
+AZ1 901    FW2223 01-JUN-22 30-APR-22 V 	      1 S
+
+05-SEP-22 05-SEP-22		17
+
+AZ1 2316   SS21   01-JAN-20 31-DEC-26 V 	      1 S
+
+24-MAR-21 24-MAR-21		 2
+
+AZ1 1067   SS22   15-OCT-21 15-APR-22 V 	      1 S
+
+C30 C30_CD C30_CD C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- ------ ------ --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD C30_ID_LISTINO
+--------- --------- --------------
+
+27-OCT-21 27-OCT-21		 8
+
+AZ1 2242   FW2223 01-JAN-22 31-DEC-22 V 	      1 S
+
+18-MAY-22 18-MAY-22		10
+
+AZ1 2478   FW2223 01-MAR-22 31-DEC-22 V 	      2 S
+
+04-JUL-22 04-JUL-22		12
+
+AZ1 901    SS23   01-JUL-22 31-MAR-23 V 	      1 S
+
+01-SEP-22 01-SEP-22		16
+
+AZ1 2316   SS22   15-OCT-21 15-APR-22 V 	      1 S
+
+26-OCT-21 26-OCT-21		 7
+
+AZ1 2313   FW2223 01-JUN-22 31-DEC-22 V 	      1 S
+
+25-JUL-22 25-JUL-22		14
+
+AZ1 901    SS23   01-SEP-22 31-MAR-23 V 	      1 S
+
+02-FEB-23 02-FEB-23		20
+
+
+30 rows selected.
+
+Elapsed: 00:00:00.10
+=== 2a) INTEXGR.C52_DETT_LIST_CL ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 C52_CD_AZIENDA		       VARCHAR2 		 3 N
+	 2 C52_ID_LISTINO		       NUMBER			22 N
+	 3 C52_RIGA			       NUMBER			22 N
+	 4 C52_ST_RECORD		       VARCHAR2 		 1 N
+	 5 C52_ST_MODIFICA		       NUMBER			22 Y
+	 6 C52_CD_FASE			       VARCHAR2 		 6 N
+	 7 C52_CODICE_1 		       VARCHAR2 		20 N
+	 8 C52_CODICE_2 		       VARCHAR2 		20 N
+	 9 C52_CODICE_3 		       VARCHAR2 		20 N
+	10 C52_CODICE_4 		       VARCHAR2 		20 N
+	11 C52_CD_ARTICOLO		       VARCHAR2 		20 Y
+	12 C52_TIPO_ARTICOLO		       VARCHAR2 		 3 Y
+	13 C52_CD_UNITA_MIS		       VARCHAR2 		 6 Y
+	14 C52_NOTE			       VARCHAR2 	      4000 Y
+	15 C52_PREZZO_UNI_1		       NUMBER			22 Y
+	16 C52_QTA_1			       NUMBER			22 Y
+	17 C52_PREZZO_UNI_2		       NUMBER			22 Y
+	18 C52_QTA_2			       NUMBER			22 Y
+	19 C52_PREZZO_UNI_3		       NUMBER			22 Y
+	20 C52_QTA_3			       NUMBER			22 Y
+	21 C52_PREZZO_UNI_4		       NUMBER			22 Y
+	22 C52_QTA_4			       NUMBER			22 Y
+	23 C52_PREZZO_UNI_5		       NUMBER			22 Y
+	24 C52_QTA_5			       NUMBER			22 Y
+	25 C52_SCELTA			       NUMBER			22 Y
+	26 C52_CODICE_6 		       VARCHAR2 		20 Y
+
+26 rows selected.
+
+Elapsed: 00:00:00.08
+
+no rows selected
+
+Elapsed: 00:00:00.01
+=== 2b) NEXSTYLE.C52_DETT_LIST_CL ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 C52_CD_AZIENDA		       VARCHAR2 		 3 N
+	 2 C52_ID_LISTINO		       NUMBER			22 N
+	 3 C52_RIGA			       NUMBER			22 N
+	 4 C52_ST_RECORD		       VARCHAR2 		 1 N
+	 5 C52_ST_MODIFICA		       NUMBER			22 Y
+	 6 C52_CD_FASE			       VARCHAR2 		 6 N
+	 7 C52_CODICE_1 		       VARCHAR2 		20 N
+	 8 C52_CODICE_2 		       VARCHAR2 		20 N
+	 9 C52_CODICE_3 		       VARCHAR2 		20 N
+	10 C52_CODICE_4 		       VARCHAR2 		20 N
+	11 C52_CD_ARTICOLO		       VARCHAR2 		20 Y
+	12 C52_TIPO_ARTICOLO		       VARCHAR2 		 3 Y
+	13 C52_CD_UNITA_MIS		       VARCHAR2 		 6 Y
+	14 C52_NOTE			       VARCHAR2 	      4000 Y
+	15 C52_PREZZO_UNI_1		       NUMBER			22 Y
+	16 C52_QTA_1			       NUMBER			22 Y
+	17 C52_PREZZO_UNI_2		       NUMBER			22 Y
+	18 C52_QTA_2			       NUMBER			22 Y
+	19 C52_PREZZO_UNI_3		       NUMBER			22 Y
+	20 C52_QTA_3			       NUMBER			22 Y
+	21 C52_PREZZO_UNI_4		       NUMBER			22 Y
+	22 C52_QTA_4			       NUMBER			22 Y
+	23 C52_PREZZO_UNI_5		       NUMBER			22 Y
+	24 C52_QTA_5			       NUMBER			22 Y
+	25 C52_SCELTA			       NUMBER			22 Y
+	26 C52_CODICE_6 		       VARCHAR2 		20 Y
+
+26 rows selected.
+
+Elapsed: 00:00:00.07
+
+no rows selected
+
+Elapsed: 00:00:00.01
+=== 3a) colonne view INTEX2.C30_R07_CW0_001W ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH
+---------- ----------------------------------- --------------- -----------
+	 1 C30_CD_CLIENTE		       VARCHAR2 		 6
+	 2 R07_RAGIONE_SOC		       VARCHAR2 		40
+	 3 C30_CD_LINEA 		       VARCHAR2 		 6
+	 4 CW0_DS_LINEA 		       VARCHAR2 		40
+	 5 C30_DATA_INIZIO_VAL		       DATE			 7
+	 6 C30_ST_RECORD		       VARCHAR2 		 1
+	 7 C30_ST_MODIFICA		       NUMBER			22
+	 8 C30_DATA_FINE_VAL		       DATE			 7
+	 9 C30_DESCRIZIONE		       VARCHAR2 		40
+	10 C30_MEMO			       VARCHAR2 	      4000
+	11 C30_CD_VALUTA		       VARCHAR2 		 3
+	12 R03_DS_VALUTA		       VARCHAR2 		40
+
+12 rows selected.
+
+Elapsed: 00:00:00.07
+=== 3a) sample 20 ===
+
+no rows selected
+
+Elapsed: 00:00:00.01
+=== 3b) INTEX2.C52_001W ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH
+---------- ----------------------------------- --------------- -----------
+	 1 C52_KEY			       NUMBER			22
+	 2 C52_CD_CLIENTE		       VARCHAR2 		 6
+	 3 R07_RAGIONE_SOC		       VARCHAR2 		40
+	 4 C52_CD_CICLO_INTERNO 	       VARCHAR2 		13
+	 5 C52_CD_CICLO_CLI		       VARCHAR2 		13
+	 6 C52_CD_ARTICOLO		       VARCHAR2 		13
+	 7 CWA_DS_ARTICOLO_CLIENTE	       VARCHAR2 		40
+	 8 C52_CD_COMPOSIZIONE		       VARCHAR2 		 6
+	 9 CW4_DS_COMPOSIZIONE		       VARCHAR2 		60
+	10 C52_URL_IMMAGINE_1		       VARCHAR2 	       255
+	11 C52_URL_IMMAGINE_2		       VARCHAR2 	       255
+	12 C52_URL_IMMAGINE_3		       VARCHAR2 	       255
+	13 C52_URL_IMMAGINE_4		       VARCHAR2 	       255
+	14 C52_NOTE			       VARCHAR2 	      4000
+	15 C52_STATO			       VARCHAR2 		 1
+	16 C52_DT_EVENTO		       DATE			 7
+	17 C52_ST_RECORD		       VARCHAR2 		 1
+	18 C52_ST_MODIFICA		       NUMBER			22
+	19 R07_CD_VALUTA		       VARCHAR2 		 3
+
+19 rows selected.
+
+Elapsed: 00:00:00.07
+
+   C52_KEY C52_CD R07_RAGIONE_SOC			   C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO CWA_DS_ARTICOLO_CLIENTE		      C52_CD CW4_DS_COMPOSIZIONE
+---------- ------ ---------------------------------------- ------------- ------------- ------------- ---------------------------------------- ------ ------------------------------------------------------------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA R07
+- --------- - --------------- ---
+      2436 447	  PROJECT SRL				   447_0089_01	 LGCLA60       CAPI	     CAPI				      00005  DENIM 100%
+447_0089_01/16236603115435755431279139098453.jpg
+
+447_0089_01/1621931676263324327334450410341.jpg
+447_0089_01/16236603847334291243677948531452.jpg
+GIUBBINO, SALOPETTE- CAMICIA- PANTALONE
+  22.90 	     21 	      17	      17,10
+N 24-JUN-21 V		    0 01
+
+      2437 447	  PROJECT SRL				   447_0090_01	 LGCLA61       00049	     GONNE				      00005  DENIM 100%
+447_0090_01/16219519108331151860741589271251.jpg
+447_0090_01/16219537054881800058822986647034.jpg
+
+
+GONNA 4.50-----PANT 5.80-----SHORT 4-----GIUBB7.5
+N 24-JUN-21 V		    0 01
+
+      2438 262	  FLOWER SRL				   262_0050_01		       CAPI	     CAPI				      00005  DENIM 100%
+262_0050_01/16196944471396349529835284836695.jpg
+
+262_0050_01/16196945284833074961231284203423.jpg
+262_0050_01/1619694587044872715218519026859.jpg
+1 pantalone, 1 camicetta, 1 abito lungo
+ 2.5			   2			   3
+S 24-JUN-21 V		    0 01
+
+      2439 447	  PROJECT SRL				   447_0113_01	 LJDLA12       PANTALONI     PALAZZO				      00005  DENIM 100%
+447_0113_01/16244412390064878251050038847924.jpg
+447_0113_01/16244412678766097208059416653501.jpg
+
+
+13 EU
+N 24-JUN-21 V		    0 01
+
+      2440 447	  PROJECT SRL				   447_0111_01	 LJDLA14       PANTALONI     PALAZZO				      00005  DENIM 100%
+447_0111_01/16244328961685884197382961928727.jpg
+447_0111_01/16243603088878558357395928279636.jpg
+
+
+EU 1.4
+N 24-JUN-21 V		    0 01
+
+      2441 915	  JEANS MARKET SRL			   915_0003_01		       CAPI	     CAPI				      00005  DENIM 100%
+915_0003_01/16240166946045937480251055941285.jpg
+
+915_0003_01/16240158734428445337534032169066.jpg
+915_0003_01/16240159239536044972202905161026.jpg
+Giubbini, pantaloni
+36 EU	       33 EU
+S 24-JUN-21 V		    0 01
+
+      2442 447	  PROJECT SRL				   447_0114_01	 LGCLA62       00071	     PINOCCHIETTI			      00005  DENIM 100%
+447_0114_01/16244550986055690353183598867117.jpg
+447_0114_01/16244551149462795435428314054938.jpg
+
+
+10.80
+S 24-JUN-21 V		    0 01
+
+      2443 895	  SYSTEM SERVICE S.R.L. 		   895_0012_01		       00001	     PANTALONI				      00005  DENIM 100%
+895_0012_01/1624527787843920290016938724683.jpg
+895_0012_01/16245304051802185379841286366435.jpg
+
+
+9.10
+S 24-JUN-21 V		    0 01
+
+      2452 895	  SYSTEM SERVICE S.R.L. 		   895_0014_01		       00030	     GAMBETTE/TIRELLE			      00005  DENIM 100%
+895_0014_01/16257246614924160072186509045277.jpg
+895_0014_01/16257246958849018914097416048160.jpg
+
+
+gonna 9.50short 7.50 giubb 11.90 corpetto 7.50
+N 01-AUG-21 V		    0 01
+
+      2453 447	  PROJECT SRL				   447_0116_01	 LPMLA34       PANTALONI     PALAZZO				      00005  DENIM 100%
+447_0116_01/16248653685066933681336375928349.jpg
+447_0116_01/16248655704015701386636293896812.jpg
+
+
+7.80
+N 01-AUG-21 V		    0 01
+
+      2454 447	  PROJECT SRL				   447_0119_01	 LDWLA10       PANTALONI     PALAZZO				      00005  DENIM 100%
+447_0119_01/16269526702192221409647288491556.jpg
+
+   C52_KEY C52_CD R07_RAGIONE_SOC			   C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO CWA_DS_ARTICOLO_CLIENTE		      C52_CD CW4_DS_COMPOSIZIONE
+---------- ------ ---------------------------------------- ------------- ------------- ------------- ---------------------------------------- ------ ------------------------------------------------------------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA R07
+- --------- - --------------- ---
+447_0119_01/16269527064255067003435527837872.jpg
+
+
+3.70
+N 01-AUG-21 V		    0 01
+
+      2444 262	  FLOWER SRL				   262_0062_01		       00008	     CAMICIE				      00005  DENIM 100%
+262_0062_01/16242561421123011679546023852836.jpg
+262_0062_01/16242562386513472854552508575034.jpg
+
+
+6
+S 25-JUN-21 V		    0 01
+
+      2445 262	  FLOWER SRL				   262_0063_02		       00026	     BORSE				      00005  DENIM 100%
+262_0063_02/16243479298012569967323698785783.jpg
+262_0063_02/16243480663768739599765811835735.jpg
+
+
+BORSA BLU 5
+BORSA ROSSA 3
+S 25-JUN-21 V		    0 01
+
+      2448 2028   ANIMO S.R.L. SOCIETA' UNIPERSONALE	   2028_0006_01  529J	       00001	     PANTALONI				      00005  DENIM 100%
+2028_0006_01/16233995921351357446100575453833.jpg
+2028_0006_01/16234013236558563960214880491824.jpg
+
+
+9.80 eu
+S 01-JUL-21 V		    0 01
+
+      2449 2028   ANIMO S.R.L. SOCIETA' UNIPERSONALE	   2028_0005_01  528J	       00001	     PANTALONI				      00005  DENIM 100%
+2028_0005_01/16233994240732805437343418500795.jpg
+2028_0005_01/16233994653008671415345422012363.jpg
+
+
+10.50
+S 01-JUL-21 V		    0 01
+
+      2462 1493   VENTO DEL SUD S.R.L. SOC.UNIPERSONALE    1493_0053_01 	       00001	     PANTALONI				      00005  DENIM 100%
+
+
+
+
+
+N 15-FEB-23 V		    0 01
+
+      2422 2108   PEGNO GROUP S.R.L.			   2108_0039_01 	       00001	     PANTALONI				      00005  DENIM 100%
+2108_0039_01/16179555390627539855532480814924.jpg
+2108_0039_01/16179552495558970138635310144037.jpg
+
+
+14.10
+N 15-JUN-21 V		    0 01
+
+      2220 2118   BORAGIO V.O.F.			   2118_0034_01 	       00010	     GIUBBINI				      00002  COTONE ELAST.
+2118_0034_01/16085469790307025130357310119321.jpg
+2118_0034_01/16085470403486209671185713371591.jpg
+
+
+
+N 23-FEB-21 V		    0 01
+
+      2221 2118   BORAGIO V.O.F.			   2118_0033_01 	       00010	     GIUBBINI				      00002  COTONE ELAST.
+2118_0033_01/160854690831914710112320581967.jpg
+2118_0033_01/16085469255235253237863993780588.jpg
+
+
+
+N 23-FEB-21 V		    0 01
+
+      2219 2118   BORAGIO V.O.F.			   2118_0035_01 	       00017	     FELPE				      00001  COTONE 100%
+2118_0035_01/16091654902537552428454793882466.jpg
+2118_0035_01/1609165507562795509926631916908.jpg
+
+
+
+N 23-FEB-21 V		    0 01
+
+
+20 rows selected.
+
+Elapsed: 00:00:00.03
+=== 3c) NEXSTYLE.C30_001W ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH
+---------- ----------------------------------- --------------- -----------
+	 1 C30_CD_AZIENDA		       VARCHAR2 		 3
+	 2 C30_ID_LISTINO		       NUMBER			22
+	 3 C30_CD_CLIENTE		       VARCHAR2 		 6
+	 4 R07_RAGIONE_SOC		       VARCHAR2 	       100
+	 5 C30_CD_STAGIONE		       VARCHAR2 		 6
+	 6 G75_DS_STAGIONE		       VARCHAR2 		40
+	 7 C30_DT_INI_VAL		       DATE			 7
+	 8 C30_DT_FIN_VAL		       DATE			 7
+	 9 C30_ST_RECORD		       VARCHAR2 		 1
+	10 C30_ST_MODIFICA		       NUMBER			22
+	11 C30_FLAG_ATTIVO		       VARCHAR2 		 1
+	12 C30_NOTE			       VARCHAR2 	      4000
+	13 SD_DT_INS			       DATE			 7
+	14 SD_DT_MOD			       DATE			 7
+
+14 rows selected.
+
+Elapsed: 00:00:00.07
+
+C30 C30_ID_LISTINO C30_CD R07_RAGIONE_SOC										       C30_CD G75_DS_STAGIONE			       C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- -------------- ------ ---------------------------------------------------------------------------------------------------- ------ ---------------------------------------- --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD
+--------- ---------
+AZ1		31 000002 ALTANA SOCIETA' BENEFIT SRL - SOCIO UNICO							       SS26   SPRING SUMMER 2026		       01-AUG-25 31-DEC-25 V		   1 S
+
+08-AUG-25 08-AUG-25
+
+AZ1		40 000003 ST  BARTH SRL 										       FW26   FALL WINTER 26-27 		       01-APR-26 30-SEP-26 V		   3 S
+
+30-JUL-26 30-JUL-26
+
+AZ1		35 000003 ST  BARTH SRL 										       SS26   SPRING SUMMER 2026		       01-OCT-25 31-MAR-26 V		   1 S
+
+29-JAN-26 29-JAN-26
+
+AZ1		 3 1067   BOGLIOLI S.P.A.										       FW2122 FALL WINTER 21/22 		       01-APR-21 31-JUL-21 V		   2 S
+
+16-APR-21 16-APR-21
+
+AZ1		 8 1067   BOGLIOLI S.P.A.										       SS22   SPRING SUMMER 2022		       15-OCT-21 15-APR-22 V		   1 S
+
+27-OCT-21 27-OCT-21
+
+AZ1		37 131	  STAFF INTERNATIONAL SPA									       FW26   FALL WINTER 26-27 		       01-JAN-26 31-DEC-26 V		   4 S
+
+15-APR-26 15-APR-26
+
+AZ1		34 131	  STAFF INTERNATIONAL SPA									       SS26   SPRING SUMMER 2026		       01-NOV-25 30-JUN-26 V		   1 S
+
+13-NOV-25 13-NOV-25
+
+AZ1		33 131	  STAFF INTERNATIONAL SPA									       SS26   SPRING SUMMER 2026		       01-JUL-25 31-JAN-26 V		   1 S
+
+11-NOV-25 11-NOV-25
+
+AZ1		38 131	  STAFF INTERNATIONAL SPA									       SS27   SPRING SUMMER 2027		       01-MAY-26 31-DEC-26 V		   4 S
+
+09-JUN-26 09-JUN-26
+
+AZ1		36 1366   TIERRA S.R.L. 										       FW26   FALL WINTER 26-27 		       01-JAN-26 31-JUL-26 V		   1 S
+
+30-MAR-26 30-MAR-26
+
+AZ1		19 1493   VENTO DEL SUD S.R.L. SOC.UNIPERSONALE 							       SS23   SPRING SUMMER 2023		       01-OCT-22 31-MAR-23 V		   3 S
+CAPI FALLATI ? 10,00 CAD
+31-JAN-23 31-JAN-23
+
+AZ1		10 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       FW2223 FALL WINTER 22/23 		       01-JAN-22 31-DEC-22 V		   1 S
+
+18-MAY-22 18-MAY-22
+
+AZ1		27 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       FW2425 FALL WINTER 24/25 		       01-APR-24 31-OCT-24 V		   1 S
+
+27-MAY-24 27-MAY-24
+
+AZ1		 6 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       SS22   SPRING SUMMER 2022		       01-JUN-21 31-DEC-21 V		   2 S
+
+27-SEP-21 27-SEP-21
+
+AZ1		18 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       SS23   SPRING SUMMER 2023		       01-NOV-22 30-APR-23 V		   1 S
+
+18-NOV-22 18-NOV-22
+
+AZ1		 1 2310   RHONE APPAREL INC										       SS21   SPRING SUMMER 2021		       01-JAN-21 31-DEC-21 V		   2 S
+
+23-FEB-21 23-FEB-21
+
+AZ1		 4 2313   HATICO MODE GMBH										       FW2122 FALL WINTER 21/22 		       13-JAN-21 31-DEC-21 V		   2 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21
+
+AZ1		14 2313   HATICO MODE GMBH										       FW2223 FALL WINTER 22/23 		       01-JUN-22 31-DEC-22 V		   1 S
+
+25-JUL-22 25-JUL-22
+
+AZ1		 9 2313   HATICO MODE GMBH										       SS22   SPRING SUMMER 2022		       01-OCT-21 30-APR-22 V		   3 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21
+
+AZ1		 2 2316   SAVE THE DUCK S.P.A.										       SS21   SPRING SUMMER 2021		       01-JAN-20 31-DEC-26 V		   1 S
+
+24-MAR-21 24-MAR-21
+
+
+20 rows selected.
+
+Elapsed: 00:00:00.02
+=== 3d) INTEXGR.C30_001W ===
+
+C30 C30_ID_LISTINO C30_CD R07_RAGIONE_SOC										       C30_CD G75_DS_STAGIONE			       C30_DT_IN C30_DT_FI C C30_ST_MODIFICA C
+--- -------------- ------ ---------------------------------------------------------------------------------------------------- ------ ---------------------------------------- --------- --------- - --------------- -
+C30_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SD_DT_INS SD_DT_MOD
+--------- ---------
+AZ1		31 000002 ALTANA SOCIETA' BENEFIT SRL - SOCIO UNICO							       SS26   SPRING/SUMMER 2026		       01-AUG-25 31-DEC-25 V		   1 S
+
+08-AUG-25 08-AUG-25
+
+AZ1		35 000003 ST  BARTH SRL 										       SS26   SPRING/SUMMER 2026		       01-OCT-25 31-MAR-26 V		   1 S
+
+29-JAN-26 29-JAN-26
+
+AZ1		 3 1067   BOGLIOLI S.P.A.										       FW2122 FALL WINTER 21/22 		       01-APR-21 31-JUL-21 V		   2 S
+
+16-APR-21 16-APR-21
+
+AZ1		 8 1067   BOGLIOLI S.P.A.										       SS22   SPRING SUMMER 2022		       15-OCT-21 15-APR-22 V		   1 S
+
+27-OCT-21 27-OCT-21
+
+AZ1		29 131	  STAFF INTERNATIONAL SPA									       FW25   FALL WINTER 25-26 		       01-JAN-25 30-SEP-25 V		   2 S
+
+03-APR-25 03-APR-25
+
+AZ1		34 131	  STAFF INTERNATIONAL SPA									       SS26   SPRING/SUMMER 2026		       01-NOV-25 30-JUN-26 V		   1 S
+
+13-NOV-25 13-NOV-25
+
+AZ1		33 131	  STAFF INTERNATIONAL SPA									       SS26   SPRING/SUMMER 2026		       01-JUL-25 31-JAN-26 V		   1 S
+
+11-NOV-25 11-NOV-25
+
+AZ1		19 1493   VENTO DEL SUD S.R.L. SOC.UNIPERSONALE 							       SS23   SPRING SUMMER 2023		       01-OCT-22 31-MAR-23 V		   3 S
+CAPI FALLATI ? 10,00 CAD
+31-JAN-23 31-JAN-23
+
+AZ1		10 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       FW2223 FALL WINTER 22/23 		       01-JAN-22 31-DEC-22 V		   1 S
+
+18-MAY-22 18-MAY-22
+
+AZ1		27 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       FW2425 FALL WINTER 24/25 		       01-APR-24 31-OCT-24 V		   1 S
+
+27-MAY-24 27-MAY-24
+
+AZ1		 6 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       SS22   SPRING SUMMER 2022		       01-JUN-21 31-DEC-21 V		   2 S
+
+27-SEP-21 27-SEP-21
+
+AZ1		18 2242   DRESSLER BEKEID.BRINKMANN GMBH & CO.								       SS23   SPRING SUMMER 2023		       01-NOV-22 30-APR-23 V		   1 S
+
+18-NOV-22 18-NOV-22
+
+AZ1		 1 2310   RHONE APPAREL INC										       SS21   SPRING SUMMER 2021		       01-JAN-21 31-DEC-21 V		   2 S
+
+23-FEB-21 23-FEB-21
+
+AZ1		 4 2313   HATICO MODE GMBH										       FW2122 FALL WINTER 21/22 		       13-JAN-21 31-DEC-21 V		   2 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21
+
+AZ1		14 2313   HATICO MODE GMBH										       FW2223 FALL WINTER 22/23 		       01-JUN-22 31-DEC-22 V		   1 S
+
+25-JUL-22 25-JUL-22
+
+AZ1		 9 2313   HATICO MODE GMBH										       SS22   SPRING SUMMER 2022		       01-OCT-21 30-APR-22 V		   3 S
+listino del 13/01/2021 - Alain - Alexander
+18-JUN-21 18-JUN-21
+
+AZ1		 2 2316   SAVE THE DUCK S.P.A.										       SS21   SPRING SUMMER 2021		       01-JAN-20 31-DEC-26 V		   1 S
+
+24-MAR-21 24-MAR-21
+
+AZ1		 7 2316   SAVE THE DUCK S.P.A.										       SS22   SPRING SUMMER 2022		       15-OCT-21 15-APR-22 V		   1 S
+
+26-OCT-21 26-OCT-21
+
+AZ1		 5 2387   PA.RO. SRL											       FW2122 FALL WINTER 21/22 		       01-JUN-21 31-DEC-21 V		   2 S
+proposta 11/06/2021 Alain - Claudio Parazi
+23-JUN-21 23-JUN-21
+
+AZ1		15 2430   SERVICE BOX SRL										       FW2223 FALL WINTER 22/23 		       01-JUN-22 31-DEC-22 V		   2 S
+
+03-AUG-22 03-AUG-22
+
+
+20 rows selected.
+
+Elapsed: 00:00:00.06
+=== 4) C52_PROTOTIPI_ATMAN colonne utili ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 C52_KEY			       NUMBER			22 N
+	 2 C52_CD_CLIENTE		       VARCHAR2 		 6 Y
+	 3 C52_CD_CICLO_INTERNO 	       VARCHAR2 		13 Y
+	 4 C52_CD_CICLO_CLI		       VARCHAR2 		13 Y
+	 5 C52_CD_ARTICOLO		       VARCHAR2 		13 N
+	 6 C52_CD_COMPOSIZIONE		       VARCHAR2 		 6 N
+	 7 C52_URL_IMMAGINE_1		       VARCHAR2 	       255 Y
+	 8 C52_URL_IMMAGINE_2		       VARCHAR2 	       255 Y
+	 9 C52_URL_IMMAGINE_3		       VARCHAR2 	       255 Y
+	10 C52_URL_IMMAGINE_4		       VARCHAR2 	       255 Y
+	11 C52_NOTE			       VARCHAR2 	      4000 Y
+	12 C52_STATO			       VARCHAR2 		 1 Y
+	13 C52_DT_EVENTO		       DATE			 7 Y
+	14 C52_ST_RECORD		       VARCHAR2 		 1 N
+	15 C52_ST_MODIFICA		       NUMBER			22 N
+
+15 rows selected.
+
+Elapsed: 00:00:00.08
+=== 4) sample 30 (no sort) ===
+
+   C52_KEY C52_CD C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO C52_CD
+---------- ------ ------------- ------------- ------------- ------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA
+- --------- - ---------------
+      2436 447	  447_0089_01	LGCLA60       CAPI	    00005
+447_0089_01/16236603115435755431279139098453.jpg
+
+447_0089_01/1621931676263324327334450410341.jpg
+447_0089_01/16236603847334291243677948531452.jpg
+GIUBBINO, SALOPETTE- CAMICIA- PANTALONE
+  22.90 	     21 	      17	      17,10
+N 24-JUN-21 V		    0
+
+      2437 447	  447_0090_01	LGCLA61       00049	    00005
+447_0090_01/16219519108331151860741589271251.jpg
+447_0090_01/16219537054881800058822986647034.jpg
+
+
+GONNA 4.50-----PANT 5.80-----SHORT 4-----GIUBB7.5
+N 24-JUN-21 V		    0
+
+      2438 262	  262_0050_01		      CAPI	    00005
+262_0050_01/16196944471396349529835284836695.jpg
+
+262_0050_01/16196945284833074961231284203423.jpg
+262_0050_01/1619694587044872715218519026859.jpg
+1 pantalone, 1 camicetta, 1 abito lungo
+ 2.5			   2			   3
+S 24-JUN-21 V		    0
+
+      2439 447	  447_0113_01	LJDLA12       PANTALONI     00005
+447_0113_01/16244412390064878251050038847924.jpg
+447_0113_01/16244412678766097208059416653501.jpg
+
+
+13 EU
+N 24-JUN-21 V		    0
+
+      2440 447	  447_0111_01	LJDLA14       PANTALONI     00005
+447_0111_01/16244328961685884197382961928727.jpg
+447_0111_01/16243603088878558357395928279636.jpg
+
+
+EU 1.4
+N 24-JUN-21 V		    0
+
+      2441 915	  915_0003_01		      CAPI	    00005
+915_0003_01/16240166946045937480251055941285.jpg
+
+915_0003_01/16240158734428445337534032169066.jpg
+915_0003_01/16240159239536044972202905161026.jpg
+Giubbini, pantaloni
+36 EU	       33 EU
+S 24-JUN-21 V		    0
+
+      2442 447	  447_0114_01	LGCLA62       00071	    00005
+447_0114_01/16244550986055690353183598867117.jpg
+447_0114_01/16244551149462795435428314054938.jpg
+
+
+10.80
+S 24-JUN-21 V		    0
+
+      2443 895	  895_0012_01		      00001	    00005
+895_0012_01/1624527787843920290016938724683.jpg
+895_0012_01/16245304051802185379841286366435.jpg
+
+
+9.10
+S 24-JUN-21 V		    0
+
+      2452 895	  895_0014_01		      00030	    00005
+895_0014_01/16257246614924160072186509045277.jpg
+895_0014_01/16257246958849018914097416048160.jpg
+
+
+gonna 9.50short 7.50 giubb 11.90 corpetto 7.50
+N 01-AUG-21 V		    0
+
+      2453 447	  447_0116_01	LPMLA34       PANTALONI     00005
+447_0116_01/16248653685066933681336375928349.jpg
+447_0116_01/16248655704015701386636293896812.jpg
+
+
+7.80
+N 01-AUG-21 V		    0
+
+      2454 447	  447_0119_01	LDWLA10       PANTALONI     00005
+447_0119_01/16269526702192221409647288491556.jpg
+
+   C52_KEY C52_CD C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO C52_CD
+---------- ------ ------------- ------------- ------------- ------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA
+- --------- - ---------------
+447_0119_01/16269527064255067003435527837872.jpg
+
+
+3.70
+N 01-AUG-21 V		    0
+
+      2444 262	  262_0062_01		      00008	    00005
+262_0062_01/16242561421123011679546023852836.jpg
+262_0062_01/16242562386513472854552508575034.jpg
+
+
+6
+S 25-JUN-21 V		    0
+
+      2445 262	  262_0063_02		      00026	    00005
+262_0063_02/16243479298012569967323698785783.jpg
+262_0063_02/16243480663768739599765811835735.jpg
+
+
+BORSA BLU 5
+BORSA ROSSA 3
+S 25-JUN-21 V		    0
+
+      2448 2028   2028_0006_01	529J	      00001	    00005
+2028_0006_01/16233995921351357446100575453833.jpg
+2028_0006_01/16234013236558563960214880491824.jpg
+
+
+9.80 eu
+S 01-JUL-21 V		    0
+
+      2449 2028   2028_0005_01	528J	      00001	    00005
+2028_0005_01/16233994240732805437343418500795.jpg
+2028_0005_01/16233994653008671415345422012363.jpg
+
+
+10.50
+S 01-JUL-21 V		    0
+
+      2462 1493   1493_0053_01		      00001	    00005
+
+
+
+
+
+N 15-FEB-23 V		    0
+
+      2422 2108   2108_0039_01		      00001	    00005
+2108_0039_01/16179555390627539855532480814924.jpg
+2108_0039_01/16179552495558970138635310144037.jpg
+
+
+14.10
+N 15-JUN-21 V		    0
+
+      2220 2118   2118_0034_01		      00010	    00002
+2118_0034_01/16085469790307025130357310119321.jpg
+2118_0034_01/16085470403486209671185713371591.jpg
+
+
+
+N 23-FEB-21 V		    0
+
+      2221 2118   2118_0033_01		      00010	    00002
+2118_0033_01/160854690831914710112320581967.jpg
+2118_0033_01/16085469255235253237863993780588.jpg
+
+
+
+N 23-FEB-21 V		    0
+
+      2219 2118   2118_0035_01		      00017	    00001
+2118_0035_01/16091654902537552428454793882466.jpg
+2118_0035_01/1609165507562795509926631916908.jpg
+
+
+
+N 23-FEB-21 V		    0
+
+      2222 2118   2118_0032_01		      00010	    00002
+2118_0032_01/1608546854105740666899081924426.jpg
+2118_0032_01/16085467314891287496862289719054.jpg
+
+
+
+
+   C52_KEY C52_CD C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO C52_CD
+---------- ------ ------------- ------------- ------------- ------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA
+- --------- - ---------------
+N 23-FEB-21 V		    0
+
+      2223 2118   2118_0031_01		      00010	    00002
+2118_0031_01/16085465574507603050221893365124.jpg
+2118_0031_01/16085465758931965088801202685090.jpg
+
+
+
+N 23-FEB-21 V		    0
+
+      2224 2118   2118_0030_01		      00001	    00005
+2118_0030_01/16081312159227128160551112605676.jpg
+2118_0030_01/16081312456975982623416381848928.jpg
+
+
+
+N 23-FEB-21 V		    0
+
+      2309 262	  262_0040_01		      00001	    00005
+262_0040_01/16164211921519210354706453377432.jpg
+262_0040_01/16164212547367882753983883980740.jpg
+
+
+6.60 EU
+S 25-MAR-21 V		    0
+
+      2310 262	  262_0041_01		      00001	    00005
+262_0041_01/16164214141587341820885828363606.jpg
+262_0041_01/1616421511224302145074953573843.jpg
+
+
+7.70
+S 25-MAR-21 V		    0
+
+      2311 262	  262_0042_01		      00001	    00005
+262_0042_01/16164216251245744938375917440006.jpg
+262_0042_01/16164216394025472322787205947204.jpg
+
+
+7.40
+S 25-MAR-21 V		    0
+
+      2312 262	  262_0043_01		      00001	    00005
+262_0043_01/16165717477821068061667638000317.jpg
+262_0043_01/16165720700757921103769761953535.jpg
+262_0043_01/16165721078473166876931921184135.jpg
+262_0043_01/16165721484026743154651547348491.jpg
+7.70
+S 25-MAR-21 V		    0
+
+      2321 447	  447_0063_01	LVALAA1       00025	    00005
+447_0063_01/16178071089327555012538768884305.jpg
+447_0063_01/16178071861267390018515495620107.jpg
+
+
+13.40
+S 08-APR-21 V		    0
+
+      2322 262	  262_0044_01		      00058	    00005
+262_0044_01/16178849664114881136543205237164.jpg
+
+
+
+eu 12
+S 08-APR-21 V		    0
+
+      2168 2342   2342_0034_01		      00001	    00005
+2342_0034_01/16136383201333772301697500522562.jpg
+2342_0034_01/16136383351337143106455098501376.jpg
+
+
+10.60
+S 22-FEB-21 V		    0
+
+
+30 rows selected.
+
+Elapsed: 00:00:00.02
+=== 4) ultimi 30 per C52_KEY (tabella piccola, sort OK) ===
+
+   C52_KEY C52_CD C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO C52_CD
+---------- ------ ------------- ------------- ------------- ------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA
+- --------- - ---------------
+      2468 1843   1843_0005_01	Gravel Wash   00010	    00005
+1843_0005_01/17642362974433356530167837718114.jpg
+1843_0005_01/17642363509321617965292443155501.jpg
+
+
+
+N 02-DEC-25 V		    0
+
+      2467 2142   2142_0024_01		      00001	    00005
+2142_0024_01/17636318856614931552947015939097.jpg
+2142_0024_01/17636319039772848055331482996250.jpg
+2142_0024_01/17636319226305039791749366825658.jpg
+2142_0024_01/17636321852966741453713291500491.jpg
+
+S 02-DEC-25 V		    0
+
+      2466 2142   2142_0023_01		      00001	    00005
+2142_0023_01/17635533246254632428678077682765.jpg
+2142_0023_01/17635533476913569229466129203863.jpg
+
+
+
+S 02-DEC-25 V		    0
+
+      2465 895	  895_0268_01		      00001	    00005
+895_0268_01/17579418402678243030343877042859.jpg
+895_0268_01/17579419330725469581907076544669.jpg
+895_0268_01/17579419813937789765684715932757.jpg
+
+
+N 18-SEP-25 V		    0
+
+      2464 2467   2467_0276_01		      00030	    00005
+2467_0276_01/17582090416793739055317595204477.jpg
+2467_0276_01/17582090512486366716941538592474.jpg
+
+
+
+N 18-SEP-25 V		    0
+
+      2463 2342   2342_0722_01		      00001	    00005
+2342_0722_01/16862950137554678570867820172920.jpg
+2342_0722_01/16862950305473566519051180586611.jpg
+2342_0722_01/1689145316009432927814468917513.jpg
+
+Tag3: proto del 12. 07.23 per cambio tessuto.
+Tag4 : proto del 31.08.23 per cambio tessuto : ky ottenuto Black old black
+N 27-MAR-24 V		    0
+
+      2462 1493   1493_0053_01		      00001	    00005
+
+
+
+
+
+N 15-FEB-23 V		    0
+
+      2461 772	  772_0014_01		      00017	    00001
+772_0014_01/16551990051811899029189899642707.jpg
+772_0014_01/1655199059609805790376405640217.jpg
+
+
+
+N 15-JUN-22 V		    0
+
+      2460 772	  772_0013_01		      00017	    00001
+772_0013_01/16551976961433006032290204547156.jpg
+772_0013_01/1655197739286100409093274216901.jpg
+
+
+
+N 15-JUN-22 V		    0
+
+      2459 1770   1770_0109_01		      00008	    00005
+1770_0109_01/16522516787406390804950816050404.jpg
+1770_0109_01/16522518086574919724883119527069.jpg
+
+
+
+S 19-MAY-22 V		    0
+
+      2458 1770   1770_0106_01		      00008	    00005
+1770_0106_01/16521035088008356316509449506100.jpg
+1770_0106_01/16521035529578198173959178106510.jpg
+
+
+   C52_KEY C52_CD C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO C52_CD
+---------- ------ ------------- ------------- ------------- ------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA
+- --------- - ---------------
+
+
+S 19-MAY-22 V		    0
+
+      2457 915	  915_0014_01		      CAPI	    00005
+915_0014_01/16527918791587584560695604500265.jpg
+915_0014_01/16527919569055367611212152985474.jpg
+915_0014_01/16527919871212297039702216982537.jpg
+
+
+S 18-MAY-22 V		    0
+
+      2456 915	  915_0013_01		      PANTALONI     00005
+915_0013_01/1652791316348819039169223664637.jpg
+915_0013_01/16527913606452667502285193733335.jpg
+
+
+
+S 18-MAY-22 V		    0
+
+      2455 1873   1873_0025_01		      00001	    00005
+1873_0025_01/16524480690647579266201887642068.jpg
+1873_0025_01/16524481082153488607878077325449.jpg
+
+
+
+N 18-MAY-22 V		    0
+
+      2454 447	  447_0119_01	LDWLA10       PANTALONI     00005
+447_0119_01/16269526702192221409647288491556.jpg
+447_0119_01/16269527064255067003435527837872.jpg
+
+
+3.70
+N 01-AUG-21 V		    0
+
+      2453 447	  447_0116_01	LPMLA34       PANTALONI     00005
+447_0116_01/16248653685066933681336375928349.jpg
+447_0116_01/16248655704015701386636293896812.jpg
+
+
+7.80
+N 01-AUG-21 V		    0
+
+      2452 895	  895_0014_01		      00030	    00005
+895_0014_01/16257246614924160072186509045277.jpg
+895_0014_01/16257246958849018914097416048160.jpg
+
+
+gonna 9.50short 7.50 giubb 11.90 corpetto 7.50
+N 01-AUG-21 V		    0
+
+      2451 915	  915_0004_01		      CAPI	    00005
+915_0004_01/16244510027874580204854501061205.jpg
+
+915_0004_01/16244510718932043663290926472387.jpg
+915_0004_01/16244511402574251807270600116679.jpg
+GIUBBINO, PANTALONI, GONNA, BERMUDA PANTALONE DESTROY
+15		      13.10	     11.80	   10		      16.30
+N 05-JUL-21 V		    0
+
+      2450 447	  447_0117_01	LPMLA28       PANTALONI     00005
+447_0117_01/16252257840778711029836204707905.jpg
+447_0117_01/16252258062197825683398478919573.jpg
+
+
+9.60
+N 05-JUL-21 V		    0
+
+      2449 2028   2028_0005_01	528J	      00001	    00005
+2028_0005_01/16233994240732805437343418500795.jpg
+2028_0005_01/16233994653008671415345422012363.jpg
+
+
+10.50
+S 01-JUL-21 V		    0
+
+      2448 2028   2028_0006_01	529J	      00001	    00005
+2028_0006_01/16233995921351357446100575453833.jpg
+2028_0006_01/16234013236558563960214880491824.jpg
+
+
+9.80 eu
+S 01-JUL-21 V		    0
+
+
+   C52_KEY C52_CD C52_CD_CICLO_ C52_CD_CICLO_ C52_CD_ARTICO C52_CD
+---------- ------ ------------- ------------- ------------- ------
+C52_URL_IMMAGINE_1
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_2
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_3
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_URL_IMMAGINE_4
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C52_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C C52_DT_EV C C52_ST_MODIFICA
+- --------- - ---------------
+      2447 895	  895_0013_01		      CAPI	    00005
+895_0013_01/16246127036673482940351837916956.jpg
+
+895_0013_01/1624612510448753780227066390271.jpg
+895_0013_01/1624612552123541963251544648238.jpg
+pant eu 8.70
+gonna eu 7.90
+giubb 10.70
+N 01-JUL-21 V		    0
+
+      2446 2334   2334_0013_01		      00001	    00005
+2334_0013_01/16250670384877284308044573047723.jpg
+2334_0013_01/16250670786691512690986780751518.jpg
+
+
+
+N 01-JUL-21 V		    0
+
+      2445 262	  262_0063_02		      00026	    00005
+262_0063_02/16243479298012569967323698785783.jpg
+262_0063_02/16243480663768739599765811835735.jpg
+
+
+BORSA BLU 5
+BORSA ROSSA 3
+S 25-JUN-21 V		    0
+
+      2444 262	  262_0062_01		      00008	    00005
+262_0062_01/16242561421123011679546023852836.jpg
+262_0062_01/16242562386513472854552508575034.jpg
+
+
+6
+S 25-JUN-21 V		    0
+
+      2443 895	  895_0012_01		      00001	    00005
+895_0012_01/1624527787843920290016938724683.jpg
+895_0012_01/16245304051802185379841286366435.jpg
+
+
+9.10
+S 24-JUN-21 V		    0
+
+      2442 447	  447_0114_01	LGCLA62       00071	    00005
+447_0114_01/16244550986055690353183598867117.jpg
+447_0114_01/16244551149462795435428314054938.jpg
+
+
+10.80
+S 24-JUN-21 V		    0
+
+      2441 915	  915_0003_01		      CAPI	    00005
+915_0003_01/16240166946045937480251055941285.jpg
+
+915_0003_01/16240158734428445337534032169066.jpg
+915_0003_01/16240159239536044972202905161026.jpg
+Giubbini, pantaloni
+36 EU	       33 EU
+S 24-JUN-21 V		    0
+
+      2440 447	  447_0111_01	LJDLA14       PANTALONI     00005
+447_0111_01/16244328961685884197382961928727.jpg
+447_0111_01/16243603088878558357395928279636.jpg
+
+
+EU 1.4
+N 24-JUN-21 V		    0
+
+      2439 447	  447_0113_01	LJDLA12       PANTALONI     00005
+447_0113_01/16244412390064878251050038847924.jpg
+447_0113_01/16244412678766097208059416653501.jpg
+
+
+13 EU
+N 24-JUN-21 V		    0
+
+
+30 rows selected.
+
+Elapsed: 00:00:00.02
+=== 5a) Z09_TESTATE_CICLI_LAVORAZIONE colonne ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 Z09_CD_CLIENTE		       VARCHAR2 		 6 N
+	 2 Z09_CD_ARTICOLO_CLIENTE	       VARCHAR2 		13 N
+	 3 Z09_CD_CICLO 		       VARCHAR2 		13 N
+	 4 Z09_ST_RECORD		       VARCHAR2 		 1 Y
+	 5 Z09_ST_MODIFICA		       NUMBER			22 Y
+	 6 Z09_DS_CICLO 		       VARCHAR2 		40 Y
+	 7 Z09_DATA_INS 		       DATE			 7 Y
+	 8 Z09_FLAG_CAMP_NEWCOL 	       VARCHAR2 		 1 Y
+	 9 Z09_FLAG_NO_ST_CART		       VARCHAR2 		 1 Y
+	10 Z09_FLAG_NO_ST_RESID 	       VARCHAR2 		 1 Y
+	11 Z09_CD_REPARTO_STAT		       VARCHAR2 		 6 Y
+	12 Z09_FL_FATTURARE		       VARCHAR2 		 1 Y
+	13 Z09_FL_PREZZO_ZERO		       VARCHAR2 		 1 Y
+	14 Z09_DS_CICLO_BOLLE_FAT	       VARCHAR2 	       255 Y
+	15 Z09_DS_APPLICAZIONE		       VARCHAR2 		25 Y
+	16 Z09_DS_RICAMO		       VARCHAR2 		25 Y
+	17 Z09_DS_STAMPA		       VARCHAR2 		25 Y
+	18 Z09_IMMAGINE_1		       VARCHAR2 	       200 Y
+	19 Z09_IMMAGINE_2		       VARCHAR2 	       200 Y
+	20 Z09_IMMAGINE_3		       VARCHAR2 	       200 Y
+	21 Z09_IMMAGINE_4		       VARCHAR2 	       200 Y
+	22 Z09_FLAG_VISIBILE		       CHAR			 1 N
+	23 Z09_FLAG_PROTOTIPO		       CHAR			 1 N
+	24 Z09_NR_REVISIONE		       NUMBER			22 Y
+	25 Z09_UTENTE_INSERIMENTO	       VARCHAR2 		10 Y
+	26 Z09_NOTE			       VARCHAR2 	      4000 Y
+	27 Z09_CD_CICLO_CLI		       VARCHAR2 		13 Y
+	28 Z09_DATA_VALIDITA		       DATE			 7 Y
+	29 Z09_CD_GRUPPO		       VARCHAR2 		13 Y
+	30 Z09_PERC_FALLOSITA		       NUMBER			22 Y
+	31 Z09_CD_LINEA 		       VARCHAR2 		 6 N
+	32 Z09_CD_STAGIONE		       VARCHAR2 		 6 N
+	33 Z09_CD_COMPOSIZIONE		       VARCHAR2 		 6 N
+
+33 rows selected.
+
+Elapsed: 00:00:00.01
+=== 5a) sample 20 (no sort) ===
+
+Z09_CD Z09_CD_ARTICO Z09_CD_CICLO  Z Z09_ST_MODIFICA Z09_DS_CICLO			      Z09_DATA_ Z Z Z Z09_CD Z Z
+------ ------------- ------------- - --------------- ---------------------------------------- --------- - - - ------ - -
+Z09_DS_CICLO_BOLLE_FAT																														Z09_DS_APPLICAZIONE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- -------------------------
+Z09_DS_RICAMO		  Z09_DS_STAMPA 	    Z09_IMMAGINE_1
+------------------------- ------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_2
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_3
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_4																								 Z Z Z09_NR_REVISIONE Z09_UTENTE
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- - - ---------------- ----------
+Z09_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_CD_CICLO_ Z09_DATA_ Z09_CD_GRUPPO Z09_PERC_FALLOSITA Z09_CD Z09_CD Z09_CD
+------------- --------- ------------- ------------------ ------ ------ ------
+1422   00060	     168	   V		   0 TI+SWE+A/S 			      24-NOV-11 N N N TINTO  S N
+TI+SWE+A/S
+
+
+
+																									 S S		    0 MANUELA
+
+168	      30-DEC-99 .			       0 .	.      .
+
+1422   00001	     155	   V		   0 TINTO+A/S				      24-NOV-11 N N N TINTO  S N
+TINTO+A/S
+
+
+
+																									 S S		    0 MANUELA
+
+155			.			       0 .	.      .
+
+986    00030	     T400	   V		   0 TINTO OLD				      14-JUN-11 N N N TINTO  S N
+TINTO OLD
+
+
+
+																									 S S		    0 MANUELA
+
+T3	      30-DEC-99 .			       0 .	.      .
+
+466    00001	     W181	   V		   0 FOLLATURA+AIR DRY			      24-NOV-11 N N N TINTO  S N
+FOLLATURA+AIR DRY
+
+
+
+																									 S N		    0 MANUELA
+
+			.			       0 .	.      .
+
+1222   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1231   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1244   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1279   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1304   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1305   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+Z09_CD Z09_CD_ARTICO Z09_CD_CICLO  Z Z09_ST_MODIFICA Z09_DS_CICLO			      Z09_DATA_ Z Z Z Z09_CD Z Z
+------ ------------- ------------- - --------------- ---------------------------------------- --------- - - - ------ - -
+Z09_DS_CICLO_BOLLE_FAT																														Z09_DS_APPLICAZIONE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- -------------------------
+Z09_DS_RICAMO		  Z09_DS_STAMPA 	    Z09_IMMAGINE_1
+------------------------- ------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_2
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_3
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_4																								 Z Z Z09_NR_REVISIONE Z09_UTENTE
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- - - ---------------- ----------
+Z09_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_CD_CICLO_ Z09_DATA_ Z09_CD_GRUPPO Z09_PERC_FALLOSITA Z09_CD Z09_CD Z09_CD
+------------- --------- ------------- ------------------ ------ ------ ------
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1307   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1291   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+472    00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+84     00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1347   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1348   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1349   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1319   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1318   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+Z09_CD Z09_CD_ARTICO Z09_CD_CICLO  Z Z09_ST_MODIFICA Z09_DS_CICLO			      Z09_DATA_ Z Z Z Z09_CD Z Z
+------ ------------- ------------- - --------------- ---------------------------------------- --------- - - - ------ - -
+Z09_DS_CICLO_BOLLE_FAT																														Z09_DS_APPLICAZIONE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- -------------------------
+Z09_DS_RICAMO		  Z09_DS_STAMPA 	    Z09_IMMAGINE_1
+------------------------- ------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_2
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_3
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_4																								 Z Z Z09_NR_REVISIONE Z09_UTENTE
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- - - ---------------- ----------
+Z09_NOTE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_CD_CICLO_ Z09_DATA_ Z09_CD_GRUPPO Z09_PERC_FALLOSITA Z09_CD Z09_CD Z09_CD
+------------- --------- ------------- ------------------ ------ ------ ------
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+1321   00030	     TI+TR.4FASI   V		   0 TI+TR.4 FASI			      20-APR-11 N N N INTEX  S N
+TI+TR.4 FASI
+
+
+
+																									 P S		    2 0001
+
+TI+TR.4FASI   30-DEC-99 .			       0 .	.      .
+
+
+20 rows selected.
+
+Elapsed: 00:00:00.02
+=== 5b) Z08_CICLI_LAVORAZIONE colonne (solo nomi, no DESC pieno) ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH N
+---------- ----------------------------------- --------------- ----------- -
+	 1 Z08_CD_CLIENTE		       VARCHAR2 		 6 N
+	 2 Z08_CD_ARTICOLO_CLIENTE	       VARCHAR2 		13 N
+	 3 Z08_CD_CICLO 		       VARCHAR2 		13 N
+	 4 Z08_SEQUENZA 		       NUMBER			22 N
+	 5 Z08_ST_RECORD		       VARCHAR2 		 1 Y
+	 6 Z08_ST_MODIFICA		       NUMBER			22 Y
+	 7 Z08_CD_FASE			       VARCHAR2 		 6 N
+	 8 Z08_CD_MACROFASE		       VARCHAR2 		 6 Y
+	 9 Z08_NOTE			       VARCHAR2 	       254 Y
+	10 Z08_FLAG_NO_FATTURA		       VARCHAR2 		 1 Y
+	11 Z08_FLAG_DA_PROGRAMMARE	       CHAR			 1 Y
+	12 Z08_FLAG_PRETRATTAMENTO	       VARCHAR2 		 1 Y
+	13 Z08_FLAG_FATTURA_A_PARTE	       VARCHAR2 		 1 N
+	14 Z08_QT_RICHIESTA		       NUMBER			22 N
+	15 Z08_CD_UNITA_MIS		       VARCHAR2 		 6 Y
+	16 Z08_CD_CDC			       VARCHAR2 		 6 Y
+	17 Z08_FLAG_TR_SPECIALE 	       VARCHAR2 		 1 Y
+	18 Z08_CD_LINEA 		       VARCHAR2 		 6 N
+	19 Z08_CD_STAGIONE		       VARCHAR2 		 6 N
+	20 Z08_CD_COMPOSIZIONE		       VARCHAR2 		 6 N
+
+20 rows selected.
+
+Elapsed: 00:00:00.00
+=== 5b) sample 20 (no sort) ===
+
+Z08_CD Z08_CD_ARTICO Z08_CD_CICLO  Z08_SEQUENZA Z Z08_ST_MODIFICA Z08_CD Z08_CD
+------ ------------- ------------- ------------ - --------------- ------ ------
+Z08_NOTE																														       Z Z Z Z Z08_QT_RICHIESTA Z08_CD Z08_CD Z
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- - - - - ---------------- ------ ------ -
+Z08_CD Z08_CD Z08_CD
+------ ------ ------
+1422   00001	     R77		     40 V		0 000113
+																															       N S N N		      1 NR	      N
+.      .      .
+
+769    00030	     TI+TR.4FASI	     10 V		0 000001
+																															       N S N N		      1 NR	      N
+.      .      .
+
+769    00030	     TI+TR.4FASI	     20 V		0 000057
+																															       N S N N		      1 NR	      N
+.      .      .
+
+729    00030	     TI+TR.4FASI	     10 V		0 000001
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1277   00030	     TI.OLD+TR.2F	     20 V		0 000001
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1277   00030	     TI.OLD+TR.2F	     30 V		0 000003
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1277   00030	     TI.OLD+TR.2F	     40 V		0 000055
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1280   00030	     TI.OLD+TR.2F	     10 V		0 000002
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1280   00030	     TI.OLD+TR.2F	     20 V		0 000001
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1280   00030	     TI.OLD+TR.2F	     30 V		0 000003
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1280   00030	     TI.OLD+TR.2F	     40 V		0 000055
+																															       N S N N		      1 NR	      N
+.      .      .
+
+709    CAPI	     TI.Q/SI+4FASI	     20 V		0 000057
+																															       N S N N		      1 NR	      N
+.      .      .
+
+709    CAPI	     TI.Q/SI+2FASI	     10 V		0 000156
+																															       N S N N		      1 NR	      N
+.      .      .
+
+709    CAPI	     TI.Q/SI+2FASI	     20 V		0 000055
+																															       N S N N		      1 NR	      N
+.      .      .
+
+709    CAPI	     TI.OLD+TR.4F	     10 V		0 000002
+																															       N S N N		      1 NR	      N
+.      .      .
+
+648    CAPI	     W4000		     10 V		0 000044
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1537   CAPI	     T400		     10 V		0 000002
+																															       N S N N		      1 NR	      N
+.      .      .
+
+1568   CAPI	     RG C		     10 V		0 000129
+																															       S S N N		      1 NR	      N
+.      .      .
+
+709    CAPI	     TI.OLD+TR.4F	     20 V		0 000001
+																															       N S N N		      1 NR	      N
+.      .      .
+
+709    CAPI	     TI.OLD+TR.4F	     30 V		0 000003
+																															       N S N N		      1 NR	      N
+.      .      .
+
+
+20 rows selected.
+
+Elapsed: 00:00:00.02
+=== 5c) Z09_CICLI altri schema ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH
+---------- ----------------------------------- --------------- -----------
+	 1 Z09_CODICE			       VARCHAR2 		 6
+	 2 Z09_DESCRIZIONE		       VARCHAR2 		40
+	 3 Z09_ST_RECORD		       VARCHAR2 		 1
+	 4 Z09_ST_MODIFICA		       NUMBER			22
+	 5 SD_DT_INS			       DATE			 7
+	 6 SD_DT_MOD			       DATE			 7
+	 7 Z09_CD_AZIENDA		       VARCHAR2 		 3
+
+7 rows selected.
+
+Elapsed: 00:00:00.08
+
+no rows selected
+
+Elapsed: 00:00:00.00
+
+no rows selected
+
+Elapsed: 00:00:00.00
+=== 6a) EW1 colonne ===
+
+ COLUMN_ID COLUMN_NAME			       DATA_TYPE       DATA_LENGTH
+---------- ----------------------------------- --------------- -----------
+	 1 EW1_ANNO_DISPOSIZIONE	       NUMBER			22
+	 2 EW1_NR_DISPOSIZIONE		       NUMBER			22
+	 3 EW1_ST_RECORD		       VARCHAR2 		 1
+	 4 EW1_ST_MODIFICA		       NUMBER			22
+	 5 EW1_DATA_IMMISSIONE		       DATE			 7
+	 6 EW1_DATA_BOLLA_CLI		       DATE			 7
+	 7 EW1_NR_BOLLA_CLI		       VARCHAR2 		20
+	 8 EW1_CD_CLIENTE		       VARCHAR2 		 6
+	 9 EW1_RIFER_CLIENTE		       VARCHAR2 		30
+	10 EW1_CD_LINEA 		       VARCHAR2 		 6
+	11 EW1_CD_STAGIONE		       VARCHAR2 		 6
+	12 EW1_FLAG_CHIUSO		       VARCHAR2 		 1
+	13 EW1_CD_PROVENIENZA		       VARCHAR2 		13
+	14 EW1_FLAG_MAIL		       VARCHAR2 		 1
+	15 EW1_FLAG_ESENTE		       VARCHAR2 		 1
+
+15 rows selected.
+
+Elapsed: 00:00:00.07
+=== 6a) sample 10 ===
+
+EW1_ANNO_DISPOSIZIONE EW1_NR_DISPOSIZIONE E EW1_ST_MODIFICA EW1_DATA_ EW1_DATA_ EW1_NR_BOLLA_CLI     EW1_CD EW1_RIFER_CLIENTE		   EW1_CD EW1_CD E EW1_CD_PROVEN E E
+--------------------- ------------------- - --------------- --------- --------- -------------------- ------ ------------------------------ ------ ------ - ------------- - -
+		 2012		     2350 V		  1 27-FEB-12 15-FEB-12 26		     1445				   .	  PE 12  S		 N N
+		 2012		     2351 V		  1 27-FEB-12 24-FEB-12 360		     866				   01	  PE 12  S		 N N
+		 2012		     2352 V		  1 27-FEB-12 27-FEB-12 326		     466				   .	  PE 12  S		 N N
+		 2012		     2353 V		  1 27-FEB-12 27-FEB-12 327		     466				   .	  PE 12  S		 N N
+		 2012		     2354 V		  1 27-FEB-12 24-FEB-12 265		     1052				   .	  PE 12  S		 N N
+		 2012		     2355 V		  1 27-FEB-12 27-FEB-12 578		     12 				   01	  PE 12  S		 N N
+		 2012		     2356 V		  1 27-FEB-12 27-FEB-12 382		     648				   02	  PE 12  S		 N N
+		 2012		     2357 V		  1 27-FEB-12 24-FEB-12 550		     969				   .	  PE 12  S		 N N
+		 2012		     2358 V		  1 27-FEB-12 27-FEB-12 579		     12 				   .	  PE 12  S		 N N
+		 2012		     2359 V		  1 27-FEB-12 27-FEB-12 580		     12 				   01	  PE 12  S		 N N
+
+10 rows selected.
+
+Elapsed: 00:00:00.01
+=== 6b) EW2 sample 10 ===
+
+EW2_ANNO_DISPOSIZIONE EW2_NR_DISPOSIZIONE EW2_RIGA_DISPOSIZIONE E EW2_ST_MODIFICA EW2_NR_CAPI_CARICATI EW2_KG_CARICATI EW2_SCATOLA	    EW2_DS_ARTICOLO			     EW2_CD_ARTICO EW2_CD_ARTICO EW2_CD EW2_CD_CICLO  EW2_CD_CAR EW2_CD_COL EW2_DS_COLORE
+--------------------- ------------------- --------------------- - --------------- -------------------- --------------- -------------------- ---------------------------------------- ------------- ------------- ------ ------------- ---------- ---------- ----------------------------------------
+EW2_RIF_DISP_CLIENTE			 EW2_NOTE
+---------------------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+EW2_NOTE_RICETTA					     E EW2_CD_VASCA  EW2_SERIE_VASCA EW2_CD_PROVEN EW2_CD_DESTIN EW2_NR_CAMP_NUOVI_COL E EW2_QUALITA	      EW2_MODELLO	   EW2_NR_COTTA EW2_DATA_ EW2_ANNO_CONS_RICHIESTA EW2_SETT_CONS_RICHIESTA EW2_DATA_ EW2_ANNO_CONS_CONFERMATA
+------------------------------------------------------------ - ------------- --------------- ------------- ------------- --------------------- - -------------------- -------------------- ------------ --------- ----------------------- ----------------------- --------- ------------------------
+EW2_SETT_CONS_CONFERMATA E EW2_NR_RIPRESO E EW2_DEF_COLO EW2_CD EW2_CD E EW2_CD EW2_NR_CAPI_DDT EW2_KG_DDT E E EW2_CD EW2_CD EW2_RIF_ADDEBITO_CAPI_MANCANTI				  EW2_AMMANCO EW2_CD E EW2_NR_CAPI_PROD EW2_KG_PROD E EW2_NR_COLORI_DDT EW2_NR_SACCHI EW2_CD EW2_STATO_RICETTA
+------------------------ - -------------- - ------------ ------ ------ - ------ --------------- ---------- - - ------ ------ ------------------------------------------------------------ ----------- ------ - ---------------- ----------- - ----------------- ------------- ------ --------------------
+EW2_CD_CICLO_ EW2_CD EW2_PRZ_UNITARIO E EW2_PRZ_UNITARIO_KG E
+------------- ------ ---------------- - ------------------- -
+		 2012		     1236		      2 V		1		     9		    17			    CAPPOTTI				     CAPI	   00027	 00350	T400	      648	 04	    VERDE PRATO M /TRM
+27601 TRM
+							     T										     0 N						  40361
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		      3 V		1		    16		  10,5			    CAPPOTTI				     CAPI	   00027	 00350	T400	      648	 06	    TORTORA /TRM
+27601 TRM
+							     T										     0 N						  40362
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		      4 V		1		    20		    23			    CAPPOTTI				     CAPI	   00027	 00350	T400	      648	 10	    NERO /TRM
+27601 TRM
+							     T										     0 N						  40363
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		      5 V		1		    21		    15			    CAPPOTTI				     CAPI	   00027	 00350	T400	      648	 13	    VERDE SALVIA /TRM
+27601 TRM
+							     T										     0 N						  40364
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		      6 V		1		    31		    15			    GIACCHE				     CAPI	   00025	 00350	T400	      648	 00	    BIANCO /TRM
+27600/1 TRM
+							     T										     0 N						  40365
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+T400	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		      7 V		1		    14		   7,5			    GIACCHE				     CAPI	   00025	 00350	T400	      648	 01	    PERLA /TRM
+27600/1 TRM
+							     T										     0 N						  40366
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		      8 V		1		    20		    12			    GIACCHE				     CAPI	   00025	 00350	T400	      648	 03	    BEIGE /TRM
+27600/1 TRM
+							     T										     0 N						  40367
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		      9 V		1		    39		    20			    GIACCHE				     CAPI	   00025	 00350	T400	      648	 04	    VERDE PRATO M /TRM
+27600/1 TRM
+							     T										     0 N						  40368
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		     12 V		1		    13		   6,5			    GIACCHE				     CAPI	   00025	 00350	T400	      648	 09	    PESCA CHSS /TRM
+27600/1 TRM
+							     T										     0 N						  40369
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+		 2012		     1236		     13 V		1		    29		    15			    GIACCHE				     CAPI	   00025	 00350	T400	      648	 10	    NERO /TRM
+27600/1 TRM
+							     T										     0 N						  40370
+			 C		0 N			       S 648				   P L 01     PE 12									    0	     D				    N				    1
+	      PE 12		    0 L 		  0 L
+
+
+10 rows selected.
+
+Elapsed: 00:00:00.01
+=== 6c) STORICO_DISPOSIZIONI sample 10 ===
+
+EW2_CD_ARTICO CW1_DS_ARTICOLO_FI		       EW2_CD_COL EW2_CD_CAR EW2_DS_COLORE			      G31_DS_COLORE			       EW2_CD_CICLO  Z09_DS_CICLO			      EW2_CD CW4_DS_COMPOSIZIONE					  EW1_DATA_
+------------- ---------------------------------------- ---------- ---------- ---------------------------------------- ---------------------------------------- ------------- ---------------------------------------- ------ ------------------------------------------------------------ ---------
+EW1_NR_BOLLA_CLI     EW1_CD EW1_CD R07_RAGIONE_SOC			    EW2_ANNO_DISPOSIZIONE EW2_NR_DISPOSIZIONE EW2_RIGA_DISPOSIZIONE EW2_NR_CAPI_CARICATI EW2_KG_CARICATI EW2_SCATOLA	      EW2_DS_ARTICOLO			       EW2_RIF_DISP_CLIENTE
+-------------------- ------ ------ ---------------------------------------- --------------------- ------------------- --------------------- -------------------- --------------- -------------------- ---------------------------------------- ----------------------------------------
+EW2_NOTE						     EW2_NOTE_RICETTA						  EW2_CD_PROVEN CW8_RAGIONE_SOC_PROV			 EW2_CD_DESTIN CW8_RAGIONE_SOC_DEST			EW2_NR_CAMP_NUOVI_COL E EW2_QUALITA	     EW2_MODELLO
+------------------------------------------------------------ ------------------------------------------------------------ ------------- ---------------------------------------- ------------- ---------------------------------------- --------------------- - -------------------- --------------------
+EW2_NR_COTTA EW2_NR_RIPRESO  CAPIEVASI	  KGEVASI CAPILAVORATI KGLAVORATI CAPINONLAVORATI KGNONLAVORATI CW0_DS_LINEA
+------------ -------------- ---------- ---------- ------------ ---------- --------------- ------------- ----------------------------------------
+BOLLE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+E EW2_FLAG_TP E P0
+- ----------- - --
+FORNITORI
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CARTELLINI																								 Z09_CD Z01_DS_REPARTO
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------ ----------------------------------------
+VASCHE																									 CD_CICLO_CLI  EW2_CD Z11_DS_STAGIONE			       EW2_CD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------------- ------ ---------------------------------------- ------
+DS_STAGIONE_PROD
+----------------------------------------
+LISTA_FASI_EXTRA
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+E
+-
+CAPI	      CAPI				       04	  648	     VERDE PRATO M /TRM 		      VERDE PRATO M /TRM		       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  2		       9	      17		      CAPPOTTI				       27601 TRM
+																															    0 N
+       40361		  0	     9	       17	     9	       17		0	      0 TRANSIT
+1431 del 02/02 -
+P Produzione  S N
+
+5234
+ | -0-31/01/2012 | 05C-3-01/02/2012																						       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       06	  648	     TORTORA /TRM			      TORTORA /TRM			       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  3		      16	    10,5		      CAPPOTTI				       27601 TRM
+																															    0 N
+       40362		  0	    16	     10,5	    16	     10,5		0	      0 TRANSIT
+1557 del 06/02 -
+P Produzione  S N
+
+5236
+ | -0-02/02/2012 | 19C-2-03/02/2012																						       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       10	  648	     NERO /TRM				      NERO /TRM 			       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  4		      20	      23		      CAPPOTTI				       27601 TRM
+																															    0 N
+       40363		  0	    20	       23	    20	       23		0	      0 TRANSIT
+1403 del 02/02 -
+P Produzione  S N
+
+5240
+ | -0-01/02/2012 | 11C-2-01/02/2012																						       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       13	  648	     VERDE SALVIA /TRM			      VERDE SALVIA /TRM 		       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  5		      21	      15		      CAPPOTTI				       27601 TRM
+																															    0 N
+       40364		  0	    21	       15	    21	       15		0	      0 TRANSIT
+1431 del 02/02 -
+P Produzione  S N
+
+5242
+ | -0-01/02/2012 | 05C-2-01/02/2012																						       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       00	  648	     BIANCO /TRM			      BIANCO /TRM			       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  6		      31	      15		      GIACCHE				       27600/1 TRM
+																															    0 N
+       40365		  0	    31	       15	    31	       15		0	      0 TRANSIT
+1431 del 02/02 -
+P Produzione  S N
+
+5230
+ | -0-31/01/2012 | 17C-3-01/02/2012																					 T400	       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       01	  648	     PERLA /TRM 			      PERLA /TRM			       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  7		      14	     7,5		      GIACCHE				       27600/1 TRM
+																															    0 N
+       40366		  0	    14	      7,5	    14	      7,5		0	      0 TRANSIT
+1466 del 03/02 -
+P Produzione  S N
+
+5231
+ | -0-02/02/2012 | 34C-3-02/02/2012																						       PE 12					       PE 12
+
+
+EW2_CD_ARTICO CW1_DS_ARTICOLO_FI		       EW2_CD_COL EW2_CD_CAR EW2_DS_COLORE			      G31_DS_COLORE			       EW2_CD_CICLO  Z09_DS_CICLO			      EW2_CD CW4_DS_COMPOSIZIONE					  EW1_DATA_
+------------- ---------------------------------------- ---------- ---------- ---------------------------------------- ---------------------------------------- ------------- ---------------------------------------- ------ ------------------------------------------------------------ ---------
+EW1_NR_BOLLA_CLI     EW1_CD EW1_CD R07_RAGIONE_SOC			    EW2_ANNO_DISPOSIZIONE EW2_NR_DISPOSIZIONE EW2_RIGA_DISPOSIZIONE EW2_NR_CAPI_CARICATI EW2_KG_CARICATI EW2_SCATOLA	      EW2_DS_ARTICOLO			       EW2_RIF_DISP_CLIENTE
+-------------------- ------ ------ ---------------------------------------- --------------------- ------------------- --------------------- -------------------- --------------- -------------------- ---------------------------------------- ----------------------------------------
+EW2_NOTE						     EW2_NOTE_RICETTA						  EW2_CD_PROVEN CW8_RAGIONE_SOC_PROV			 EW2_CD_DESTIN CW8_RAGIONE_SOC_DEST			EW2_NR_CAMP_NUOVI_COL E EW2_QUALITA	     EW2_MODELLO
+------------------------------------------------------------ ------------------------------------------------------------ ------------- ---------------------------------------- ------------- ---------------------------------------- --------------------- - -------------------- --------------------
+EW2_NR_COTTA EW2_NR_RIPRESO  CAPIEVASI	  KGEVASI CAPILAVORATI KGLAVORATI CAPINONLAVORATI KGNONLAVORATI CW0_DS_LINEA
+------------ -------------- ---------- ---------- ------------ ---------- --------------- ------------- ----------------------------------------
+BOLLE
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+E EW2_FLAG_TP E P0
+- ----------- - --
+FORNITORI
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CARTELLINI																								 Z09_CD Z01_DS_REPARTO
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------ ----------------------------------------
+VASCHE																									 CD_CICLO_CLI  EW2_CD Z11_DS_STAGIONE			       EW2_CD
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------------- ------ ---------------------------------------- ------
+DS_STAGIONE_PROD
+----------------------------------------
+LISTA_FASI_EXTRA
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+E
+-
+
+L
+
+CAPI	      CAPI				       03	  648	     BEIGE /TRM 			      BEIGE /TRM			       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  8		      20	      12		      GIACCHE				       27600/1 TRM
+																															    0 N
+       40367		  0	    20	       12	    20	       12		0	      0 TRANSIT
+1522 del 06/02 -
+P Produzione  S N
+
+5232
+ | -0-02/02/2012 | 33C-3-03/02/2012																						       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       04	  648	     VERDE PRATO M /TRM 		      VERDE PRATO M /TRM		       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			  9		      39	      20		      GIACCHE				       27600/1 TRM
+																															    0 N
+       40368		  0	    39	       20	    39	       20		0	      0 TRANSIT
+1431 del 02/02 -
+P Produzione  S N
+
+5235
+ | -0-31/01/2012 | 05C-3-01/02/2012																						       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       09	  648	     PESCA CHSS /TRM			      PESCA CHSS /TRM			       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			 12		      13	     6,5		      GIACCHE				       27600/1 TRM
+																															    0 N
+       40369		  0	    13	      6,5	    13	      6,5		0	      0 TRANSIT
+1343 del 01/02 -
+P Produzione  S N
+
+5239
+ | -0-31/01/2012 | 15C-3-31/01/2012																						       PE 12					       PE 12
+
+
+L
+
+CAPI	      CAPI				       10	  648	     NERO /TRM				      NERO /TRM 			       T400						      00350  CO33% VI26% LI26% NY13% EA2%				  27-JAN-12
+181		     01     648    TAM & COMPANY S.P.A. 				     2012		 1236			 13		      29	      15		      GIACCHE				       27600/1 TRM
+																															    0 N
+       40370		  0	    29	       15	    29	       15		0	      0 TRANSIT
+1403 del 02/02 -
+P Produzione  S N
+
+5241
+ | -0-01/02/2012 | 11C-2-01/02/2012																						       PE 12					       PE 12
+
+
+L
+
+
+10 rows selected.
+
+Elapsed: 00:00:00.02
+=== 7) colonne ID/cliente/ciclo/stagione/prezzo ===
+
+TABLE_NAME			    COLUMN_NAME 			DATA_TYPE
+----------------------------------- ----------------------------------- ---------------
+C30_LISTINO_CLIENTI		    C30_CD_CLIENTE			VARCHAR2
+C33_LISTINO_CLIENTI_CICLI	    C33_CD_CLIENTE			VARCHAR2
+C33_LISTINO_CLIENTI_CICLI	    C33_CD_CICLO			VARCHAR2
+C33_LISTINO_CLIENTI_CICLI	    C33_PREZZO_AL_KG			NUMBER
+C33_LISTINO_CLIENTI_CICLI	    C33_PREZZO_AL_CAPO			NUMBER
+C33_LISTINO_CLIENTI_CICLI	    C33_PREZZO_FORFAIT			NUMBER
+C33_LISTINO_CLIENTI_CICLI	    C33_PREZZO_CAMP_NC			NUMBER
+C33_LISTINO_CLIENTI_CICLI	    C33_FLAG_STAMPA_LIST		VARCHAR2
+C52_PROTOTIPI_ATMAN		    C52_KEY				NUMBER
+C52_PROTOTIPI_ATMAN		    C52_CD_CLIENTE			VARCHAR2
+C52_PROTOTIPI_ATMAN		    C52_CD_CICLO_INTERNO		VARCHAR2
+C52_PROTOTIPI_ATMAN		    C52_CD_CICLO_CLI			VARCHAR2
+Z08_CICLI_LAVORAZIONE		    Z08_CD_CLIENTE			VARCHAR2
+Z08_CICLI_LAVORAZIONE		    Z08_CD_ARTICOLO_CLIENTE		VARCHAR2
+Z08_CICLI_LAVORAZIONE		    Z08_CD_CICLO			VARCHAR2
+Z08_CICLI_LAVORAZIONE		    Z08_CD_STAGIONE			VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_CD_CLIENTE			VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_CD_ARTICOLO_CLIENTE		VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_CD_CICLO			VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_DS_CICLO			VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_FLAG_NO_ST_RESID		VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_FL_PREZZO_ZERO			VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_DS_CICLO_BOLLE_FAT		VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_CD_CICLO_CLI			VARCHAR2
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_DATA_VALIDITA			DATE
+Z09_TESTATE_CICLI_LAVORAZIONE	    Z09_CD_STAGIONE			VARCHAR2
+C30_TEST_LIST_CLI		    C30_CD_CLIENTE			VARCHAR2
+C30_TEST_LIST_CLI		    C30_CD_STAGIONE			VARCHAR2
+C30_TEST_LIST_CLI		    C30_ID_LISTINO			NUMBER
+C52_DETT_LIST_CL		    C52_ID_LISTINO			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_1			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_2			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_3			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_4			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_5			NUMBER
+C30_TEST_LIST_CLI		    C30_CD_CLIENTE			VARCHAR2
+C30_TEST_LIST_CLI		    C30_CD_STAGIONE			VARCHAR2
+C30_TEST_LIST_CLI		    C30_ID_LISTINO			NUMBER
+C52_DETT_LIST_CL		    C52_ID_LISTINO			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_1			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_2			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_3			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_4			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_5			NUMBER
+C30_TEST_LIST_CLI		    C30_CD_CLIENTE			VARCHAR2
+C30_TEST_LIST_CLI		    C30_CD_STAGIONE			VARCHAR2
+C30_TEST_LIST_CLI		    C30_ID_LISTINO			NUMBER
+C52_DETT_LIST_CL		    C52_ID_LISTINO			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_1			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_2			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_3			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_4			NUMBER
+C52_DETT_LIST_CL		    C52_PREZZO_UNI_5			NUMBER
+
+53 rows selected.
+
+Elapsed: 00:00:00.11
+=== FINE SCRIPT ===

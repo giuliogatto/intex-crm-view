@@ -1,0 +1,318 @@
+REM =============================================================================
+REM Offerte a Clienti — controlli finali + query definitive
+REM Testata:  INTEX2.C37_TESTATA_LISTINI  (C37_PRG = "Cod. Univoco")
+REM Righe:    INTEX2.C38_RIGHE_LISTINI    (chiave a 7 campi + C38_SEQUENZA)
+REM Centri:   INTEX2.C51_RIPARTIZIONI_COSTI_CDC + C50_CDC_TAB
+REM
+REM Codici dalle foto (cliente 2594 JACOB COHEN):
+REM   39770 = "Prototipo"         (T141, AI 27)
+REM   36625 = "Offerta accettata" (T220, PE 26)
+REM
+REM Esecuzione:
+REM   sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB @offerte-controllo-finale.txt > offerte-controllo-out.txt
+REM =============================================================================
+
+WHENEVER SQLERROR CONTINUE
+WHENEVER OSERROR CONTINUE
+
+SET ECHO OFF
+SET FEEDBACK ON
+SET PAGESIZE 200
+SET LINESIZE 400
+SET TRIMSPOOL ON
+SET TRIMOUT ON
+SET LONG 2000
+SET TIMING ON
+SET NUMWIDTH 12
+
+COLUMN table_name      FORMAT A32
+COLUMN constraint_name FORMAT A25
+COLUMN column_name     FORMAT A30
+COLUMN data_type       FORMAT A12
+COLUMN cod_univoco     FORMAT 99999999
+COLUMN cliente         FORMAT A7
+COLUMN ragione_sociale FORMAT A35
+COLUMN linea           FORMAT A6
+COLUMN ds_linea        FORMAT A20
+COLUMN stagione        FORMAT A7
+COLUMN ds_stagione     FORMAT A18
+COLUMN composizione    FORMAT A7
+COLUMN ds_composizione FORMAT A25
+COLUMN articolo        FORMAT A13
+COLUMN ds_articolo     FORMAT A25
+COLUMN ciclo           FORMAT A13
+COLUMN ciclo_cli       FORMAT A13
+COLUMN ds_ciclo        FORMAT A40
+COLUMN valuta          FORMAT A4
+COLUMN fl_proto        FORMAT A8
+COLUMN fl_vis          FORMAT A6
+COLUMN z09_fl_proto    FORMAT A8
+COLUMN st              FORMAT A2
+COLUMN oggetto         FORMAT A40
+COLUMN fase            FORMAT A8
+COLUMN ds_fase         FORMAT A30
+COLUMN tp              FORMAT A2
+COLUMN cdc             FORMAT A6
+COLUMN ds_cdc          FORMAT A25
+
+
+REM =============================================================================
+REM A) CONTROLLI
+REM =============================================================================
+
+PROMPT
+PROMPT === A1) Chiavi primarie delle tabelle di decodifica (per confermare i JOIN) ===
+SELECT c.table_name, c.constraint_name, cc.column_name, cc.position
+FROM all_constraints c
+JOIN all_cons_columns cc
+  ON cc.owner = c.owner AND cc.constraint_name = c.constraint_name
+WHERE c.owner = 'INTEX2'
+  AND c.constraint_type = 'P'
+  AND c.table_name IN (
+    'R07_CLIENTI','Z11_STAGIONI','CW4_COMPOSIZIONI','CW0_LINEA_TINTORIA',
+    'CWA_ARTICOLI_CLIENTE','Z09_TESTATE_CICLI_LAVORAZIONE','Z02_FASI_DI_LAVORO',
+    'C50_CDC_TAB','C51_RIPARTIZIONI_COSTI_CDC'
+  )
+ORDER BY c.table_name, cc.position;
+
+PROMPT
+PROMPT === A2) Colonne descrittive delle tabelle di decodifica ===
+SELECT table_name, column_name, data_type
+FROM all_tab_columns
+WHERE owner = 'INTEX2'
+  AND table_name IN ('R07_CLIENTI','Z11_STAGIONI','CW4_COMPOSIZIONI','CW0_LINEA_TINTORIA',
+                     'CWA_ARTICOLI_CLIENTE','Z02_FASI_DI_LAVORO')
+  AND (column_name LIKE '%\_CD\_%' ESCAPE '\' OR column_name LIKE '%DS%' OR column_name LIKE '%RAGIONE%')
+ORDER BY table_name, column_id;
+
+PROMPT
+PROMPT === A3) Colonne complete della view C37_001W (view usata dal gestionale?) ===
+SELECT column_id, column_name, data_type
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C37_001W'
+ORDER BY column_id;
+
+PROMPT
+PROMPT === A4) Significato dei flag: confronto 39770 (Prototipo) vs 36625 (Accettata) ===
+SELECT t.C37_PRG            AS cod_univoco,
+       t.C37_CD_CLIENTE     AS cliente,
+       t.C37_CD_STAGIONE    AS stagione,
+       t.C37_CD_CICLO       AS ciclo,
+       t.C37_FLAG_PROTOTIPO AS fl_proto,
+       t.C37_FLAG_VISIBILE  AS fl_vis,
+       t.C37_ST_RECORD      AS st,
+       z.Z09_FLAG_PROTOTIPO AS z09_fl_proto,
+       z.Z09_NR_REVISIONE,
+       z.Z09_PERC_FALLOSITA,
+       t.C37_PZ_TOT_CAPO,
+       t.C37_PZ_TOT_KG,
+       t.C37_DATA_VALIDITA
+FROM INTEX2.C37_TESTATA_LISTINI t
+LEFT JOIN INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z
+  ON  z.Z09_CD_CLIENTE          = t.C37_CD_CLIENTE
+  AND z.Z09_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+  AND z.Z09_CD_CICLO            = t.C37_CD_CICLO
+WHERE t.C37_PRG IN (39770, 36625, 40723, 40067, 38594, 39636)
+ORDER BY t.C37_PRG;
+
+PROMPT
+PROMPT === A5) Distribuzione flag su tutte le offerte ===
+SELECT C37_FLAG_PROTOTIPO AS fl_proto, C37_FLAG_VISIBILE AS fl_vis, C37_ST_RECORD AS st, COUNT(*) AS n
+FROM INTEX2.C37_TESTATA_LISTINI
+GROUP BY C37_FLAG_PROTOTIPO, C37_FLAG_VISIBILE, C37_ST_RECORD
+ORDER BY n DESC;
+
+PROMPT
+PROMPT === A6) Distribuzione Z09_FLAG_PROTOTIPO sulle offerte (join ciclo) ===
+SELECT t.C37_FLAG_PROTOTIPO AS fl_proto, z.Z09_FLAG_PROTOTIPO AS z09_fl_proto, COUNT(*) AS n
+FROM INTEX2.C37_TESTATA_LISTINI t
+LEFT JOIN INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z
+  ON  z.Z09_CD_CLIENTE          = t.C37_CD_CLIENTE
+  AND z.Z09_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+  AND z.Z09_CD_CICLO            = t.C37_CD_CICLO
+GROUP BY t.C37_FLAG_PROTOTIPO, z.Z09_FLAG_PROTOTIPO
+ORDER BY n DESC;
+
+PROMPT
+PROMPT === A7) C37_PRG: univoco? null? range ===
+SELECT COUNT(*)                AS n_offerte,
+       COUNT(C37_PRG)          AS n_con_prg,
+       COUNT(DISTINCT C37_PRG) AS n_prg_distinti,
+       MIN(C37_PRG)            AS prg_min,
+       MAX(C37_PRG)            AS prg_max
+FROM INTEX2.C37_TESTATA_LISTINI;
+
+PROMPT
+PROMPT === A8) C38_C37_PRG affidabile? (se molti NULL si usa la chiave a 7 campi) ===
+SELECT COUNT(*)            AS n_righe,
+       COUNT(C38_C37_PRG)  AS n_con_prg,
+       SUM(CASE WHEN C38_C37_PRG = 0 THEN 1 ELSE 0 END) AS n_prg_zero
+FROM INTEX2.C38_RIGHE_LISTINI;
+
+PROMPT
+PROMPT === A9) Offerte per stagione (top 20) ===
+SELECT * FROM (
+  SELECT C37_CD_STAGIONE AS stagione, COUNT(*) AS n
+  FROM INTEX2.C37_TESTATA_LISTINI
+  GROUP BY C37_CD_STAGIONE
+  ORDER BY n DESC
+) WHERE ROWNUM <= 20;
+
+PROMPT
+PROMPT === A10) Righe C38 dell'offerta 39770 (chiave a 7 campi) — confronto con la foto ===
+SELECT r.C38_SEQUENZA, r.C38_CD_FORNITORE, r.C38_TP_PREZZO AS tp, r.C38_QTA_RIGA,
+       r.C38_PZ_UNITARIO, r.C38_PZ_UNITARIO_KG, r.C38_CS_UNITARIO, r.C38_CS_UNITARIO_KG,
+       r.C38_C37_PRG
+FROM INTEX2.C37_TESTATA_LISTINI t
+JOIN INTEX2.C38_RIGHE_LISTINI r
+  ON  r.C38_CD_CLIENTE      = t.C37_CD_CLIENTE
+  AND r.C38_CD_LINEA        = t.C37_CD_LINEA
+  AND r.C38_CD_STAGIONE     = t.C37_CD_STAGIONE
+  AND r.C38_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+  AND r.C38_CD_ARTICOLO     = t.C37_CD_ARTICOLO
+  AND r.C38_CD_CICLO        = t.C37_CD_CICLO
+  AND r.C38_CD_VALUTA       = t.C37_CD_VALUTA
+WHERE t.C37_PRG = 39770
+ORDER BY r.C38_SEQUENZA;
+
+PROMPT
+PROMPT === A11) Fasi del ciclo dell'offerta 39770 (Z08: descrizione fasi della griglia) ===
+SELECT z8.*
+FROM INTEX2.C37_TESTATA_LISTINI t
+JOIN INTEX2.Z08_CICLI_LAVORAZIONE z8
+  ON  z8.Z08_CD_CLIENTE          = t.C37_CD_CLIENTE
+  AND z8.Z08_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+  AND z8.Z08_CD_CICLO            = t.C37_CD_CICLO
+WHERE t.C37_PRG = 39770
+  AND ROWNUM <= 30;
+
+PROMPT
+PROMPT === A12) Centri di costo dell'offerta 39770 (foto: 40 TINTORIA, vendita capo 15,55) ===
+SELECT c51.C51_CD_CDC AS cdc, c50.C50_DS_CDC AS ds_cdc, c51.C51_COSTO, c51.C51_COSTO_KG
+FROM INTEX2.C37_TESTATA_LISTINI t
+JOIN INTEX2.C51_RIPARTIZIONI_COSTI_CDC c51
+  ON  c51.C51_CD_CLIENTE      = t.C37_CD_CLIENTE
+  AND c51.C51_CD_LINEA        = t.C37_CD_LINEA
+  AND c51.C51_CD_STAGIONE     = t.C37_CD_STAGIONE
+  AND c51.C51_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+  AND c51.C51_CD_ARTICOLO     = t.C37_CD_ARTICOLO
+  AND c51.C51_CD_CICLO        = t.C37_CD_CICLO
+  AND c51.C51_CD_VALUTA       = t.C37_CD_VALUTA
+LEFT JOIN INTEX2.C50_CDC_TAB c50
+  ON c50.C50_CD_CDC = c51.C51_CD_CDC
+WHERE t.C37_PRG = 39770;
+
+
+REM =============================================================================
+REM B) QUERY DEFINITIVE
+REM     Se B1 fallisce per un nome colonna di decodifica, usare B2 (solo codici)
+REM     e mandare l'output di A1/A2 per correggere i JOIN.
+REM =============================================================================
+
+PROMPT
+PROMPT === B1) Ultime 100 offerte con descrizioni (come la schermata "Offerte a Clienti") ===
+SELECT * FROM (
+  SELECT t.C37_PRG                AS cod_univoco,
+         t.C37_CD_CLIENTE         AS cliente,
+         r07.R07_RAGIONE_SOC      AS ragione_sociale,
+         t.C37_CD_CICLO           AS ciclo,
+         t.C37_CD_CICLO_CLI       AS ciclo_cli,
+         z09.Z09_DS_CICLO         AS ds_ciclo,
+         t.C37_CD_LINEA           AS linea,
+         cw0.CW0_DS_LINEA         AS ds_linea,
+         t.C37_CD_STAGIONE        AS stagione,
+         z11.Z11_DS_STAGIONE      AS ds_stagione,
+         t.C37_CD_COMPOSIZIONE    AS composizione,
+         cw4.CW4_DS_COMPOSIZIONE  AS ds_composizione,
+         t.C37_CD_ARTICOLO        AS articolo,
+         cwa.CWA_DS_ARTICOLO_CLIENTE AS ds_articolo,
+         t.C37_CD_VALUTA          AS valuta,
+         t.C37_PZ_TOT_CAPO,
+         t.C37_PZ_TOT_KG,
+         t.C37_FLAG_PROTOTIPO     AS fl_proto,
+         z09.Z09_NR_REVISIONE,
+         z09.Z09_PERC_FALLOSITA,
+         t.C37_DATA_VALIDITA
+  FROM INTEX2.C37_TESTATA_LISTINI t
+  LEFT JOIN INTEX2.R07_CLIENTI r07
+    ON r07.R07_CD_CLIENTE = t.C37_CD_CLIENTE
+  LEFT JOIN INTEX2.Z11_STAGIONI z11
+    ON z11.Z11_CD_STAGIONE = t.C37_CD_STAGIONE
+  LEFT JOIN INTEX2.CW4_COMPOSIZIONI cw4
+    ON cw4.CW4_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+  LEFT JOIN INTEX2.CW0_LINEA_TINTORIA cw0
+    ON  cw0.CW0_CD_CLIENTE = t.C37_CD_CLIENTE
+    AND cw0.CW0_CD_LINEA   = t.C37_CD_LINEA
+  LEFT JOIN INTEX2.CWA_ARTICOLI_CLIENTE cwa
+    ON  cwa.CWA_CD_CLIENTE  = t.C37_CD_CLIENTE
+    AND cwa.CWA_CD_ARTICOLO = t.C37_CD_ARTICOLO
+  LEFT JOIN INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z09
+    ON  z09.Z09_CD_CLIENTE          = t.C37_CD_CLIENTE
+    AND z09.Z09_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+    AND z09.Z09_CD_CICLO            = t.C37_CD_CICLO
+  ORDER BY t.C37_PRG DESC
+) WHERE ROWNUM <= 100;
+
+PROMPT
+PROMPT === B2) Ultime 100 offerte — solo codici (nessuna decodifica, non può fallire) ===
+SELECT * FROM (
+  SELECT t.C37_PRG             AS cod_univoco,
+         t.C37_CD_CLIENTE      AS cliente,
+         t.C37_CD_LINEA        AS linea,
+         t.C37_CD_STAGIONE     AS stagione,
+         t.C37_CD_COMPOSIZIONE AS composizione,
+         t.C37_CD_ARTICOLO     AS articolo,
+         t.C37_CD_CICLO        AS ciclo,
+         t.C37_CD_CICLO_CLI    AS ciclo_cli,
+         t.C37_CD_VALUTA       AS valuta,
+         t.C37_PZ_TOT_CAPO,
+         t.C37_PZ_TOT_KG,
+         t.C37_FLAG_PROTOTIPO  AS fl_proto,
+         t.C37_FLAG_VISIBILE   AS fl_vis,
+         t.C37_DATA_VALIDITA
+  FROM INTEX2.C37_TESTATA_LISTINI t
+  ORDER BY t.C37_PRG DESC
+) WHERE ROWNUM <= 100;
+
+PROMPT
+PROMPT === B3) Righe (fasi/prezzi) delle ultime 20 offerte ===
+SELECT t.C37_PRG AS cod_univoco,
+       r.C38_SEQUENZA,
+       r.C38_TP_PREZZO AS tp,
+       r.C38_QTA_RIGA,
+       r.C38_PZ_UNITARIO,
+       r.C38_PZ_UNITARIO_KG,
+       r.C38_CS_UNITARIO,
+       r.C38_CS_UNITARIO_KG,
+       r.C38_CD_FORNITORE
+FROM (
+  SELECT * FROM (
+    SELECT * FROM INTEX2.C37_TESTATA_LISTINI ORDER BY C37_PRG DESC
+  ) WHERE ROWNUM <= 20
+) t
+JOIN INTEX2.C38_RIGHE_LISTINI r
+  ON  r.C38_CD_CLIENTE      = t.C37_CD_CLIENTE
+  AND r.C38_CD_LINEA        = t.C37_CD_LINEA
+  AND r.C38_CD_STAGIONE     = t.C37_CD_STAGIONE
+  AND r.C38_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+  AND r.C38_CD_ARTICOLO     = t.C37_CD_ARTICOLO
+  AND r.C38_CD_CICLO        = t.C37_CD_CICLO
+  AND r.C38_CD_VALUTA       = t.C37_CD_VALUTA
+ORDER BY t.C37_PRG DESC, r.C38_SEQUENZA;
+
+PROMPT
+PROMPT === B4) Offerte di un cliente/stagione (esempio: 2594 JACOB COHEN, AI 27) ===
+SELECT t.C37_PRG AS cod_univoco, t.C37_CD_CICLO AS ciclo, t.C37_CD_CICLO_CLI AS ciclo_cli,
+       t.C37_CD_LINEA AS linea, t.C37_CD_COMPOSIZIONE AS composizione, t.C37_CD_ARTICOLO AS articolo,
+       t.C37_PZ_TOT_CAPO, t.C37_PZ_TOT_KG, t.C37_FLAG_PROTOTIPO AS fl_proto
+FROM INTEX2.C37_TESTATA_LISTINI t
+WHERE t.C37_CD_CLIENTE = '2594'
+  AND t.C37_CD_STAGIONE = 'AI 27'
+ORDER BY t.C37_PRG DESC;
+
+PROMPT
+PROMPT === B5) View del gestionale C37_001W per le offerte delle foto ===
+SELECT * FROM INTEX2.C37_001W WHERE C37_PRG IN (39770, 36625);
+
+PROMPT === FINE SCRIPT ===
+EXIT

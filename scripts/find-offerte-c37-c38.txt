@@ -1,0 +1,222 @@
+REM =============================================================================
+REM Offerte a Clienti: verifica ipotesi C37_TESTATA_LISTINI / C38_RIGHE_LISTINI
+REM Indizio dalle foto: la griglia fasi della scheda offerta mostra le colonne
+REM C38_TP_PREZZO e C38_QTA_RIGA.
+REM Codici univoci visti nelle foto (cliente 2594 JACOB COHEN):
+REM   39770 (T141, AI 27/28), 36625 (T220, PE 26, "Offerta accettata"),
+REM   40723, 40067, 38594, 39636
+REM
+REM Esecuzione:
+REM   sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB @find-offerte-c37-c38.txt > find-offerte-out.txt
+REM =============================================================================
+
+WHENEVER SQLERROR CONTINUE
+WHENEVER OSERROR CONTINUE
+
+SET ECHO OFF
+SET FEEDBACK ON
+SET PAGESIZE 100
+SET LINESIZE 300
+SET TRIMSPOOL ON
+SET LONG 4000
+SET TIMING ON
+SET SERVEROUTPUT ON SIZE UNLIMITED
+
+COLUMN tabella FORMAT A40
+COLUMN owner FORMAT A15
+COLUMN table_name FORMAT A35
+COLUMN view_name FORMAT A35
+COLUMN column_name FORMAT A35
+COLUMN data_type FORMAT A15
+
+
+REM -----------------------------------------------------------------------------
+REM 1) Dimensioni candidate (statistiche: istantaneo, nessuna scansione)
+REM -----------------------------------------------------------------------------
+
+PROMPT === 1) NUM_ROWS da statistiche ===
+SELECT table_name, num_rows, last_analyzed
+FROM all_tables
+WHERE owner = 'INTEX2'
+  AND table_name IN (
+    'C37_TESTATA_LISTINI','C38_RIGHE_LISTINI','C38_VOCI_SPESA',
+    'C37_LISTINI_FORNITORI','C40_LISTINO_MAT_STAGIONI','C41_RIGHE_LISTINI_MATERIALI',
+    'C45_LISTINO_STAG_FASI_ARTF','C46_LISTINO_STAG_FASI_ARTC',
+    'C50_CDC_TAB','C51_RIPARTIZIONI_COSTI_CDC','C52_PROTOTIPI_ATMAN',
+    'CWA_ARTICOLI_CLIENTE','CW2_GRUPPO_COMPOSIZIONE','CW4_COMPOSIZIONI','CW0_LINEA_TINTORIA',
+    'Z09_TESTATE_CICLI_LAVORAZIONE','Z08_CICLI_LAVORAZIONE','Z11_STAGIONI',
+    'Z18_CICLI_STD_FASI','Z19_CICLI_STD_TESTATE'
+  )
+ORDER BY table_name;
+
+
+REM -----------------------------------------------------------------------------
+REM 2) Ricerca per nome colonna su tutto il DB (solo catalogo: veloce)
+REM     Cerca i campi visibili nella scheda "Offerte a Clienti"
+REM -----------------------------------------------------------------------------
+
+PROMPT === 2a) Colonne C37_* / C38_* in tutte le tabelle e view ===
+SELECT owner, table_name, column_name, data_type
+FROM all_tab_columns
+WHERE owner = 'INTEX2'
+  AND (column_name LIKE 'C37\_%' ESCAPE '\' OR column_name LIKE 'C38\_%' ESCAPE '\')
+ORDER BY table_name, column_id;
+
+PROMPT === 2b) Colonne che richiamano i campi della scheda offerta ===
+SELECT owner, table_name, column_name, data_type
+FROM all_tab_columns
+WHERE owner = 'INTEX2'
+  AND (
+       column_name LIKE '%UNIVOC%'
+    OR column_name LIKE '%TP_PREZZO%'
+    OR column_name LIKE '%QTA_RIGA%'
+    OR column_name LIKE '%FALL%'
+    OR column_name LIKE '%ACCETT%'
+    OR column_name LIKE '%FASCIA%'
+    OR column_name LIKE '%RICARICO%'
+    OR column_name LIKE '%REVISION%'
+    OR column_name LIKE '%PROTOTIP%'
+  )
+ORDER BY table_name, column_id;
+
+PROMPT === 2c) View che espongono C37/C38 (possibili endpoint ORDS) ===
+SELECT owner, view_name
+FROM all_views
+WHERE owner = 'INTEX2'
+  AND (view_name LIKE 'C37%' OR view_name LIKE 'C38%' OR view_name LIKE 'C45%' OR view_name LIKE 'C46%')
+ORDER BY view_name;
+
+PROMPT === 2d) Foreign key verso / da C37 e C38 ===
+SELECT a.table_name, a.constraint_name, a.constraint_type, a.r_constraint_name,
+       c.column_name, c.position
+FROM all_constraints a
+JOIN all_cons_columns c
+  ON c.owner = a.owner AND c.constraint_name = a.constraint_name
+WHERE a.owner = 'INTEX2'
+  AND a.table_name IN ('C37_TESTATA_LISTINI','C38_RIGHE_LISTINI')
+  AND a.constraint_type IN ('P','R','U')
+ORDER BY a.table_name, a.constraint_type, a.constraint_name, c.position;
+
+
+REM -----------------------------------------------------------------------------
+REM 3) C37_TESTATA_LISTINI — ipotesi: testata offerta (1 riga = 1 codice univoco)
+REM -----------------------------------------------------------------------------
+
+PROMPT === 3a) C37_TESTATA_LISTINI colonne ===
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C37_TESTATA_LISTINI'
+ORDER BY column_id;
+
+PROMPT === 3b) C37_TESTATA_LISTINI count ===
+SELECT COUNT(*) AS n FROM INTEX2.C37_TESTATA_LISTINI;
+
+PROMPT === 3c) C37_TESTATA_LISTINI sample 20 (no sort) ===
+SELECT * FROM INTEX2.C37_TESTATA_LISTINI WHERE ROWNUM <= 20;
+
+
+REM -----------------------------------------------------------------------------
+REM 4) C38_RIGHE_LISTINI — ipotesi: fasi/prezzi dell'offerta (griglia in basso)
+REM     Tabella potenzialmente grande: niente COUNT pieno, niente ORDER BY
+REM -----------------------------------------------------------------------------
+
+PROMPT === 4a) C38_RIGHE_LISTINI colonne ===
+SELECT column_id, column_name, data_type, data_length, nullable
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C38_RIGHE_LISTINI'
+ORDER BY column_id;
+
+PROMPT === 4b) C38_RIGHE_LISTINI sample 30 (no sort) ===
+SELECT * FROM INTEX2.C38_RIGHE_LISTINI WHERE ROWNUM <= 30;
+
+
+REM -----------------------------------------------------------------------------
+REM 5) Dove compaiono i codici univoci delle foto?
+REM     Scansiona le colonne NUMBER di tabelle medie/piccole cercando
+REM     39770 / 36625 / 40723. C38 e le tabelle enormi sono escluse apposta.
+REM -----------------------------------------------------------------------------
+
+PROMPT === 5) Ricerca codici univoco 39770 / 36625 / 40723 ===
+DECLARE
+  v_found NUMBER;
+BEGIN
+  FOR c IN (
+    SELECT table_name, column_name
+    FROM all_tab_columns
+    WHERE owner = 'INTEX2'
+      AND data_type = 'NUMBER'
+      AND table_name IN (
+        'C37_TESTATA_LISTINI','C45_LISTINO_STAG_FASI_ARTF','C46_LISTINO_STAG_FASI_ARTC',
+        'C52_PROTOTIPI_ATMAN','C40_LISTINO_MAT_STAGIONI','Z19_CICLI_STD_TESTATE',
+        'Z09_TESTATE_CICLI_LAVORAZIONE'
+      )
+    ORDER BY table_name, column_id
+  ) LOOP
+    BEGIN
+      EXECUTE IMMEDIATE
+        'SELECT COUNT(*) FROM INTEX2.' || c.table_name ||
+        ' WHERE ' || c.column_name || ' IN (39770, 36625, 40723) AND ROWNUM <= 1'
+        INTO v_found;
+      IF v_found > 0 THEN
+        DBMS_OUTPUT.PUT_LINE('TROVATO: ' || c.table_name || '.' || c.column_name);
+      END IF;
+    EXCEPTION
+      WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('ERRORE su ' || c.table_name || '.' || c.column_name || ': ' || SQLERRM);
+    END;
+  END LOOP;
+  DBMS_OUTPUT.PUT_LINE('--- ricerca codici univoco terminata ---');
+END;
+/
+
+
+REM -----------------------------------------------------------------------------
+REM 6) Tabelle collegate alla scheda (sample piccoli)
+REM -----------------------------------------------------------------------------
+
+PROMPT === 6a) C45_LISTINO_STAG_FASI_ARTF colonne + sample ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C45_LISTINO_STAG_FASI_ARTF'
+ORDER BY column_id;
+SELECT * FROM INTEX2.C45_LISTINO_STAG_FASI_ARTF WHERE ROWNUM <= 10;
+
+PROMPT === 6b) C46_LISTINO_STAG_FASI_ARTC colonne + sample ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C46_LISTINO_STAG_FASI_ARTC'
+ORDER BY column_id;
+SELECT * FROM INTEX2.C46_LISTINO_STAG_FASI_ARTC WHERE ROWNUM <= 10;
+
+PROMPT === 6c) C38_VOCI_SPESA colonne + sample ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C38_VOCI_SPESA'
+ORDER BY column_id;
+SELECT * FROM INTEX2.C38_VOCI_SPESA WHERE ROWNUM <= 10;
+
+PROMPT === 6d) C50_CDC_TAB (Centri: es. 40 TINTORIA) colonne + sample ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C50_CDC_TAB'
+ORDER BY column_id;
+SELECT * FROM INTEX2.C50_CDC_TAB WHERE ROWNUM <= 10;
+
+PROMPT === 6e) C51_RIPARTIZIONI_COSTI_CDC (Vendita a capo / a kg per centro?) ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C51_RIPARTIZIONI_COSTI_CDC'
+ORDER BY column_id;
+SELECT * FROM INTEX2.C51_RIPARTIZIONI_COSTI_CDC WHERE ROWNUM <= 10;
+
+PROMPT === 6f) CW2_GRUPPO_COMPOSIZIONE (Composizione/Gruppo es. 10001 naturali) ===
+SELECT * FROM INTEX2.CW2_GRUPPO_COMPOSIZIONE WHERE ROWNUM <= 10;
+
+PROMPT === 6g) CW0_LINEA_TINTORIA (Linea es. 01 AMERICA) ===
+SELECT * FROM INTEX2.CW0_LINEA_TINTORIA WHERE ROWNUM <= 10;
+
+PROMPT === 6h) Z11_STAGIONI (es. AI 27, PE 26) ===
+SELECT * FROM INTEX2.Z11_STAGIONI WHERE ROWNUM <= 20;
+
+PROMPT === FINE SCRIPT ===
+EXIT

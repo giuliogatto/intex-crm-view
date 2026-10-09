@@ -1,0 +1,523 @@
+
+=== 0a) Colonne Z08_CICLI_LAVORAZIONE (per il JOIN fasi) ===
+
+ COLUMN_ID COLUMN_NAME			DATA_TYPE
+---------- ---------------------------- ----------
+	 1 Z08_CD_CLIENTE		VARCHAR2
+	 2 Z08_CD_ARTICOLO_CLIENTE	VARCHAR2
+	 3 Z08_CD_CICLO 		VARCHAR2
+	 4 Z08_SEQUENZA 		NUMBER
+	 5 Z08_ST_RECORD		VARCHAR2
+	 6 Z08_ST_MODIFICA		NUMBER
+	 7 Z08_CD_FASE			VARCHAR2
+	 8 Z08_CD_MACROFASE		VARCHAR2
+	 9 Z08_NOTE			VARCHAR2
+	10 Z08_FLAG_NO_FATTURA		VARCHAR2
+	11 Z08_FLAG_DA_PROGRAMMARE	CHAR
+	12 Z08_FLAG_PRETRATTAMENTO	VARCHAR2
+	13 Z08_FLAG_FATTURA_A_PARTE	VARCHAR2
+	14 Z08_QT_RICHIESTA		NUMBER
+	15 Z08_CD_UNITA_MIS		VARCHAR2
+	16 Z08_CD_CDC			VARCHAR2
+	17 Z08_FLAG_TR_SPECIALE 	VARCHAR2
+	18 Z08_CD_LINEA 		VARCHAR2
+	19 Z08_CD_STAGIONE		VARCHAR2
+	20 Z08_CD_COMPOSIZIONE		VARCHAR2
+
+20 rows selected.
+
+Elapsed: 00:00:00.09
+
+=== 0b) Chiave primaria Z08 ===
+
+COLUMN_NAME		       POSITION
+---------------------------- ----------
+Z08_CD_CLIENTE			      1
+Z08_CD_ARTICOLO_CLIENTE 	      2
+Z08_CD_CICLO			      3
+Z08_CD_LINEA			      4
+Z08_CD_STAGIONE 		      5
+Z08_CD_COMPOSIZIONE		      6
+Z08_SEQUENZA			      7
+
+7 rows selected.
+
+Elapsed: 00:00:01.59
+
+=== 0c) C37_PRG duplicati (attesi ~26) ===
+
+COD_UNIVOCO	     N
+----------- ----------
+      32240	     2
+      32237	     3
+      32235	     2
+      32233	     2
+      32168	     8
+      32132	     2
+      32130	     3
+      32113	     2
+      32106	     2
+      30312	     4
+      29526	     2
+      29518	     2
+      25031	     2
+      24668	     3
+      22830	     2
+
+15 rows selected.
+
+Elapsed: 00:00:00.06
+
+=== 0d) Conferma stato: offerte per stato (escluso listino standard) ===
+
+STATO		      N
+------------ ----------
+ACCETTATA	  13160
+DA ACCETTARE	   3165
+
+2 rows selected.
+
+Elapsed: 00:00:00.01
+
+=== 1a) Ultime 100 offerte — dalla view C37_001W ===
+
+COD_UNIVOCO STATO	 CLIENTE RAGIONE_SOCIALE		CICLO	      CICLO_CLI     DS_CICLO				     LINEA  DS_LINEA	    STAGION DS_STAGIONE      COMPOSI DS_COMPOSIZIONE	       ARTICOLO      DS_ARTICOLO	  REPARTO    C37_PZ_TOT_CAPO C37_PZ_TOT_KG Z09_PERC_FALLOSITA UTENTE	 Z09_DATA_
+----------- ------------ ------- ------------------------------ ------------- ------------- ---------------------------------------- ------ --------------- ------- ---------------- ------- ------------------------- ------------- -------------------- ---------- --------------- ------------- ------------------ ---------- ---------
+      41728 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T200	      T200	    TINTO REATTIVO+A/S+PROF+DIV.CAPI	     .	    .		    AI 27   AI 27/28	     10001   naturali		       00008	     CAMICIE		  TINTO 		   0		 0		    0 MANUELA	 08-OCT-26
+      41727 DA ACCETTARE 897	 LORO PIANA SPA 		T105L	      T105L	    SCARICA+TINTO OL.			     .	    .		    AI 27   AI 27/28	     10002   animali		       CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 08-OCT-26
+      41726 DA ACCETTARE 1992	 J6 S.R.L.			331-2	      331-2	    LAV.331-2				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00012	     BERMUDA		  DENIM 		   0		 0		    5 MANUELA	 08-OCT-26
+      41725 DA ACCETTARE 2323	 JEIKO S.R.L.S. UNIPERSONALE	0032	      0032	    LAV.0032				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00010	     GIUBBINI		  DENIM 		  25		 0		    5 MANUELA	 08-OCT-26
+      41724 DA ACCETTARE 2323	 JEIKO S.R.L.S. UNIPERSONALE	0032	      0032	    LAV.0032				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		  20		 0		    5 MANUELA	 08-OCT-26
+      41723 ACCETTATA	 2502	 BEL TESSILE SRLS		T711	      T711	    TI.Q/SI EVOLUTION			     .	    .		    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE	  EFFETTI SP		   0		10		    0 GIADA	 08-OCT-26
+																															  ECIALI
+
+      41722 DA ACCETTARE 2467	 ALTER STUDIO S.R.L.		348	      348 - UMIT    LAV.348				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		  14		 0		    5 FLORINA	 08-OCT-26
+      41721 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		0012	      0012-SCURO    SBOZZIMA+MORBIDO			     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 07-OCT-26
+      41720 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T100L	      TR_15056	    PURGA+TINTO LANA OL+A/S+PROF+DIV.CAPI    .	    .		    AI 27   AI 27/28	     10002   animali		       CAPI CAMP     PANTALONI		  TINTO 		   0		 0		    4 GIADA	 07-OCT-26
+      41719 DA ACCETTARE 447	 PROJECT SRL			LBWLA54       LBWLA54	    LAV.LBWLA54 			     99     denim	    PE 27   PE 27	     00005   DENIM 100% 	       00026	     BORSE		  DENIM 	       12,06		 0		    7 MANUELA	 07-OCT-26
+      41718 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T110	      T110 (BIANCO) TINTO DIRETTO+A/SIL+DIV CAPI	     .	    .		    AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI		  TINTO 		   0		 0		    4 GIADA	 07-OCT-26
+      41717 DA ACCETTARE 2008	 TRIVENETO MODA S.R.L.		T154	      T154	    TINTO+M.PELO+SPR.PIGM TOT+LASER	     .	    .		    PE 27   PE 27	     10001   naturali		       00029	     T-SHIRTS		  TINTO 		  22	       7,5		   10 FLORINA	 07-OCT-26
+      41716 DA ACCETTARE 2093	 MOOD SRL			0022	      0022 - GUCCI  LAV.0022				     99     DENIM	    PE 27   PE 27	     10001   naturali		       00017	     FELPE		  DENIM 		   8		 0		    5 FLORINA	 07-OCT-26
+      41715 DA ACCETTARE 2093	 MOOD SRL			0024	      0024 - GUCCI  LAV.0024				     99     DENIM	    PE 27   PE 27	     10001   naturali		       00029	     T-SHIRT		  DENIM 		 6,5		 0		    5 FLORINA	 07-OCT-26
+      41714 DA ACCETTARE 2093	 MOOD SRL			0021	      0021 - GUCCI  LAV.0021				     99     DENIM	    PE 27   PE 27	     10001   naturali		       00029	     T-SHIRT		  EFFETTI SP		  11		 0		    7 FLORINA	 07-OCT-26
+																															  ECIALI
+
+      41713 DA ACCETTARE 5	 DIESEL SPA			TR.FINO4FASI* TR.FINO4FASI* TR.FINO 4 FASI*			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI		  PROTOTIPI		   0		 0		    0 MANUELA	 07-OCT-26
+																															  E RICERCA
+
+      41712 DA ACCETTARE 5	 DIESEL SPA			TRAT.COMPLESS TRAT.COMPLESS TRATT.COMPLESSO			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI		  PROTOTIPI		   0		 0		    0 MANUELA	 07-OCT-26
+																															  E RICERCA
+
+      41711 DA ACCETTARE 5	 DIESEL SPA			TR.FINO2FASI* TR.FINO2FASI* TR.FINO2FASI*			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI		  PROTOTIPI		 8,5		 0		    0 MANUELA	 07-OCT-26
+																															  E RICERCA
+
+      41710 DA ACCETTARE 5	 DIESEL SPA			TI.COL.AC SPE TI.COL.AC SPE TI.COL.AC SPECIALE			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI		  DENIM 		 150		 0		    0 MANUELA	 07-OCT-26
+      41709 DA ACCETTARE 5	 DIESEL SPA			T.COL.AC      T.COL.AC	    T.COL.AC				     01     FASHION SHOW    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE	  PROTOTIPI		  50		 0		    5 MANUELA	 07-OCT-26
+																															  E RICERCA
+
+      41708 DA ACCETTARE 2659	 TEXSERVICE EOOD		INMARMO       INMARMO	    12M MARMORIZZO TINTURA-ZOLFO OZONO	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 07-OCT-26
+      41707 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTOLAN       INTOLAN	    INTOLAN: PURGA+TINTO OLAND+SWE+AMM.      05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 07-OCT-26
+      41706 DA ACCETTARE 5	 DIESEL SPA			T.COL.AC      T.COL.AC	    T.COL.AC				     07     FABIO FANTIN    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE	  PROTOTIPI		  50		 0		    5 MANUELA	 07-OCT-26
+																															  E RICERCA
+
+      41705 DA ACCETTARE 5	 DIESEL SPA			PROT.DENIM    PROT.DENIM    PROTOTIPIE DENIM			     07     FABIO FANTIN    *	    *		     00285   COMP.VARIE 	       00030	     GAMBETTE/TIRELLE	  DENIM 		  50		 0		    0 MANUELA	 07-OCT-26
+      41704 DA ACCETTARE 648	 TAM & COMPANY S.P.A.		T100	      T100	    TINTO				     .	    .		    AI 26   AI 26/27	     00012   NYLON 100% 	       CAPI	     CAPI		  TINTO 		   0		 0		    4 GIADA	 07-OCT-26
+      41703 DA ACCETTARE 1917	 ALLEGRINI CONFEZIONI S.R.L.	T700	      T700	    TINTO EVOLUTION+MICRO		     .	    .		    PE 27   PE 27	     00285   COMP.VARIE 	       CAPI	     CAPI		  EFFETTI SP		 1,3		13		    7 FLORINA	 07-OCT-26
+																															  ECIALI
+
+      41702 DA ACCETTARE 2671	 POLO D SRLS			TR.FINO4FASI* TR.FINO4FASI* TR.FINO 4 FASI*			     .	    .		    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI		  PROTOTIPI		   0		 0		    0 MANUELA	 07-OCT-26
+																															  E RICERCA
+
+      41701 DA ACCETTARE 2671	 POLO D SRLS			TR.FINO2FASI* TR.FINO2FASI* TR.FINO 2 FASI*			     .	    .		    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI		  PROTOTIPI		   0		 0		    0 MANUELA	 07-OCT-26
+																															  E RICERCA
+
+      41700 DA ACCETTARE 1420	 FOSTER SPA			INTLINO       INTLINO	    INTLINO:TINTO+ENZIMA		     03     PE 27	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		 5		    5 GIADA	 07-OCT-26
+      41698 DA ACCETTARE 2165	 UMBRIA VERDE MATTIOLI SRL	T152	      T152	    TINTO+M.PELO+MARMO			     .	    .		    AI 27   AI 27/28	     10001   naturali		       00015	     MAGLIE		  TINTO 		  10		10		    3 FLORINA	 06-OCT-26
+      41697 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	T152	      T152	    PREP+TINTO				     20     RPC0	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		 9		    5 FLORINA	 06-OCT-26
+      41696 DA ACCETTARE 1718	 G & G SERVICE S.R.L.		W102	      W102	    LAVATO+MORBIDO			     01     JW ANDERSON     AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI		  TINTO 		 2,5		 0		    7 FLORINA	 06-OCT-26
+      41695 DA ACCETTARE 224	 SALGARI S.R.L. 		T152	      T152	    TINTO+M.PELO+MARMO			     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  TINTO 		   7	       6,5		    3 FLORINA	 06-OCT-26
+      41694 DA ACCETTARE 224	 SALGARI S.R.L. 		T700	      T700	    TINTO EVOLUTION			     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  EFFETTI SP		   1		11		    7 FLORINA	 06-OCT-26
+																															  ECIALI
+
+      41693 DA ACCETTARE 224	 SALGARI S.R.L. 		W300	      W300	    LAV. ENZIMI 			     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0	       3,5		    5 FLORINA	 06-OCT-26
+      41692 DA ACCETTARE 224	 SALGARI S.R.L. 		T400	      T400	    TINTO OLD				     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0	       8,5		    3 FLORINA	 06-OCT-26
+      41691 DA ACCETTARE 224	 SALGARI S.R.L. 		T100	      T100	    TINTO				     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0	       4,5		    3 FLORINA	 06-OCT-26
+      41690 DA ACCETTARE 224	 SALGARI S.R.L. 		T200	      T200	    TINTO REATTIVO+TINTO REATTIVO	     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		 7		    3 FLORINA	 06-OCT-26
+      41689 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	T252	      T252	    PREP+TINTO REATTIVO 		     20     RPC0	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		11		    5 FLORINA	 06-OCT-26
+      41688 DA ACCETTARE 866	 EUROTRADE S.R.L.		T261	      T261CAMP/PROD SWE+TINTO REATTIVO STRETCH		     .	    .		    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0		 0		    5 MANUELA	 06-OCT-26
+      41686 DA ACCETTARE 866	 EUROTRADE S.R.L.		T201	      T201 CAMP/PRO TINTO REATTIVO STRETCH		     .	    .		    AI 27   AI 27/28	     10010   naturali elasticizzate    00067	     CAPI CAMP. 	  TINTO 		   0		 0		    5 GIADA	 06-OCT-26
+      41685 DA ACCETTARE 866	 EUROTRADE S.R.L.		T101	      T101CAMP/PROD TINTO STRETCH			     .	    .		    AI 27   AI 27/28	     10010   naturali elasticizzate    00067	     CAPI CAMP. 	  TINTO 		   0		 0		    0 GIADA	 06-OCT-26
+      41684 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	T152	      T152	    PREP+TINTO				     .	    .		    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		 9		    5 FLORINA	 06-OCT-26
+      41683 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	0045	      0045	    LAV.0045				     20     RPC0	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI		  DENIM 		   8		 0		    5 FLORINA	 06-OCT-26
+      41682 DA ACCETTARE 2492	 FASHIONART S.P.A.		290	      290 - LV	    LAV.290				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00179	     TELO 166X75	  DENIM 		   6		 0		    5 MANUELA	 06-OCT-26
+      41681 ACCETTATA	 1992	 J6 S.R.L.			T400	      T400	    TINTO OLD				     .	    .		    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		 9		    5 MANUELA	 07-OCT-26
+      41680 DA ACCETTARE 447	 PROJECT SRL			LCWLAH3       LCWLAH3	    LAV.LCWLAH3 			     99     denim	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		3,15		 0		    5 MANUELA	 06-OCT-26
+      41679 DA ACCETTARE 866	 EUROTRADE S.R.L.		TR.FINO6FASI* TR.FINO6FASI* TR.FINO 6 FASI*			     .	    .		    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI		  PROTOTIPI		   0		 0		    0 MANUELA	 06-OCT-26
+																															  E RICERCA
+
+      41678 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTTR	      INTTR	    INTTR:PREP+TINTO REATT+SWE+MORBIDO	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 06-OCT-26
+      41677 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTSOLD       INTSOLD	    INTSOLD: TINTO SUPER OLD		     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 06-OCT-26
+      41676 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTOLAN       INTOLAN	    INTOLAN: PURGA+TINTO OLAND+SWE+AMM.      05     AI 27 28	    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 06-OCT-26
+      41675 DA ACCETTARE 2008	 TRIVENETO MODA S.R.L.		W7000	      W7000	    LAV.W7000-SOLO MANO PELLE		     .	    .		    PE 27   PE 27	     10001   naturali		       00016	     CANOTTE		  EFFETTI SP		  15		 0		    7 MANUELA	 06-OCT-26
+																															  ECIALI
+
+      41674 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTTENC       INTTENC	    INTENC: PREP+TINTO TENCEL+SWE+AMM.	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0	       5,2		    5 GIADA	 06-OCT-26
+      41673 DA ACCETTARE 2659	 TEXSERVICE EOOD		INT1003       INT1003	    INT1003:RES+TINTO OLD+SW+AMM.	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 06-OCT-26
+      41672 DA ACCETTARE 2659	 TEXSERVICE EOOD		INMARMO       INMARMO	    12M MARMORIZZO TINTURA-ZOLFO OZONO	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    00001	     PANTALONI		  TINTO 		   0		 0		    5 GIADA	 06-OCT-26
+      41671 DA ACCETTARE 2659	 TEXSERVICE EOOD		I2026	      I2026	    I2026:OLD STRETCH+SW PIETRE 1H+RTF	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI		  TINTO 		   0		 0		    5 GIADA	 06-OCT-26
+      41670 DA ACCETTARE 866	 EUROTRADE S.R.L.		W957	      SW POMICE 2H  SW POMICE 2H			     99     denim	    AI 26   AI 26/27	     00005   DENIM 100% 	       00025	     GIACCHE		  DENIM 		   0		 0		    0 MANUELA	 06-OCT-26
+      41669 DA ACCETTARE 897	 LORO PIANA SPA 		TLPOLAR DENIM TLPOLAR DENIM TL* POLAR DENIM MTA1447		     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 06-OCT-26
+      41668 DA ACCETTARE 2083	 S.A.L.G.A.R.I. KNIT S.R.L.	T100L	      T100L	    TINTO				     .	    .		    AI 27   AI 27/28	     10002   animali		       CAPI	     CAPI		  TINTO 		   0	       5,5		    0 FLORINA	 05-OCT-26
+      41667 DA ACCETTARE 2083	 S.A.L.G.A.R.I. KNIT S.R.L.	T400	      T400	    TINTO OLD				     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0	       7,5		    0 FLORINA	 05-OCT-26
+      41666 DA ACCETTARE 224	 SALGARI S.R.L. 		T100L	      T100L	    TINTO LANA				     .	    .		    AI 27   AI 27/28	     00007   LANA 100%		       CAPI	     CAPI		  TINTO 		   0	       5,5		    3 FLORINA	 05-OCT-26
+      41664 DA ACCETTARE 910	 COTTON TREND SRL		W300	      W300	    SWE 				     .	    .		    PE 27   PE 27	     00285   COMP.VARIE 	       CAPI	     CAPI		  TINTO 		   0		 0		    0 GIADA	 05-OCT-26
+      41663 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T220	      T220	    TINTO REATTIVO STR+A/S+PROF+DIV.CAPI     01     AMERICA	    PE 27   PE 27	     10010   naturali elasticizzate    00012	     BERMUDA		  TINTO 		 4,6		 0		    4 GIADA	 05-OCT-26
+      41662 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T154	      T154	    TINTO STR+A/S+PROF+DIV CAPI 	     01     AMERICA	    PE 27   PE 27	     10010   naturali elasticizzate    00012	     BERMUDA		  TINTO 		 3,9		 0		    4 GIADA	 05-OCT-26
+      41661 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T109	      T109(BIANCO)  T109-TINTO BIANCO STR+A/S+D.CAPI	     01     AMERICA	    PE 27   PE 27	     10010   naturali elasticizzate    00012	     BERMUDA		  TINTO 		   0		 0		    0 GIADA	 05-OCT-26
+      41660 DA ACCETTARE 5	 DIESEL SPA			214	      214	    LAV.214				     .	    .		    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 05-OCT-26
+      41659 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		027	      027-CHIARO    LAV.027				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 05-OCT-26
+      41658 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		017	      017-SCURO     LAV.017				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 05-OCT-26
+      41657 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		021	      021-CHIARO    LAV.021				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 05-OCT-26
+      41656 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		019	      019-MEDIO     LAV.019				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 05-OCT-26
+      41655 DA ACCETTARE 594	 PRIMA S.R.L			W912	      SWE	    SWE 				     99     DENIM	    PE 27   PE 27	     00285   COMP.VARIE 	       00001	     PANTALONI		  DENIM 		   0		 0		    0 MANUELA	 05-OCT-26
+
+
+      41654 DA ACCETTARE 594	 PRIMA S.R.L			W912	      SWE	    SWE 				     99     DENIM	    PE 27   PE 27	     00285   COMP.VARIE 	       00010	     GIUBBINI		  DENIM 		   0		 0		    0 MANUELA	 05-OCT-26
+
+
+      41653 DA ACCETTARE 866	 EUROTRADE S.R.L.		W957	      SW POMICE 2H  SW POMICE 2H			     99     denim	    AI 26   AI 26/27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    0 MANUELA	 05-OCT-26
+      41652 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T.COL.AC      T.COL.AC	    T.COL.AC DOPP/PIG/RX/DIR/OLD	     .	    .		    PR LAB  PROTO LAB	     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE	  TINTO 		 110		 0		    5 FLORINA	 05-OCT-26
+      41651 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T900	      T900	    TI.COL.Q/SI 			     .	    .		    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE	  TINTO 		   0		10		    3 FLORINA	 05-OCT-26
+      41650 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		LAB DIPS      LAB DIPS	    LAB DIPS				     .	    .		    *	    *		     00285   COMP.VARIE 	       00057	     PROTOTIPI		  TINTO 		  30		 0		    0 FLORINA	 05-OCT-26
+      41649 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T152	      T152	    PREP+TINTO DIRETTO			     .	    .		    AI 27   AI 27/28	     00268   COTONE/TENCEL	       CAPI	     CAPI		  TINTO 		   0	       7,5		    5 FLORINA	 05-OCT-26
+      41648 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T252	      T252	    PREP+TINTO REATTIVO 		     .	    .		    AI 27   AI 27/28	     00268   COTONE/TENCEL	       CAPI	     CAPI		  TINTO 		   0	       9,5		    5 FLORINA	 05-OCT-26
+      41646 DA ACCETTARE 897	 LORO PIANA SPA 		TLPOLAR DENIM TLPOLAR DENIM TL* POLAR DENIM MTA1447		     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       CAPI	     CAPI		  DENIM 		   0		 0		    5 MANUELA	 05-OCT-26
+      41645 DA ACCETTARE 1213	 IN.CO SPA			T100L	      T100L-TELI    TINTO				     .	    .		    AI 27   AI 27/28	     00006   SETA 100%		       00058	     TELI		  TINTO 		   0		 0		    4 GIADA	 05-OCT-26
+      41644 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T218	      T218	    PREP+TINTO REATT.STR+A/S+PROF+DIV.CAPI   .	    .		    AI 27   AI 27/28	     00347   COTONE/TENCEL/ELASTAN     00001	     PANTALONI		  TINTO 		   0		 0		    4 GIADA	 05-OCT-26
+      41643 DA ACCETTARE 1213	 IN.CO SPA			W105L_B       W105L_B GUCCI LAV.IN OLANDESE+AMM/SIL+FORNO+TUMBLER    .	    .		    AI 27   AI 27/28	     10026   miste nat/anim	       00025	     GIACCHE		  TINTO 		   6		 0		    5 FLORINA	 05-OCT-26
+      41642 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		0044	      0044-N CHIARO LAV.0044				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 05-OCT-26
+      41641 ACCETTATA	 1569	 G.D.P.  S.R.L. 		028B	      LAV.MEDIO     LAV.028B				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		10,5		 0		    5 MANUELA	 07-OCT-26
+      41640 ACCETTATA	 1569	 G.D.P.  S.R.L. 		0043	      0043SCURO     LAV.0043				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   8		 0		    5 MANUELA	 07-OCT-26
+      41639 DA ACCETTARE 2513	 GREEN MODE SERVICE SRL 	LASER 1628    1628	    LASER 1628				     99     DENIM	    AI 27   AI 27/28	     10001   naturali		       00029	     T-SHIRTS		  TINTO 		 8,7		 0		    5 FLORINA	 02-OCT-26
+      41638 DA ACCETTARE 866	 EUROTRADE S.R.L.		087	      087	    LAV.087				     99     denim	    AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI		  DENIM 		 9,9		 0		    5 FLORINA	 02-OCT-26
+      41637 DA ACCETTARE 866	 EUROTRADE S.R.L.		086	      086	    LAV.086				     99     denim	    AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI		  DENIM 		10,8		 0		    5 FLORINA	 02-OCT-26
+      41636 DA ACCETTARE 2261	 CAGE MAGLIERIE S.R.L.		T111	      T111	    SBIANCA				     12     DONDUP	    PE 27   PE 27	     00001   COTONE 100%	       CAPI	     CAPI		  TINTO 		   0		 0		    0 GIADA	 02-OCT-26
+      41635 DA ACCETTARE 2093	 MOOD SRL			TL0018	      TL0018	    TL0018				     .	    .		    PE 27   PE 27	     10001   naturali		       00068	     FELPA C/C		  TINTO 		   8		 7		    7 FLORINA	 02-OCT-26
+      41634 DA ACCETTARE 1992	 J6 S.R.L.			T159	      T159	    DIRTY				     .	    .		    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI		  TINTO 		   0		 4		    5 FLORINA	 02-OCT-26
+      41633 DA ACCETTARE 772	 MEETING GROUP S.P.A.		T.AC+MPEL+MAR T.AC+MPEL+MAR T.AC+MPELO+MARMO			     11     PALM ANGELS     *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE	  INTEX LAB		 180		 0		    0 MANUELA	 02-OCT-26
+      41632 DA ACCETTARE 772	 MEETING GROUP S.P.A.		T.AC+MPEL+MAR T.AC+MPEL+MAR T.AC+MPELO+MARMO			     11     PALM ANGELS     *	    *		     00017   TENCEL 100%	       00060	     CAPI/TIRELLE	  INTEX LAB		 180		 0		    0 MANUELA	 02-OCT-26
+      41631 DA ACCETTARE 895	 SYSTEM SERVICE S.R.L.		TL387	      TL387 - AMIRI TL387 - AMIRI			     .	    .		    PE 27   PE 27	     10001   naturali		       00001	     PANTALONI		  TINTO 		   3	       8,5		    5 FLORINA	 02-OCT-26
+      41630 DA ACCETTARE 1992	 J6 S.R.L.			404	      404 - ERD     LAV.404(TR. SOLO SU COLLO GIACCA)	     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00025	     GIACCHE		  DENIM 		   4		 0		    5 FLORINA	 01-OCT-26
+      41629 DA ACCETTARE 1992	 J6 S.R.L.			402	      402 - ERD     LAV.402				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00025	     GIACCHE		  DENIM 		  28		 0		    5 FLORINA	 01-OCT-26
+      41628 DA ACCETTARE 1992	 J6 S.R.L.			402	      402 - ERD     LAV.402				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00079	     TRENCH		  DENIM 		  36		 0		    5 FLORINA	 01-OCT-26
+      41627 DA ACCETTARE 1992	 J6 S.R.L.			W4000	      W4000 - ERD   SPRUZZO COLORE			     99     DENIM	    PE 27   PE 27	     00285   COMP.VARIE 	       00025	     GIACCHE		  DENIM 		  22		 0		    7 FLORINA	 01-OCT-26
+      41626 DA ACCETTARE 2261	 CAGE MAGLIERIE S.R.L.		W202	      W202	    LAV.NORMALE A 90?			     .	    .		    AI 27   AI 27/28	     00001   COTONE 100%	       CAPI	     CAPI		  TINTO 		   0		 3		    3 FLORINA	 01-OCT-26
+      41625 DA ACCETTARE 5	 DIESEL SPA			214	      214	    LAV.214				     14     DEGRE	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI		  DENIM 		   0		 0		    5 MANUELA	 01-OCT-26
+
+100 rows selected.
+
+Elapsed: 00:00:00.60
+
+=== 1b) Stesso elenco con JOIN espliciti sulle tabelle (alternativa alla view) ===
+
+COD_UNIVOCO STATO	 CLIENTE RAGIONE_SOCIALE		CICLO	      CICLO_CLI     DS_CICLO				     LINEA  DS_LINEA	    STAGION DS_STAGIONE      COMPOSI DS_COMPOSIZIONE	       ARTICOLO      DS_ARTICOLO	  C37_PZ_TOT_CAPO C37_PZ_TOT_KG Z09_PERC_FALLOSITA Z09_NR_REVISIONE
+----------- ------------ ------- ------------------------------ ------------- ------------- ---------------------------------------- ------ --------------- ------- ---------------- ------- ------------------------- ------------- -------------------- --------------- ------------- ------------------ ----------------
+      41728 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T200	      T200	    TINTO REATTIVO+A/S+PROF+DIV.CAPI	     .	    .		    AI 27   AI 27/28	     10001   naturali		       00008	     CAMICIE				0	      0 		 0		  0
+      41727 DA ACCETTARE 897	 LORO PIANA SPA 		T105L	      T105L	    SCARICA+TINTO OL.			     .	    .		    AI 27   AI 27/28	     10002   animali		       CAPI	     CAPI				0	      0 		 5		  0
+      41726 DA ACCETTARE 1992	 J6 S.R.L.			331-2	      331-2	    LAV.331-2				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00012	     BERMUDA				0	      0 		 5		  0
+      41725 DA ACCETTARE 2323	 JEIKO S.R.L.S. UNIPERSONALE	0032	      0032	    LAV.0032				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00010	     GIUBBINI			       25	      0 		 5		  0
+      41724 DA ACCETTARE 2323	 JEIKO S.R.L.S. UNIPERSONALE	0032	      0032	    LAV.0032				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI			       20	      0 		 5		  0
+      41723 ACCETTATA	 2502	 BEL TESSILE SRLS		T711	      T711	    TI.Q/SI EVOLUTION			     .	    .		    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE			0	     10 		 0		  0
+      41722 DA ACCETTARE 2467	 ALTER STUDIO S.R.L.		348	      348 - UMIT    LAV.348				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI			       14	      0 		 5		  0
+      41721 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		0012	      0012-SCURO    SBOZZIMA+MORBIDO			     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41720 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T100L	      TR_15056	    PURGA+TINTO LANA OL+A/S+PROF+DIV.CAPI    .	    .		    AI 27   AI 27/28	     10002   animali		       CAPI CAMP     PANTALONI				0	      0 		 4		  0
+      41719 DA ACCETTARE 447	 PROJECT SRL			LBWLA54       LBWLA54	    LAV.LBWLA54 			     99     denim	    PE 27   PE 27	     00005   DENIM 100% 	       00026	     BORSE			    12,06	      0 		 7		  0
+      41718 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T110	      T110 (BIANCO) TINTO DIRETTO+A/SIL+DIV CAPI	     .	    .		    AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI				0	      0 		 4		  0
+      41717 DA ACCETTARE 2008	 TRIVENETO MODA S.R.L.		T154	      T154	    TINTO+M.PELO+SPR.PIGM TOT+LASER	     .	    .		    PE 27   PE 27	     10001   naturali		       00029	     T-SHIRTS			       22	    7,5 		10		  0
+      41716 DA ACCETTARE 2093	 MOOD SRL			0022	      0022 - GUCCI  LAV.0022				     99     DENIM	    PE 27   PE 27	     10001   naturali		       00017	     FELPE				8	      0 		 5		  0
+      41715 DA ACCETTARE 2093	 MOOD SRL			0024	      0024 - GUCCI  LAV.0024				     99     DENIM	    PE 27   PE 27	     10001   naturali		       00029	     T-SHIRT			      6,5	      0 		 5		  0
+      41714 DA ACCETTARE 2093	 MOOD SRL			0021	      0021 - GUCCI  LAV.0021				     99     DENIM	    PE 27   PE 27	     10001   naturali		       00029	     T-SHIRT			       11	      0 		 7		  0
+      41713 DA ACCETTARE 5	 DIESEL SPA			TR.FINO4FASI* TR.FINO4FASI* TR.FINO 4 FASI*			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI				0	      0 		 0		  0
+      41712 DA ACCETTARE 5	 DIESEL SPA			TRAT.COMPLESS TRAT.COMPLESS TRATT.COMPLESSO			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI				0	      0 		 0		  0
+      41711 DA ACCETTARE 5	 DIESEL SPA			TR.FINO2FASI* TR.FINO2FASI* TR.FINO2FASI*			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI			      8,5	      0 		 0		  0
+      41710 DA ACCETTARE 5	 DIESEL SPA			TI.COL.AC SPE TI.COL.AC SPE TI.COL.AC SPECIALE			     15     DNA 	    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI			      150	      0 		 0		  0
+      41709 DA ACCETTARE 5	 DIESEL SPA			T.COL.AC      T.COL.AC	    T.COL.AC				     01     FASHION SHOW    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE		       50	      0 		 5		  0
+      41708 DA ACCETTARE 2659	 TEXSERVICE EOOD		INMARMO       INMARMO	    12M MARMORIZZO TINTURA-ZOLFO OZONO	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	      0 		 5		  0
+      41707 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTOLAN       INTOLAN	    INTOLAN: PURGA+TINTO OLAND+SWE+AMM.      05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	      0 		 5		  0
+      41706 DA ACCETTARE 5	 DIESEL SPA			T.COL.AC      T.COL.AC	    T.COL.AC				     07     FABIO FANTIN    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE		       50	      0 		 5		  0
+      41705 DA ACCETTARE 5	 DIESEL SPA			PROT.DENIM    PROT.DENIM    PROTOTIPIE DENIM			     07     FABIO FANTIN    *	    *		     00285   COMP.VARIE 	       00030	     GAMBETTE/TIRELLE		       50	      0 		 0		  0
+      41704 DA ACCETTARE 648	 TAM & COMPANY S.P.A.		T100	      T100	    TINTO				     .	    .		    AI 26   AI 26/27	     00012   NYLON 100% 	       CAPI	     CAPI				0	      0 		 4		  0
+      41703 DA ACCETTARE 1917	 ALLEGRINI CONFEZIONI S.R.L.	T700	      T700	    TINTO EVOLUTION+MICRO		     .	    .		    PE 27   PE 27	     00285   COMP.VARIE 	       CAPI	     CAPI			      1,3	     13 		 7		  0
+      41702 DA ACCETTARE 2671	 POLO D SRLS			TR.FINO4FASI* TR.FINO4FASI* TR.FINO 4 FASI*			     .	    .		    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI				0	      0 		 0		  0
+      41701 DA ACCETTARE 2671	 POLO D SRLS			TR.FINO2FASI* TR.FINO2FASI* TR.FINO 2 FASI*			     .	    .		    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI				0	      0 		 0		  0
+      41700 DA ACCETTARE 1420	 FOSTER SPA			INTLINO       INTLINO	    INTLINO:TINTO+ENZIMA		     03     PE 27	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI				0	      5 		 5		  0
+      41698 DA ACCETTARE 2165	 UMBRIA VERDE MATTIOLI SRL	T152	      T152	    TINTO+M.PELO+MARMO			     .	    .		    AI 27   AI 27/28	     10001   naturali		       00015	     MAGLIE			       10	     10 		 3		  0
+      41697 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	T152	      T152	    PREP+TINTO				     20     RPC0	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI				0	      9 		 5		  0
+      41696 DA ACCETTARE 1718	 G & G SERVICE S.R.L.		W102	      W102	    LAVATO+MORBIDO			     01     JW ANDERSON     AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI			      2,5	      0 		 7		  0
+      41695 DA ACCETTARE 224	 SALGARI S.R.L. 		T152	      T152	    TINTO+M.PELO+MARMO			     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				7	    6,5 		 3		  0
+      41694 DA ACCETTARE 224	 SALGARI S.R.L. 		T700	      T700	    TINTO EVOLUTION			     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				1	     11 		 7		  0
+      41693 DA ACCETTARE 224	 SALGARI S.R.L. 		W300	      W300	    LAV. ENZIMI 			     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				0	    3,5 		 5		  0
+      41692 DA ACCETTARE 224	 SALGARI S.R.L. 		T400	      T400	    TINTO OLD				     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				0	    8,5 		 3		  0
+      41691 DA ACCETTARE 224	 SALGARI S.R.L. 		T100	      T100	    TINTO				     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				0	    4,5 		 3		  0
+      41690 DA ACCETTARE 224	 SALGARI S.R.L. 		T200	      T200	    TINTO REATTIVO+TINTO REATTIVO	     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				0	      7 		 3		  0
+      41689 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	T252	      T252	    PREP+TINTO REATTIVO 		     20     RPC0	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI				0	     11 		 5		  0
+      41688 DA ACCETTARE 866	 EUROTRADE S.R.L.		T261	      T261CAMP/PROD SWE+TINTO REATTIVO STRETCH		     .	    .		    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	      0 		 5		  0
+      41686 DA ACCETTARE 866	 EUROTRADE S.R.L.		T201	      T201 CAMP/PRO TINTO REATTIVO STRETCH		     .	    .		    AI 27   AI 27/28	     10010   naturali elasticizzate    00067	     CAPI CAMP. 			0	      0 		 5		  0
+      41685 DA ACCETTARE 866	 EUROTRADE S.R.L.		T101	      T101CAMP/PROD TINTO STRETCH			     .	    .		    AI 27   AI 27/28	     10010   naturali elasticizzate    00067	     CAPI CAMP. 			0	      0 		 0		  0
+      41684 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	T152	      T152	    PREP+TINTO				     .	    .		    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI				0	      9 		 5		  0
+      41683 DA ACCETTARE 2349	 BOTTEGA VENETA LOGISTICA SRL	0045	      0045	    LAV.0045				     20     RPC0	    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI				8	      0 		 5		  0
+      41682 DA ACCETTARE 2492	 FASHIONART S.P.A.		290	      290 - LV	    LAV.290				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00179	     TELO 166X75			6	      0 		 5		  0
+      41681 ACCETTATA	 1992	 J6 S.R.L.			T400	      T400	    TINTO OLD				     .	    .		    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI				0	      9 		 5		  0
+      41680 DA ACCETTARE 447	 PROJECT SRL			LCWLAH3       LCWLAH3	    LAV.LCWLAH3 			     99     denim	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI			     3,15	      0 		 5		  0
+      41679 DA ACCETTARE 866	 EUROTRADE S.R.L.		TR.FINO6FASI* TR.FINO6FASI* TR.FINO 6 FASI*			     .	    .		    *	    *		     00285   COMP.VARIE 	       CAPI	     CAPI				0	      0 		 0		  0
+      41678 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTTR	      INTTR	    INTTR:PREP+TINTO REATT+SWE+MORBIDO	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	      0 		 5		  0
+      41677 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTSOLD       INTSOLD	    INTSOLD: TINTO SUPER OLD		     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	      0 		 5		  0
+      41676 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTOLAN       INTOLAN	    INTOLAN: PURGA+TINTO OLAND+SWE+AMM.      05     AI 27 28	    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				0	      0 		 5		  0
+      41675 DA ACCETTARE 2008	 TRIVENETO MODA S.R.L.		W7000	      W7000	    LAV.W7000-SOLO MANO PELLE		     .	    .		    PE 27   PE 27	     10001   naturali		       00016	     CANOTTE			       15	      0 		 7		  0
+      41674 DA ACCETTARE 2659	 TEXSERVICE EOOD		INTTENC       INTTENC	    INTENC: PREP+TINTO TENCEL+SWE+AMM.	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	    5,2 		 5		  0
+      41673 DA ACCETTARE 2659	 TEXSERVICE EOOD		INT1003       INT1003	    INT1003:RES+TINTO OLD+SW+AMM.	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	      0 		 5		  0
+      41672 DA ACCETTARE 2659	 TEXSERVICE EOOD		INMARMO       INMARMO	    12M MARMORIZZO TINTURA-ZOLFO OZONO	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    00001	     PANTALONI				0	      0 		 5		  0
+      41671 DA ACCETTARE 2659	 TEXSERVICE EOOD		I2026	      I2026	    I2026:OLD STRETCH+SW PIETRE 1H+RTF	     05     AI 27 28	    AI 27   AI 27/28	     10010   naturali elasticizzate    CAPI	     CAPI				0	      0 		 5		  0
+      41670 DA ACCETTARE 866	 EUROTRADE S.R.L.		W957	      SW POMICE 2H  SW POMICE 2H			     99     denim	    AI 26   AI 26/27	     00005   DENIM 100% 	       00025	     GIACCHE				0	      0 		 0		  0
+      41669 DA ACCETTARE 897	 LORO PIANA SPA 		TLPOLAR DENIM TLPOLAR DENIM TL* POLAR DENIM MTA1447		     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41668 DA ACCETTARE 2083	 S.A.L.G.A.R.I. KNIT S.R.L.	T100L	      T100L	    TINTO				     .	    .		    AI 27   AI 27/28	     10002   animali		       CAPI	     CAPI				0	    5,5 		 0		  0
+      41667 DA ACCETTARE 2083	 S.A.L.G.A.R.I. KNIT S.R.L.	T400	      T400	    TINTO OLD				     .	    .		    AI 27   AI 27/28	     10001   naturali		       CAPI	     CAPI				0	    7,5 		 0		  0
+      41666 DA ACCETTARE 224	 SALGARI S.R.L. 		T100L	      T100L	    TINTO LANA				     .	    .		    AI 27   AI 27/28	     00007   LANA 100%		       CAPI	     CAPI				0	    5,5 		 3		  0
+      41664 DA ACCETTARE 910	 COTTON TREND SRL		W300	      W300	    SWE 				     .	    .		    PE 27   PE 27	     00285   COMP.VARIE 	       CAPI	     CAPI				0	      0 		 0		  0
+      41663 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T220	      T220	    TINTO REATTIVO STR+A/S+PROF+DIV.CAPI     01     AMERICA	    PE 27   PE 27	     10010   naturali elasticizzate    00012	     BERMUDA			      4,6	      0 		 4		  0
+      41662 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T154	      T154	    TINTO STR+A/S+PROF+DIV CAPI 	     01     AMERICA	    PE 27   PE 27	     10010   naturali elasticizzate    00012	     BERMUDA			      3,9	      0 		 4		  0
+      41661 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T109	      T109(BIANCO)  T109-TINTO BIANCO STR+A/S+D.CAPI	     01     AMERICA	    PE 27   PE 27	     10010   naturali elasticizzate    00012	     BERMUDA				0	      0 		 0		  0
+      41660 DA ACCETTARE 5	 DIESEL SPA			214	      214	    LAV.214				     .	    .		    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41659 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		027	      027-CHIARO    LAV.027				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41658 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		017	      017-SCURO     LAV.017				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41657 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		021	      021-CHIARO    LAV.021				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41656 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		019	      019-MEDIO     LAV.019				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41655 DA ACCETTARE 594	 PRIMA S.R.L			W912	      SWE	    SWE 				     99     DENIM	    PE 27   PE 27	     00285   COMP.VARIE 	       00001	     PANTALONI				0	      0 		 0		  0
+
+
+      41654 DA ACCETTARE 594	 PRIMA S.R.L			W912	      SWE	    SWE 				     99     DENIM	    PE 27   PE 27	     00285   COMP.VARIE 	       00010	     GIUBBINI				0	      0 		 0		  0
+
+
+      41653 DA ACCETTARE 866	 EUROTRADE S.R.L.		W957	      SW POMICE 2H  SW POMICE 2H			     99     denim	    AI 26   AI 26/27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 0		  0
+      41652 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T.COL.AC      T.COL.AC	    T.COL.AC DOPP/PIG/RX/DIR/OLD	     .	    .		    PR LAB  PROTO LAB	     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE		      110	      0 		 5		  0
+      41651 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T900	      T900	    TI.COL.Q/SI 			     .	    .		    *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE			0	     10 		 3		  0
+      41650 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		LAB DIPS      LAB DIPS	    LAB DIPS				     .	    .		    *	    *		     00285   COMP.VARIE 	       00057	     PROTOTIPI			       30	      0 		 0		  0
+      41649 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T152	      T152	    PREP+TINTO DIRETTO			     .	    .		    AI 27   AI 27/28	     00268   COTONE/TENCEL	       CAPI	     CAPI				0	    7,5 		 5		  0
+      41648 DA ACCETTARE 1250	 FABIANA FILIPPI SPA		T252	      T252	    PREP+TINTO REATTIVO 		     .	    .		    AI 27   AI 27/28	     00268   COTONE/TENCEL	       CAPI	     CAPI				0	    9,5 		 5		  0
+      41646 DA ACCETTARE 897	 LORO PIANA SPA 		TLPOLAR DENIM TLPOLAR DENIM TL* POLAR DENIM MTA1447		     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       CAPI	     CAPI				0	      0 		 5		  0
+      41645 DA ACCETTARE 1213	 IN.CO SPA			T100L	      T100L-TELI    TINTO				     .	    .		    AI 27   AI 27/28	     00006   SETA 100%		       00058	     TELI				0	      0 		 4		  0
+      41644 DA ACCETTARE 2594	 JACOB COHEN COMPANY SPA	T218	      T218	    PREP+TINTO REATT.STR+A/S+PROF+DIV.CAPI   .	    .		    AI 27   AI 27/28	     00347   COTONE/TENCEL/ELASTAN     00001	     PANTALONI				0	      0 		 4		  0
+      41643 DA ACCETTARE 1213	 IN.CO SPA			W105L_B       W105L_B GUCCI LAV.IN OLANDESE+AMM/SIL+FORNO+TUMBLER    .	    .		    AI 27   AI 27/28	     10026   miste nat/anim	       00025	     GIACCHE				6	      0 		 5		  0
+      41642 DA ACCETTARE 1569	 G.D.P.  S.R.L. 		0044	      0044-N CHIARO LAV.0044				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+      41641 ACCETTATA	 1569	 G.D.P.  S.R.L. 		028B	      LAV.MEDIO     LAV.028B				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI			     10,5	      0 		 5		  0
+      41640 ACCETTATA	 1569	 G.D.P.  S.R.L. 		0043	      0043SCURO     LAV.0043				     99     DENIM	    AI 27   AI 27/28	     00005   DENIM 100% 	       00001	     PANTALONI				8	      0 		 5		  0
+      41639 DA ACCETTARE 2513	 GREEN MODE SERVICE SRL 	LASER 1628    1628	    LASER 1628				     99     DENIM	    AI 27   AI 27/28	     10001   naturali		       00029	     T-SHIRTS			      8,7	      0 		 5		  0
+      41638 DA ACCETTARE 866	 EUROTRADE S.R.L.		087	      087	    LAV.087				     99     denim	    AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI			      9,9	      0 		 5		  0
+      41637 DA ACCETTARE 866	 EUROTRADE S.R.L.		086	      086	    LAV.086				     99     denim	    AI 27   AI 27/28	     10001   naturali		       00001	     PANTALONI			     10,8	      0 		 5		  0
+      41636 DA ACCETTARE 2261	 CAGE MAGLIERIE S.R.L.		T111	      T111	    SBIANCA				     12     DONDUP	    PE 27   PE 27	     00001   COTONE 100%	       CAPI	     CAPI				0	      0 		 0		  0
+      41635 DA ACCETTARE 2093	 MOOD SRL			TL0018	      TL0018	    TL0018				     .	    .		    PE 27   PE 27	     10001   naturali		       00068	     FELPA C/C				8	      7 		 7		  0
+      41634 DA ACCETTARE 1992	 J6 S.R.L.			T159	      T159	    DIRTY				     .	    .		    PE 27   PE 27	     10001   naturali		       CAPI	     CAPI				0	      4 		 5		  0
+      41633 DA ACCETTARE 772	 MEETING GROUP S.P.A.		T.AC+MPEL+MAR T.AC+MPEL+MAR T.AC+MPELO+MARMO			     11     PALM ANGELS     *	    *		     00285   COMP.VARIE 	       00060	     CAPI/TIRELLE		      180	      0 		 0		  0
+      41632 DA ACCETTARE 772	 MEETING GROUP S.P.A.		T.AC+MPEL+MAR T.AC+MPEL+MAR T.AC+MPELO+MARMO			     11     PALM ANGELS     *	    *		     00017   TENCEL 100%	       00060	     CAPI/TIRELLE		      180	      0 		 0		  0
+      41631 DA ACCETTARE 895	 SYSTEM SERVICE S.R.L.		TL387	      TL387 - AMIRI TL387 - AMIRI			     .	    .		    PE 27   PE 27	     10001   naturali		       00001	     PANTALONI				3	    8,5 		 5		  0
+      41630 DA ACCETTARE 1992	 J6 S.R.L.			404	      404 - ERD     LAV.404(TR. SOLO SU COLLO GIACCA)	     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00025	     GIACCHE				4	      0 		 5		  0
+      41629 DA ACCETTARE 1992	 J6 S.R.L.			402	      402 - ERD     LAV.402				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00025	     GIACCHE			       28	      0 		 5		  0
+      41628 DA ACCETTARE 1992	 J6 S.R.L.			402	      402 - ERD     LAV.402				     99     DENIM	    PE 27   PE 27	     00005   DENIM 100% 	       00079	     TRENCH			       36	      0 		 5		  0
+      41627 DA ACCETTARE 1992	 J6 S.R.L.			W4000	      W4000 - ERD   SPRUZZO COLORE			     99     DENIM	    PE 27   PE 27	     00285   COMP.VARIE 	       00025	     GIACCHE			       22	      0 		 7		  0
+      41626 DA ACCETTARE 2261	 CAGE MAGLIERIE S.R.L.		W202	      W202	    LAV.NORMALE A 90?			     .	    .		    AI 27   AI 27/28	     00001   COTONE 100%	       CAPI	     CAPI				0	      3 		 3		  0
+      41625 DA ACCETTARE 5	 DIESEL SPA			214	      214	    LAV.214				     14     DEGRE	    PE 27   PE 27	     00005   DENIM 100% 	       00001	     PANTALONI				0	      0 		 5		  0
+
+100 rows selected.
+
+Elapsed: 00:00:00.43
+
+=== 2a) Testata offerta 39770 (fasce, prezzi, note) ===
+
+COD_UNIVOCO RAGIONE_SOCIALE		   DS_STAGIONE	    DS_COMPOSIZIONE	      DS_ARTICOLO	   DS_CICLO				    C37_PZ_TOT_CAPO C37_PZ_TOT_KG Z09_PERC_FALLOSITA C37_QT_FASCIA_5 C37_PZ_FASCIA_5 C37_QT_FASCIA_6 C37_PZ_FASCIA_6 C37_QT_FASCIA_7 C37_PZ_FASCIA_7 C37_QT_FASCIA_8 C37_PZ_FASCIA_8 NOTE_LIBERE
+----------- ------------------------------ ---------------- ------------------------- -------------------- ---------------------------------------- --------------- ------------- ------------------ --------------- --------------- --------------- --------------- --------------- --------------- --------------- --------------- ------------------------------
+      39770 JACOB COHEN COMPANY SPA	   AI 27/28	    naturali		      GIUBBINI		   TINTO+MPELO+MARMO+A/S+PROF+DIV.CAPI		      15,55		0		   5		  20		 100		  40		  50		  60		  30		   0		   0 4,95+2+8,6
+
+1 row selected.
+
+Elapsed: 00:00:00.08
+
+=== 2b) Fasi e prezzi dell'offerta 39770 (griglia in basso della scheda) ===
+
+C38_SEQUENZA FASE     DS_FASE			     TP UM   C38_QTA_RIGA VENDITA_CAPO VENDITA_KG COSTO_CAPO   COSTO_KG C38_CD
+------------ -------- ------------------------------ -- ---- ------------ ------------ ---------- ---------- ---------- ------
+	   5 000068   DIVISIONE CAPI		     C	NR		1	     0		0	   0	      0
+	  10 000001   TINTO			     C	NR		1	     0	      4,2	   0	      0
+	  20 000005   (ti)+M.PELO		     C	NR		1	     0	      1,6	   0	      0
+	  30 000107   MARMO			     C	NR		1	     0	      6,5	   0	      0
+	  40 000063   MANO SILICONICA C 	     C	NR		1	     0		0	   0	      0
+	  50 000114   PROFUMO			     C	NR		1	     0		0	   0	      0
+	  60 001128   ASCIUGATURA COTONE 70?X 40'    C	NR		1	     0		0	   0	      0
+	  70 001049   CONTROLLO QUALITA'	     C	NR		1	     0		0	   0	      0
+
+8 rows selected.
+
+Elapsed: 00:00:00.03
+
+=== 2c) Centri di costo dell'offerta 39770 (riquadro "Centro / Vendita Capo / Vendita a Kg") ===
+
+CDC    DS_CDC			 VENDITA_CAPO VENDITA_KG
+------ ------------------------- ------------ ----------
+40     TINTORIA 			15,55	       0
+
+1 row selected.
+
+Elapsed: 00:00:00.05
+
+=== 3a) Offerte di un cliente per stagione (2594 JACOB COHEN, AI 27) ===
+
+COD_UNIVOCO STATO	 CICLO	       CICLO_CLI     DS_CICLO				      DS_LINEA	      DS_COMPOSIZIONE		DS_ARTICOLO	     C37_PZ_TOT_CAPO C37_PZ_TOT_KG
+----------- ------------ ------------- ------------- ---------------------------------------- --------------- ------------------------- -------------------- --------------- -------------
+      41728 DA ACCETTARE T200	       T200	     TINTO REATTIVO+A/S+PROF+DIV.CAPI	      . 	      naturali			CAMICIE 			   0		 0
+      41720 DA ACCETTARE T100L	       TR_15056      PURGA+TINTO LANA OL+A/S+PROF+DIV.CAPI    . 	      animali			PANTALONI			   0		 0
+      41718 DA ACCETTARE T110	       T110 (BIANCO) TINTO DIRETTO+A/SIL+DIV CAPI	      . 	      naturali			PANTALONI			   0		 0
+      41644 DA ACCETTARE T218	       T218	     PREP+TINTO REATT.STR+A/S+PROF+DIV.CAPI   . 	      COTONE/TENCEL/ELASTAN	PANTALONI			   0		 0
+      41592 DA ACCETTARE 1041_2        TR_10102      LAV.1041_2 			      DENIM	      DENIM 100%		PANTALONI			   0		 0
+      41518 DA ACCETTARE T200	       T200	     TINTO REATTIVO+A/S+PROF+DIV.CAPI	      . 	      naturali			PANTALONI			   0		 0
+      41517 DA ACCETTARE T100	       T100	     TINTO DIRETTO+A/SIL+PROF+DIV.CAPI	      . 	      naturali			PANTALONI			 4,7		 0
+      41516 DA ACCETTARE T220	       T220	     TINTO REATTIVO STR+A/S+PROF+DIV.CAPI     . 	      naturali elasticizzate	PANTALONI			   0		 0
+      41515 DA ACCETTARE T154	       T154	     TINTO STR+A/S+PROF+DIV CAPI	      . 	      naturali elasticizzate	PANTALONI			   0		 0
+      41374 DA ACCETTARE 1069-BIS      1069-TR 10112 LAV.1069 (TR 10112)T.EVOLUTION	      . 	      DENIM 100%		PANTALONI		       11,55		 0
+      41335 DA ACCETTARE 1069	       1069-TR 10112 LAV.1069 (TR 10112)T.EVOLUTION	      . 	      DENIM 100%		PANTALONI			   0		 0
+      41333 DA ACCETTARE T109-540      S3848-TR10019 T109-540(TR10019)T.BIANCO STR+A/S+D.CAPI . 	      naturali elasticizzate	PANTALONI			   0		 0
+      41310 DA ACCETTARE 1323	       1323	     LAV.1323				      DENIM	      DENIM 100%		CAMICIE 			6,75		 0
+      41309 DA ACCETTARE 1322	       1322	     LAV.1322				      DENIM	      DENIM 100%		CAMICIE 			3,75		 0
+      41308 DA ACCETTARE 1324	       1324	     LAV.1324				      DENIM	      DENIM 100%		CAMICIE 		       10,45		 0
+      41307 DA ACCETTARE 1321	       1321	     LAV.1321				      DENIM	      DENIM 100%		CAMICIE 		       10,25		 0
+      41306 DA ACCETTARE 1320	       1320	     LAV.1320				      DENIM	      DENIM 100%		CAMICIE 			4,75		 0
+      41305 DA ACCETTARE 1319	       1319	     LAV.1319				      DENIM	      DENIM 100%		CAMICIE 			3,75		 0
+      41304 DA ACCETTARE 1318	       1318	     LAV.1318				      DENIM	      DENIM 100%		CAMICIE 			3,75		 0
+      41301 DA ACCETTARE 1317	       1317	     LAV.1317				      DENIM	      DENIM 100%		CAMICIE 			7,75		 0
+      41093 DA ACCETTARE 1314	       TR_10180      LAV.1314				      DENIM	      DENIM 100%		PANTALONI			 9,8		 0
+      41092 DA ACCETTARE 1315	       1315	     LAV.1315				      DENIM	      DENIM 100%		GONNE				4,75		 0
+      41091 DA ACCETTARE 1315	       1315	     LAV.1315				      DENIM	      DENIM 100%		PANTALONI			4,75		 0
+      41090 DA ACCETTARE 1316	       1316	     LAV.1316				      DENIM	      DENIM 100%		GONNE				4,15		 0
+      41089 DA ACCETTARE 1316	       1316	     LAV.1316				      DENIM	      DENIM 100%		PANTALONI			4,15		 0
+      41007 DA ACCETTARE T302	       T302	     T.SURFACE+A/S+PROF+DIV.CAPI	      . 	      COTONE elast.		PANTALONI			16,6		 0
+      40651 DA ACCETTARE 1313	       1313	     LAV.1313				      DENIM	      DENIM 100%		PANTALONI			 3,5		 0
+      40650 DA ACCETTARE 1312	       1312	     LAV.1312				      DENIM	      DENIM 100%		PANTALONI			 2,9		 0
+      40472 DA ACCETTARE 1311	       TR_10166      LAV.1311				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40471 DA ACCETTARE 1310	       1310	     LAV.1310				      DENIM	      DENIM 100%		PANTALONI			3,85		 0
+      40337 DA ACCETTARE 1309	       1309	     LAV.1309				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40336 DA ACCETTARE 1308	       1308	     LAV.1308				      DENIM	      DENIM 100%		PANTALONI			10,3		 0
+      40335 DA ACCETTARE 1307	       TR_10173      LAV.1307				      DENIM	      DENIM 100%		PANTALONI		       10,55		 0
+      40334 DA ACCETTARE 1306	       TR_10167      LAV.1306				      DENIM	      DENIM 100%		PANTALONI			10,3		 0
+      40333 DA ACCETTARE 1304	       1304	     LAV.1304				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40331 DA ACCETTARE 1303	       1303	     LAV.1303				      DENIM	      DENIM 100%		PANTALONI			 9,2		 0
+      40330 DA ACCETTARE 1302	       1302	     LAV.1302				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40329 DA ACCETTARE 1301	       1301	     LAV.1301				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40328 DA ACCETTARE 1300	       1300	     LAV.1300				      DENIM	      DENIM 100%		PANTALONI		       12,25		 0
+      40327 DA ACCETTARE 1299	       1299	     LAV.1299				      DENIM	      DENIM 100%		PANTALONI			8,05		 0
+      40325 DA ACCETTARE 1298	       1298	     LAV.1298				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40324 DA ACCETTARE 1297	       1297	     LAV.1297				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40320 DA ACCETTARE 1296	       1296	     LAV.1296				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40317 DA ACCETTARE 1295	       1295	     LAV.1295				      DENIM	      DENIM 100%		PANTALONI			8,05		 0
+      40313 DA ACCETTARE 1294	       1294	     LAV.1294				      DENIM	      DENIM 100%		PANTALONI			3,25		 0
+      40312 DA ACCETTARE 1289	       1289	     LAV.1289				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40311 DA ACCETTARE 1288	       1288	     LAV.1288				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40310 DA ACCETTARE 1286	       1286	     LAV.1286				      DENIM	      DENIM 100%		PANTALONI			 4,9		 0
+      40308 DA ACCETTARE 1293	       TR_10165      LAV.1293				      DENIM	      DENIM 100%		PANTALONI			9,55		 0
+      40306 DA ACCETTARE 1292	       TR_10172      LAV.1292				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40303 DA ACCETTARE 1291	       TR_10168      LAV.1291				      DENIM	      DENIM 100%		PANTALONI			8,05		 0
+      40299 DA ACCETTARE 1290	       1290	     LAV.1290				      DENIM	      DENIM 100%		PANTALONI		       12,25		 0
+      40281 DA ACCETTARE 1287	       1287	     LAV.1287				      DENIM	      DENIM 100%		PANTALONI			9,05		 0
+      40278 DA ACCETTARE 1285	       1285	     LAV.1285				      DENIM	      DENIM 100%		PANTALONI			5,15		 0
+      40270 DA ACCETTARE 1284	       1284	     LAV.1284				      DENIM	      DENIM 100%		PANTALONI			 4,9		 0
+      40268 DA ACCETTARE 1283	       1283	     LAV.1283				      DENIM	      DENIM 100%		PANTALONI			 4,9		 0
+      40267 DA ACCETTARE 1282	       1282	     LAV.1282				      DENIM	      DENIM 100%		PANTALONI			 4,9		 0
+      40176 DA ACCETTARE TL1305*       1305	     TL1305*				      DENIM	      DENIM 100%		PANTALONI		       10,25		 0
+      40001 DA ACCETTARE T109L	       T109L	     TRATT.WOOL CHIC			      . 	      animali			PANTALONI			 9,5		 0
+      39771 DA ACCETTARE T141	       T141	     TINTO+MPELO+MARMO+A/S+PROF+DIV.CAPI      . 	      naturali			PANTALONI			  13		 0
+      39770 DA ACCETTARE T141	       T141	     TINTO+MPELO+MARMO+A/S+PROF+DIV.CAPI      . 	      naturali			GIUBBINI		       15,55		 0
+      39769 DA ACCETTARE T152	       T152	     MARBLED DYE (TINTO+MPELO+MARMO+DIRTY)    . 	      naturali			GIUBBINI		       17,55		 0
+      39768 DA ACCETTARE T152	       T152	     MARBLED DYE (TINTO+MPELO+MARMO+DIRTY)    . 	      naturali			PANTALONI			  15		 0
+
+63 rows selected.
+
+Elapsed: 00:00:00.04
+
+=== 3b) Solo offerte ancora da accettare (ultime 50, escluso listino standard) ===
+
+COD_UNIVOCO CLIENTE RAGIONE_SOCIALE		   STAGION CICLO	 DS_CICLO				  C37_PZ_TOT_CAPO C37_PZ_TOT_KG
+----------- ------- ------------------------------ ------- ------------- ---------------------------------------- --------------- -------------
+      41728 2594    JACOB COHEN COMPANY SPA	   AI 27   T200 	 TINTO REATTIVO+A/S+PROF+DIV.CAPI			0	      0
+      41727 897     LORO PIANA SPA		   AI 27   T105L	 SCARICA+TINTO OL.					0	      0
+      41726 1992    J6 S.R.L.			   PE 27   331-2	 LAV.331-2						0	      0
+      41725 2323    JEIKO S.R.L.S. UNIPERSONALE    PE 27   0032 	 LAV.0032					       25	      0
+      41724 2323    JEIKO S.R.L.S. UNIPERSONALE    PE 27   0032 	 LAV.0032					       20	      0
+      41722 2467    ALTER STUDIO S.R.L. 	   AI 27   348		 LAV.348					       14	      0
+      41721 1569    G.D.P.  S.R.L.		   PE 27   0012 	 SBOZZIMA+MORBIDO					0	      0
+      41720 2594    JACOB COHEN COMPANY SPA	   AI 27   T100L	 PURGA+TINTO LANA OL+A/S+PROF+DIV.CAPI			0	      0
+      41719 447     PROJECT SRL 		   PE 27   LBWLA54	 LAV.LBWLA54					    12,06	      0
+      41718 2594    JACOB COHEN COMPANY SPA	   AI 27   T110 	 TINTO DIRETTO+A/SIL+DIV CAPI				0	      0
+      41717 2008    TRIVENETO MODA S.R.L.	   PE 27   T154 	 TINTO+M.PELO+SPR.PIGM TOT+LASER		       22	    7,5
+      41716 2093    MOOD SRL			   PE 27   0022 	 LAV.0022						8	      0
+      41715 2093    MOOD SRL			   PE 27   0024 	 LAV.0024					      6,5	      0
+      41714 2093    MOOD SRL			   PE 27   0021 	 LAV.0021					       11	      0
+      41708 2659    TEXSERVICE EOOD		   AI 27   INMARMO	 12M MARMORIZZO TINTURA-ZOLFO OZONO			0	      0
+      41707 2659    TEXSERVICE EOOD		   AI 27   INTOLAN	 INTOLAN: PURGA+TINTO OLAND+SWE+AMM.			0	      0
+      41704 648     TAM & COMPANY S.P.A.	   AI 26   T100 	 TINTO							0	      0
+      41703 1917    ALLEGRINI CONFEZIONI S.R.L.    PE 27   T700 	 TINTO EVOLUTION+MICRO				      1,3	     13
+      41700 1420    FOSTER SPA			   PE 27   INTLINO	 INTLINO:TINTO+ENZIMA					0	      5
+      41698 2165    UMBRIA VERDE MATTIOLI SRL	   AI 27   T152 	 TINTO+M.PELO+MARMO				       10	     10
+      41697 2349    BOTTEGA VENETA LOGISTICA SRL   PE 27   T152 	 PREP+TINTO						0	      9
+      41696 1718    G & G SERVICE S.R.L.	   AI 27   W102 	 LAVATO+MORBIDO 				      2,5	      0
+      41695 224     SALGARI S.R.L.		   AI 27   T152 	 TINTO+M.PELO+MARMO					7	    6,5
+      41694 224     SALGARI S.R.L.		   AI 27   T700 	 TINTO EVOLUTION					1	     11
+      41693 224     SALGARI S.R.L.		   AI 27   W300 	 LAV. ENZIMI						0	    3,5
+      41692 224     SALGARI S.R.L.		   AI 27   T400 	 TINTO OLD						0	    8,5
+      41691 224     SALGARI S.R.L.		   AI 27   T100 	 TINTO							0	    4,5
+      41690 224     SALGARI S.R.L.		   AI 27   T200 	 TINTO REATTIVO+TINTO REATTIVO				0	      7
+      41689 2349    BOTTEGA VENETA LOGISTICA SRL   PE 27   T252 	 PREP+TINTO REATTIVO					0	     11
+      41688 866     EUROTRADE S.R.L.		   AI 27   T261 	 SWE+TINTO REATTIVO STRETCH				0	      0
+      41686 866     EUROTRADE S.R.L.		   AI 27   T201 	 TINTO REATTIVO STRETCH 				0	      0
+      41685 866     EUROTRADE S.R.L.		   AI 27   T101 	 TINTO STRETCH						0	      0
+      41684 2349    BOTTEGA VENETA LOGISTICA SRL   PE 27   T152 	 PREP+TINTO						0	      9
+      41683 2349    BOTTEGA VENETA LOGISTICA SRL   PE 27   0045 	 LAV.0045						8	      0
+      41682 2492    FASHIONART S.P.A.		   PE 27   290		 LAV.290						6	      0
+      41680 447     PROJECT SRL 		   PE 27   LCWLAH3	 LAV.LCWLAH3					     3,15	      0
+      41678 2659    TEXSERVICE EOOD		   AI 27   INTTR	 INTTR:PREP+TINTO REATT+SWE+MORBIDO			0	      0
+      41677 2659    TEXSERVICE EOOD		   AI 27   INTSOLD	 INTSOLD: TINTO SUPER OLD				0	      0
+      41676 2659    TEXSERVICE EOOD		   AI 27   INTOLAN	 INTOLAN: PURGA+TINTO OLAND+SWE+AMM.			0	      0
+      41675 2008    TRIVENETO MODA S.R.L.	   PE 27   W7000	 LAV.W7000-SOLO MANO PELLE			       15	      0
+      41674 2659    TEXSERVICE EOOD		   AI 27   INTTENC	 INTENC: PREP+TINTO TENCEL+SWE+AMM.			0	    5,2
+      41673 2659    TEXSERVICE EOOD		   AI 27   INT1003	 INT1003:RES+TINTO OLD+SW+AMM.				0	      0
+      41672 2659    TEXSERVICE EOOD		   AI 27   INMARMO	 12M MARMORIZZO TINTURA-ZOLFO OZONO			0	      0
+      41671 2659    TEXSERVICE EOOD		   AI 27   I2026	 I2026:OLD STRETCH+SW PIETRE 1H+RTF			0	      0
+      41670 866     EUROTRADE S.R.L.		   AI 26   W957 	 SW POMICE 2H						0	      0
+      41669 897     LORO PIANA SPA		   AI 27   TLPOLAR DENIM TL* POLAR DENIM MTA1447				0	      0
+      41668 2083    S.A.L.G.A.R.I. KNIT S.R.L.	   AI 27   T100L	 TINTO							0	    5,5
+      41667 2083    S.A.L.G.A.R.I. KNIT S.R.L.	   AI 27   T400 	 TINTO OLD						0	    7,5
+      41666 224     SALGARI S.R.L.		   AI 27   T100L	 TINTO LANA						0	    5,5
+      41664 910     COTTON TREND SRL		   PE 27   W300 	 SWE							0	      0
+
+50 rows selected.
+
+Elapsed: 00:00:00.35
+
+=== 3c) Offerte accettate per stagione (conteggio) ===
+
+STAGION DS_STAGIONE		  N
+------- ---------------- ----------
+AI 22	AI 22/23	       2339
+PE 24	PE 24		       2198
+PE 26	PE 26		       1852
+AI 25	AI 25/26	       1561
+PE 25	PE 25		       1551
+AI 24	AI 24/25	       1352
+AI 26	AI 26/27	       1109
+PE 27	PE 27			814
+PR LAB	PROTO LAB		270
+.				 68
+AI 27	AI 27/28		 44
+PE 28	PE 28			  1
+PE 12				  1
+
+13 rows selected.
+
+Elapsed: 00:00:00.28
+=== FINE SCRIPT ===

@@ -1,0 +1,297 @@
+REM =============================================================================
+REM Offerte a Clienti — query definitive
+REM
+REM Testata:  INTEX2.C37_TESTATA_LISTINI (C37_PRG = "Cod. Univoco")
+REM           INTEX2.C37_001W = stessa testata gia' decodificata (usata dal gestionale)
+REM Righe:    INTEX2.C38_RIGHE_LISTINI, chiave a 7 campi + C38_SEQUENZA
+REM           (C38_C37_PRG e' sempre NULL: non usarlo)
+REM Fasi:     INTEX2.Z08_CICLI_LAVORAZIONE (stessa sequenza) -> Z02_FASI_DI_LAVORO
+REM Centri:   INTEX2.C51_RIPARTIZIONI_COSTI_CDC -> C50_CDC_TAB
+REM
+REM Stato offerta (da confronto con le foto):
+REM   C37_FLAG_VISIBILE = 'P'  -> da accettare (prototipo/proposta)
+REM   C37_FLAG_VISIBILE = 'S'  -> accettata
+REM Stagione 'pe/ai' e '*' = listino standard (checkbox "Visualizza Listino Standard")
+REM
+REM Esecuzione:
+REM   sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB @offerte-query-definitive.txt > offerte-definitive-out.txt
+REM =============================================================================
+
+WHENEVER SQLERROR CONTINUE
+WHENEVER OSERROR CONTINUE
+
+SET ECHO OFF
+SET FEEDBACK ON
+SET PAGESIZE 200
+SET LINESIZE 400
+SET TRIMSPOOL ON
+SET TRIMOUT ON
+SET LONG 2000
+SET TIMING ON
+SET NUMWIDTH 10
+
+COLUMN table_name      FORMAT A28
+COLUMN column_name     FORMAT A28
+COLUMN data_type       FORMAT A10
+COLUMN cod_univoco     FORMAT 99999999
+COLUMN stato           FORMAT A12
+COLUMN cliente         FORMAT A7
+COLUMN ragione_sociale FORMAT A30
+COLUMN ciclo           FORMAT A13
+COLUMN ciclo_cli       FORMAT A13
+COLUMN ds_ciclo        FORMAT A40
+COLUMN linea           FORMAT A6
+COLUMN ds_linea        FORMAT A15
+COLUMN stagione        FORMAT A7
+COLUMN ds_stagione     FORMAT A16
+COLUMN composizione    FORMAT A7
+COLUMN ds_composizione FORMAT A25
+COLUMN articolo        FORMAT A13
+COLUMN ds_articolo     FORMAT A20
+COLUMN reparto         FORMAT A10
+COLUMN fl_vis          FORMAT A6
+COLUMN fl_proto        FORMAT A8
+COLUMN fase            FORMAT A8
+COLUMN ds_fase         FORMAT A30
+COLUMN tp              FORMAT A2
+COLUMN um              FORMAT A4
+COLUMN cdc             FORMAT A6
+COLUMN ds_cdc          FORMAT A25
+COLUMN utente          FORMAT A10
+COLUMN note_libere     FORMAT A30
+
+
+REM =============================================================================
+REM 0) Verifiche residue
+REM =============================================================================
+
+PROMPT
+PROMPT === 0a) Colonne Z08_CICLI_LAVORAZIONE (per il JOIN fasi) ===
+SELECT column_id, column_name, data_type
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'Z08_CICLI_LAVORAZIONE'
+ORDER BY column_id;
+
+PROMPT
+PROMPT === 0b) Chiave primaria Z08 ===
+SELECT cc.column_name, cc.position
+FROM all_constraints c
+JOIN all_cons_columns cc ON cc.owner = c.owner AND cc.constraint_name = c.constraint_name
+WHERE c.owner = 'INTEX2' AND c.table_name = 'Z08_CICLI_LAVORAZIONE' AND c.constraint_type = 'P'
+ORDER BY cc.position;
+
+PROMPT
+PROMPT === 0c) C37_PRG duplicati (attesi ~26) ===
+SELECT C37_PRG AS cod_univoco, COUNT(*) AS n
+FROM INTEX2.C37_TESTATA_LISTINI
+WHERE C37_PRG IS NOT NULL
+GROUP BY C37_PRG
+HAVING COUNT(*) > 1
+ORDER BY C37_PRG DESC;
+
+PROMPT
+PROMPT === 0d) Conferma stato: offerte per stato (escluso listino standard) ===
+SELECT CASE C37_FLAG_VISIBILE WHEN 'P' THEN 'DA ACCETTARE'
+                              WHEN 'S' THEN 'ACCETTATA'
+                              ELSE C37_FLAG_VISIBILE END AS stato,
+       COUNT(*) AS n
+FROM INTEX2.C37_TESTATA_LISTINI
+WHERE C37_CD_STAGIONE NOT IN ('pe/ai', '*')
+GROUP BY C37_FLAG_VISIBILE
+ORDER BY n DESC;
+
+
+REM =============================================================================
+REM 1) ELENCO OFFERTE (come la schermata "Offerte a Clienti")
+REM =============================================================================
+
+PROMPT
+PROMPT === 1a) Ultime 100 offerte — dalla view C37_001W ===
+SELECT * FROM (
+  SELECT v.C37_PRG                 AS cod_univoco,
+         CASE v.C37_FLAG_VISIBILE WHEN 'P' THEN 'DA ACCETTARE'
+                                  WHEN 'S' THEN 'ACCETTATA'
+                                  ELSE v.C37_FLAG_VISIBILE END AS stato,
+         v.C37_CD_CLIENTE          AS cliente,
+         v.R07_RAGIONE_SOC         AS ragione_sociale,
+         v.C37_CD_CICLO            AS ciclo,
+         v.C37_CD_CICLO_CLI        AS ciclo_cli,
+         v.Z09_DS_CICLO            AS ds_ciclo,
+         v.C37_CD_LINEA            AS linea,
+         v.CW0_DS_LINEA            AS ds_linea,
+         v.C37_CD_STAGIONE         AS stagione,
+         v.Z11_DS_STAGIONE         AS ds_stagione,
+         v.C37_CD_COMPOSIZIONE     AS composizione,
+         v.CW4_DS_COMPOSIZIONE     AS ds_composizione,
+         v.C37_CD_ARTICOLO         AS articolo,
+         v.CWA_DS_ARTICOLO_CLIENTE AS ds_articolo,
+         v.Z01_DS_REPARTO          AS reparto,
+         v.C37_PZ_TOT_CAPO,
+         v.C37_PZ_TOT_KG,
+         v.Z09_PERC_FALLOSITA,
+         v.Z09_UTENTE_INSERIMENTO  AS utente,
+         v.Z09_DATA_INS
+  FROM INTEX2.C37_001W v
+  WHERE v.C37_PRG IS NOT NULL
+  ORDER BY v.C37_PRG DESC
+) WHERE ROWNUM <= 100;
+
+PROMPT
+PROMPT === 1b) Stesso elenco con JOIN espliciti sulle tabelle (alternativa alla view) ===
+SELECT * FROM (
+  SELECT t.C37_PRG                   AS cod_univoco,
+         CASE t.C37_FLAG_VISIBILE WHEN 'P' THEN 'DA ACCETTARE'
+                                  WHEN 'S' THEN 'ACCETTATA'
+                                  ELSE t.C37_FLAG_VISIBILE END AS stato,
+         t.C37_CD_CLIENTE            AS cliente,
+         r07.R07_RAGIONE_SOC         AS ragione_sociale,
+         t.C37_CD_CICLO              AS ciclo,
+         t.C37_CD_CICLO_CLI          AS ciclo_cli,
+         z09.Z09_DS_CICLO            AS ds_ciclo,
+         t.C37_CD_LINEA              AS linea,
+         cw0.CW0_DS_LINEA            AS ds_linea,
+         t.C37_CD_STAGIONE           AS stagione,
+         z11.Z11_DS_STAGIONE         AS ds_stagione,
+         t.C37_CD_COMPOSIZIONE       AS composizione,
+         cw4.CW4_DS_COMPOSIZIONE     AS ds_composizione,
+         t.C37_CD_ARTICOLO           AS articolo,
+         cwa.CWA_DS_ARTICOLO_CLIENTE AS ds_articolo,
+         t.C37_PZ_TOT_CAPO,
+         t.C37_PZ_TOT_KG,
+         z09.Z09_PERC_FALLOSITA,
+         z09.Z09_NR_REVISIONE
+  FROM INTEX2.C37_TESTATA_LISTINI t
+  LEFT JOIN INTEX2.R07_CLIENTI r07
+    ON r07.R07_CD_CLIENTE = t.C37_CD_CLIENTE
+  LEFT JOIN INTEX2.Z11_STAGIONI z11
+    ON z11.Z11_CD_STAGIONE = t.C37_CD_STAGIONE
+  LEFT JOIN INTEX2.CW4_COMPOSIZIONI cw4
+    ON cw4.CW4_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+  LEFT JOIN INTEX2.CW0_LINEA_TINTORIA cw0
+    ON  cw0.CW0_CD_CLIENTE = t.C37_CD_CLIENTE
+    AND cw0.CW0_CD_LINEA   = t.C37_CD_LINEA
+  LEFT JOIN INTEX2.CWA_ARTICOLI_CLIENTE cwa
+    ON  cwa.CWA_CD_CLIENTE          = t.C37_CD_CLIENTE
+    AND cwa.CWA_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+  LEFT JOIN INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z09
+    ON  z09.Z09_CD_CLIENTE          = t.C37_CD_CLIENTE
+    AND z09.Z09_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+    AND z09.Z09_CD_CICLO            = t.C37_CD_CICLO
+    AND z09.Z09_CD_LINEA            = t.C37_CD_LINEA
+    AND z09.Z09_CD_STAGIONE         = t.C37_CD_STAGIONE
+    AND z09.Z09_CD_COMPOSIZIONE     = t.C37_CD_COMPOSIZIONE
+  WHERE t.C37_PRG IS NOT NULL
+  ORDER BY t.C37_PRG DESC
+) WHERE ROWNUM <= 100;
+
+
+REM =============================================================================
+REM 2) DETTAGLIO OFFERTA (scheda): testata + fasi + centri
+REM     Cambiare il codice univoco nelle WHERE (esempio 39770)
+REM =============================================================================
+
+PROMPT
+PROMPT === 2a) Testata offerta 39770 (fasce, prezzi, note) ===
+SELECT v.C37_PRG AS cod_univoco, v.R07_RAGIONE_SOC AS ragione_sociale,
+       v.Z11_DS_STAGIONE AS ds_stagione, v.CW4_DS_COMPOSIZIONE AS ds_composizione,
+       v.CWA_DS_ARTICOLO_CLIENTE AS ds_articolo, v.Z09_DS_CICLO AS ds_ciclo,
+       v.C37_PZ_TOT_CAPO, v.C37_PZ_TOT_KG, v.Z09_PERC_FALLOSITA,
+       v.C37_QT_FASCIA_5, v.C37_PZ_FASCIA_5, v.C37_QT_FASCIA_6, v.C37_PZ_FASCIA_6,
+       v.C37_QT_FASCIA_7, v.C37_PZ_FASCIA_7, v.C37_QT_FASCIA_8, v.C37_PZ_FASCIA_8,
+       v.C37_NOTE_LIBERE AS note_libere
+FROM INTEX2.C37_001W v
+WHERE v.C37_PRG = 39770;
+
+PROMPT
+PROMPT === 2b) Fasi e prezzi dell'offerta 39770 (griglia in basso della scheda) ===
+SELECT r.C38_SEQUENZA,
+       z8.Z08_CD_FASE      AS fase,
+       z2.Z02_DS_FASE      AS ds_fase,
+       r.C38_TP_PREZZO     AS tp,
+       z8.Z08_CD_UNITA_MIS AS um,
+       r.C38_QTA_RIGA,
+       r.C38_PZ_UNITARIO    AS vendita_capo,
+       r.C38_PZ_UNITARIO_KG AS vendita_kg,
+       r.C38_CS_UNITARIO    AS costo_capo,
+       r.C38_CS_UNITARIO_KG AS costo_kg,
+       r.C38_CD_FORNITORE
+FROM INTEX2.C37_TESTATA_LISTINI t
+JOIN INTEX2.C38_RIGHE_LISTINI r
+  ON  r.C38_CD_CLIENTE      = t.C37_CD_CLIENTE
+  AND r.C38_CD_LINEA        = t.C37_CD_LINEA
+  AND r.C38_CD_STAGIONE     = t.C37_CD_STAGIONE
+  AND r.C38_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+  AND r.C38_CD_ARTICOLO     = t.C37_CD_ARTICOLO
+  AND r.C38_CD_CICLO        = t.C37_CD_CICLO
+  AND r.C38_CD_VALUTA       = t.C37_CD_VALUTA
+LEFT JOIN INTEX2.Z08_CICLI_LAVORAZIONE z8
+  ON  z8.Z08_CD_CLIENTE          = t.C37_CD_CLIENTE
+  AND z8.Z08_CD_ARTICOLO_CLIENTE = t.C37_CD_ARTICOLO
+  AND z8.Z08_CD_CICLO            = t.C37_CD_CICLO
+  AND z8.Z08_CD_LINEA            = t.C37_CD_LINEA
+  AND z8.Z08_CD_STAGIONE         = t.C37_CD_STAGIONE
+  AND z8.Z08_CD_COMPOSIZIONE     = t.C37_CD_COMPOSIZIONE
+  AND z8.Z08_SEQUENZA            = r.C38_SEQUENZA
+LEFT JOIN INTEX2.Z02_FASI_DI_LAVORO z2
+  ON z2.Z02_CD_FASE = z8.Z08_CD_FASE
+WHERE t.C37_PRG = 39770
+ORDER BY r.C38_SEQUENZA;
+
+PROMPT
+PROMPT === 2c) Centri di costo dell'offerta 39770 (riquadro "Centro / Vendita Capo / Vendita a Kg") ===
+SELECT c51.C51_CD_CDC AS cdc, c50.C50_DS_CDC AS ds_cdc,
+       c51.C51_COSTO AS vendita_capo, c51.C51_COSTO_KG AS vendita_kg
+FROM INTEX2.C37_TESTATA_LISTINI t
+JOIN INTEX2.C51_RIPARTIZIONI_COSTI_CDC c51
+  ON  c51.C51_CD_CLIENTE      = t.C37_CD_CLIENTE
+  AND c51.C51_CD_LINEA        = t.C37_CD_LINEA
+  AND c51.C51_CD_STAGIONE     = t.C37_CD_STAGIONE
+  AND c51.C51_CD_COMPOSIZIONE = t.C37_CD_COMPOSIZIONE
+  AND c51.C51_CD_ARTICOLO     = t.C37_CD_ARTICOLO
+  AND c51.C51_CD_CICLO        = t.C37_CD_CICLO
+  AND c51.C51_CD_VALUTA       = t.C37_CD_VALUTA
+LEFT JOIN INTEX2.C50_CDC_TAB c50
+  ON c50.C50_CD_AZIENDA = 'AZ1' AND c50.C50_CD_CDC = c51.C51_CD_CDC
+WHERE t.C37_PRG = 39770;
+
+
+REM =============================================================================
+REM 3) RICERCHE TIPICHE (filtri della schermata)
+REM =============================================================================
+
+PROMPT
+PROMPT === 3a) Offerte di un cliente per stagione (2594 JACOB COHEN, AI 27) ===
+SELECT v.C37_PRG AS cod_univoco,
+       CASE v.C37_FLAG_VISIBILE WHEN 'P' THEN 'DA ACCETTARE' WHEN 'S' THEN 'ACCETTATA' END AS stato,
+       v.C37_CD_CICLO AS ciclo, v.C37_CD_CICLO_CLI AS ciclo_cli, v.Z09_DS_CICLO AS ds_ciclo,
+       v.CW0_DS_LINEA AS ds_linea, v.CW4_DS_COMPOSIZIONE AS ds_composizione,
+       v.CWA_DS_ARTICOLO_CLIENTE AS ds_articolo, v.C37_PZ_TOT_CAPO, v.C37_PZ_TOT_KG
+FROM INTEX2.C37_001W v
+WHERE v.C37_CD_CLIENTE  = '2594'
+  AND v.C37_CD_STAGIONE = 'AI 27'
+ORDER BY v.C37_PRG DESC;
+
+PROMPT
+PROMPT === 3b) Solo offerte ancora da accettare (ultime 50, escluso listino standard) ===
+SELECT * FROM (
+  SELECT v.C37_PRG AS cod_univoco, v.C37_CD_CLIENTE AS cliente, v.R07_RAGIONE_SOC AS ragione_sociale,
+         v.C37_CD_STAGIONE AS stagione, v.C37_CD_CICLO AS ciclo, v.Z09_DS_CICLO AS ds_ciclo,
+         v.C37_PZ_TOT_CAPO, v.C37_PZ_TOT_KG
+  FROM INTEX2.C37_001W v
+  WHERE v.C37_FLAG_VISIBILE = 'P'
+    AND v.C37_CD_STAGIONE NOT IN ('pe/ai', '*')
+    AND v.C37_PRG IS NOT NULL
+  ORDER BY v.C37_PRG DESC
+) WHERE ROWNUM <= 50;
+
+PROMPT
+PROMPT === 3c) Offerte accettate per stagione (conteggio) ===
+SELECT v.C37_CD_STAGIONE AS stagione, v.Z11_DS_STAGIONE AS ds_stagione, COUNT(*) AS n
+FROM INTEX2.C37_001W v
+WHERE v.C37_FLAG_VISIBILE = 'S'
+  AND v.C37_CD_STAGIONE NOT IN ('pe/ai', '*')
+GROUP BY v.C37_CD_STAGIONE, v.Z11_DS_STAGIONE
+ORDER BY n DESC;
+
+PROMPT === FINE SCRIPT ===
+EXIT

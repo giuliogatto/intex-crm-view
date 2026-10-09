@@ -1,302 +1,254 @@
-# Offerte/preventivi = Listino Clienti + Prototipi + Disposizioni
-# Connessione: sqlplus INTEX2/SD@192.168.1.10:1521/INT2DB
-#
-# Se SELECT * FROM C30_LISTINO_CLIENTI → "no rows selected":
-# la tabella esiste in INTEX2 ma può essere VUOTA. Esegui prima la
-# sezione 0 (diagnosi), poi struttura, poi sample.
-#
-# Setup sessione:
-#   SET PAGESIZE 200
-#   SET LINESIZE 300
-#   SET LONG 10000
-#   SET TRIMSPOOL ON
+REM =============================================================================
+REM Offerte/preventivi — esplorazione mirata (post output-all-queries.txt)
+REM Connessione: sqlplus INTEX2/SD@192.168.1.10:1521/INT2DB
+REM Esecuzione:  sqlplus -s INTEX2/SD@... @find-tabella-preventivi.txt
+REM
+REM Regole anti-blocco:
+REM   - niente ORDER BY su tabelle grandi (full sort)
+REM   - sample con WHERE ROWNUM <= N (stop early)
+REM   - COUNT solo dove serve; tabelle note-vuote saltate
+REM   - WHENEVER SQLERROR CONTINUE: un errore non ferma il resto
+REM =============================================================================
 
-# =============================================================================
-# 0) DIAGNOSI: perché C30 è vuota?
-# =============================================================================
+WHENEVER SQLERROR CONTINUE
+WHENEVER OSERROR CONTINUE
 
--- 0a) Quante righe (tutte le tabelle chiave)
-SELECT 'INTEX2.C30_LISTINO_CLIENTI' AS tabella, COUNT(*) AS n FROM INTEX2.C30_LISTINO_CLIENTI
-UNION ALL SELECT 'INTEX2.C31_LISTINO_CLIENTI_FASI', COUNT(*) FROM INTEX2.C31_LISTINO_CLIENTI_FASI
-UNION ALL SELECT 'INTEX2.C33_LISTINO_CLIENTI_CICLI', COUNT(*) FROM INTEX2.C33_LISTINO_CLIENTI_CICLI
-UNION ALL SELECT 'INTEX2.CX3_LISTINO_CLIENTI_CICLI', COUNT(*) FROM INTEX2.CX3_LISTINO_CLIENTI_CICLI
-UNION ALL SELECT 'INTEX2.C35_LISTINO_FASI_STAGIONI', COUNT(*) FROM INTEX2.C35_LISTINO_FASI_STAGIONI
-UNION ALL SELECT 'INTEX2.C39_LISTINO_CLI_FASI_STAG', COUNT(*) FROM INTEX2.C39_LISTINO_CLI_FASI_STAG
-UNION ALL SELECT 'INTEX2.C52_PROTOTIPI_ATMAN', COUNT(*) FROM INTEX2.C52_PROTOTIPI_ATMAN
-UNION ALL SELECT 'INTEX2.C52_PROTOTIPI_ATMAN_BK', COUNT(*) FROM INTEX2.C52_PROTOTIPI_ATMAN_BK
-UNION ALL SELECT 'INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE
-UNION ALL SELECT 'INTEX2.Z07_CICLI_MATERIALI', COUNT(*) FROM INTEX2.Z07_CICLI_MATERIALI
-UNION ALL SELECT 'INTEX2.Z08_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z08_CICLI_LAVORAZIONE
-UNION ALL SELECT 'INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE
-UNION ALL SELECT 'INTEX2.EW1_TESTATA_DISPOSIZIONI', COUNT(*) FROM INTEX2.EW1_TESTATA_DISPOSIZIONI
-UNION ALL SELECT 'INTEX2.EW2_RIGHE_DISPOSIZIONI', COUNT(*) FROM INTEX2.EW2_RIGHE_DISPOSIZIONI
-UNION ALL SELECT 'INTEX2.STORICO_DISPOSIZIONI', COUNT(*) FROM INTEX2.STORICO_DISPOSIZIONI;
+SET ECHO ON
+SET FEEDBACK ON
+SET PAGESIZE 100
+SET LINESIZE 300
+SET TRIMSPOOL ON
+SET LONG 4000
+SET TIMING ON
 
--- 0b) Statistiche Oracle (NUM_ROWS può essere stantio, ma indica se c'erano dati)
-SELECT owner, table_name, num_rows, last_analyzed
-FROM all_tables
-WHERE table_name IN (
-  'C30_LISTINO_CLIENTI','C31_LISTINO_CLIENTI_FASI','C33_LISTINO_CLIENTI_CICLI',
-  'CX3_LISTINO_CLIENTI_CICLI','C35_LISTINO_FASI_STAGIONI','C39_LISTINO_CLI_FASI_STAG',
-  'C52_PROTOTIPI_ATMAN','C52_PROTOTIPI_ATMAN_BK',
-  'Z06_GRUPPI_CICLI_LAVORAZIONE','Z07_CICLI_MATERIALI','Z08_CICLI_LAVORAZIONE',
-  'Z09_TESTATE_CICLI_LAVORAZIONE',
-  'EW1_TESTATA_DISPOSIZIONI','EW2_RIGHE_DISPOSIZIONI','STORICO_DISPOSIZIONI'
-)
-ORDER BY owner, table_name;
+COLUMN tabella FORMAT A45
+COLUMN owner FORMAT A20
+COLUMN table_name FORMAT A35
+COLUMN view_name FORMAT A35
+COLUMN column_name FORMAT A35
+COLUMN data_type FORMAT A15
 
--- 0c) Stessa tabella in altri schema? (dal catalogo risultava solo INTEX2)
+REM -----------------------------------------------------------------------------
+REM 0) Riepilogo rapido COUNT (tabelle già note + candidate nuove)
+REM -----------------------------------------------------------------------------
+
+PROMPT === 0a) COUNT tabelle chiave INTEX2 ===
+SELECT 'C30_LISTINO_CLIENTI' AS tabella, COUNT(*) AS n FROM INTEX2.C30_LISTINO_CLIENTI
+UNION ALL SELECT 'C33_LISTINO_CLIENTI_CICLI', COUNT(*) FROM INTEX2.C33_LISTINO_CLIENTI_CICLI
+UNION ALL SELECT 'C52_PROTOTIPI_ATMAN', COUNT(*) FROM INTEX2.C52_PROTOTIPI_ATMAN
+UNION ALL SELECT 'Z09_TESTATE_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE
+UNION ALL SELECT 'Z08_CICLI_LAVORAZIONE', COUNT(*) FROM INTEX2.Z08_CICLI_LAVORAZIONE
+UNION ALL SELECT 'EW1_TESTATA_DISPOSIZIONI', COUNT(*) FROM INTEX2.EW1_TESTATA_DISPOSIZIONI
+UNION ALL SELECT 'STORICO_DISPOSIZIONI', COUNT(*) FROM INTEX2.STORICO_DISPOSIZIONI;
+
+PROMPT === 0b) COUNT listino negli altri schema (nomi diversi!) ===
+SELECT 'INTEXGR.C30_TEST_LIST_CLI' AS tabella, COUNT(*) AS n FROM INTEXGR.C30_TEST_LIST_CLI
+UNION ALL SELECT 'INTEXGRIFFE.C30_TEST_LIST_CLI', COUNT(*) FROM INTEXGRIFFE.C30_TEST_LIST_CLI
+UNION ALL SELECT 'NEXSTYLE.C30_TEST_LIST_CLI', COUNT(*) FROM NEXSTYLE.C30_TEST_LIST_CLI
+UNION ALL SELECT 'INTEXGR.C52_DETT_LIST_CL', COUNT(*) FROM INTEXGR.C52_DETT_LIST_CL
+UNION ALL SELECT 'INTEXGRIFFE.C52_DETT_LIST_CL', COUNT(*) FROM INTEXGRIFFE.C52_DETT_LIST_CL
+UNION ALL SELECT 'NEXSTYLE.C52_DETT_LIST_CL', COUNT(*) FROM NEXSTYLE.C52_DETT_LIST_CL
+UNION ALL SELECT 'INTEXGR.Z09_CICLI', COUNT(*) FROM INTEXGR.Z09_CICLI
+UNION ALL SELECT 'INTEXGRIFFE.Z09_CICLI', COUNT(*) FROM INTEXGRIFFE.Z09_CICLI
+UNION ALL SELECT 'NEXSTYLE.Z09_CICLI', COUNT(*) FROM NEXSTYLE.Z09_CICLI;
+
+PROMPT === 0c) COUNT view ORDS / gestionale ===
+SELECT 'INTEX2.C30_R07_CW0_001W' AS tabella, COUNT(*) AS n FROM INTEX2.C30_R07_CW0_001W
+UNION ALL SELECT 'INTEX2.C52_001W', COUNT(*) FROM INTEX2.C52_001W
+UNION ALL SELECT 'INTEXGR.C30_001W', COUNT(*) FROM INTEXGR.C30_001W
+UNION ALL SELECT 'INTEXGR.C52_001W', COUNT(*) FROM INTEXGR.C52_001W
+UNION ALL SELECT 'INTEXGRIFFE.C30_001W', COUNT(*) FROM INTEXGRIFFE.C30_001W
+UNION ALL SELECT 'INTEXGRIFFE.C52_001W', COUNT(*) FROM INTEXGRIFFE.C52_001W
+UNION ALL SELECT 'NEXSTYLE.C30_001W', COUNT(*) FROM NEXSTYLE.C30_001W
+UNION ALL SELECT 'NEXSTYLE.C52_001W', COUNT(*) FROM NEXSTYLE.C52_001W;
+
+PROMPT === 0d) Catalogo: tabelle/view listino correlate ===
 SELECT owner, table_name
 FROM all_tables
-WHERE table_name LIKE '%LISTINO_CLIENTI%'
-   OR table_name LIKE 'C30_%'
-   OR table_name LIKE 'C52_%'
-   OR table_name LIKE 'Z09_%'
+WHERE table_name LIKE 'C30%'
+   OR table_name LIKE 'C52%'
+   OR table_name IN ('C33_LISTINO_CLIENTI_CICLI','CX3_LISTINO_CLIENTI_CICLI',
+                     'Z09_TESTATE_CICLI_LAVORAZIONE','Z09_CICLI','Z08_CICLI_LAVORAZIONE')
 ORDER BY owner, table_name;
 
--- 0d) Sinonimi (il gestionale potrebbe leggere un synonym, non la tabella locale)
-SELECT owner, synonym_name, table_owner, table_name, db_link
-FROM all_synonyms
-WHERE synonym_name IN (
-  'C30_LISTINO_CLIENTI','C31_LISTINO_CLIENTI_FASI','C33_LISTINO_CLIENTI_CICLI',
-  'CX3_LISTINO_CLIENTI_CICLI','C52_PROTOTIPI_ATMAN','STORICO_DISPOSIZIONI',
-  'Z08_CICLI_LAVORAZIONE','Z09_TESTATE_CICLI_LAVORAZIONE'
-)
-ORDER BY owner, synonym_name;
-
--- 0e) View con nome simile (dati "vivi" dietro a una view?)
 SELECT owner, view_name
 FROM all_views
-WHERE view_name LIKE '%LISTINO_CLIENTI%'
-   OR view_name LIKE '%OFFERT%'
-   OR view_name LIKE '%PREVENT%'
-   OR view_name LIKE 'C30%'
+WHERE view_name LIKE 'C30%'
    OR view_name LIKE 'C52%'
 ORDER BY owner, view_name;
 
--- 0f) Utente corrente e schema di default
-SELECT USER AS utente_corrente, SYS_CONTEXT('USERENV','CURRENT_SCHEMA') AS current_schema FROM dual;
 
+REM -----------------------------------------------------------------------------
+REM 1) Listino "vero" altri schema — C30_TEST_LIST_CLI
+REM     (sample ROWNUM senza ORDER BY = veloce)
+REM -----------------------------------------------------------------------------
 
-# =============================================================================
-# 1) C30_LISTINO_CLIENTI — Offerte a Clienti (struttura + sample)
-# =============================================================================
-
-SELECT column_id, column_name, data_type, data_length, data_precision, data_scale, nullable
-FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'C30_LISTINO_CLIENTI'
-ORDER BY column_id;
-
-DESC INTEX2.C30_LISTINO_CLIENTI;
-
--- Sample (se COUNT > 0). Dopo DESC, sostituisci ORDER BY con colonna data/key reale.
-SELECT * FROM (
-    SELECT * FROM INTEX2.C30_LISTINO_CLIENTI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
-# =============================================================================
-# 2) Tabelle collegate al listino / offerte
-# =============================================================================
-
--- C31 fasi
+PROMPT === 1a) INTEXGR.C30_TEST_LIST_CLI struttura ===
 SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'C31_LISTINO_CLIENTI_FASI'
+WHERE owner = 'INTEXGR' AND table_name = 'C30_TEST_LIST_CLI'
 ORDER BY column_id;
 
-DESC INTEX2.C31_LISTINO_CLIENTI_FASI;
+PROMPT === 1a) sample 30 (no sort) ===
+SELECT * FROM INTEXGR.C30_TEST_LIST_CLI WHERE ROWNUM <= 30;
 
-SELECT * FROM (
-    SELECT * FROM INTEX2.C31_LISTINO_CLIENTI_FASI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
--- C33 cicli
+PROMPT === 1b) INTEXGRIFFE.C30_TEST_LIST_CLI ===
 SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'C33_LISTINO_CLIENTI_CICLI'
+WHERE owner = 'INTEXGRIFFE' AND table_name = 'C30_TEST_LIST_CLI'
 ORDER BY column_id;
 
-DESC INTEX2.C33_LISTINO_CLIENTI_CICLI;
+SELECT * FROM INTEXGRIFFE.C30_TEST_LIST_CLI WHERE ROWNUM <= 30;
 
-SELECT * FROM (
-    SELECT * FROM INTEX2.C33_LISTINO_CLIENTI_CICLI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
--- CX3 cicli (variante)
+PROMPT === 1c) NEXSTYLE.C30_TEST_LIST_CLI ===
 SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'CX3_LISTINO_CLIENTI_CICLI'
+WHERE owner = 'NEXSTYLE' AND table_name = 'C30_TEST_LIST_CLI'
 ORDER BY column_id;
 
-DESC INTEX2.CX3_LISTINO_CLIENTI_CICLI;
-
-SELECT * FROM (
-    SELECT * FROM INTEX2.CX3_LISTINO_CLIENTI_CICLI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
+SELECT * FROM NEXSTYLE.C30_TEST_LIST_CLI WHERE ROWNUM <= 30;
 
 
--- C35 fasi stagioni
+REM -----------------------------------------------------------------------------
+REM 2) Dettaglio listino — C52_DETT_LIST_CL
+REM -----------------------------------------------------------------------------
+
+PROMPT === 2a) INTEXGR.C52_DETT_LIST_CL ===
 SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'C35_LISTINO_FASI_STAGIONI'
+WHERE owner = 'INTEXGR' AND table_name = 'C52_DETT_LIST_CL'
 ORDER BY column_id;
 
-DESC INTEX2.C35_LISTINO_FASI_STAGIONI;
+SELECT * FROM INTEXGR.C52_DETT_LIST_CL WHERE ROWNUM <= 30;
 
-SELECT * FROM (
-    SELECT * FROM INTEX2.C35_LISTINO_FASI_STAGIONI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
--- C39 cli fasi stag
+PROMPT === 2b) NEXSTYLE.C52_DETT_LIST_CL ===
 SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'C39_LISTINO_CLI_FASI_STAG'
+WHERE owner = 'NEXSTYLE' AND table_name = 'C52_DETT_LIST_CL'
 ORDER BY column_id;
 
-DESC INTEX2.C39_LISTINO_CLI_FASI_STAG;
-
-SELECT * FROM (
-    SELECT * FROM INTEX2.C39_LISTINO_CLI_FASI_STAG ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
+SELECT * FROM NEXSTYLE.C52_DETT_LIST_CL WHERE ROWNUM <= 30;
 
 
-# =============================================================================
-# 3) C52_PROTOTIPI_ATMAN — Scheda lavorazione prototipi
-# =============================================================================
+REM -----------------------------------------------------------------------------
+REM 3) View gestionale / ORDS (spesso qui ci sono i dati "vivi")
+REM -----------------------------------------------------------------------------
 
-SELECT column_id, column_name, data_type, data_length, data_precision, data_scale, nullable
+PROMPT === 3a) colonne view INTEX2.C30_R07_CW0_001W ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C30_R07_CW0_001W'
+ORDER BY column_id;
+
+PROMPT === 3a) sample 20 ===
+SELECT * FROM INTEX2.C30_R07_CW0_001W WHERE ROWNUM <= 20;
+
+PROMPT === 3b) INTEX2.C52_001W ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'INTEX2' AND table_name = 'C52_001W'
+ORDER BY column_id;
+
+SELECT * FROM INTEX2.C52_001W WHERE ROWNUM <= 20;
+
+PROMPT === 3c) NEXSTYLE.C30_001W ===
+SELECT column_id, column_name, data_type, data_length
+FROM all_tab_columns
+WHERE owner = 'NEXSTYLE' AND table_name = 'C30_001W'
+ORDER BY column_id;
+
+SELECT * FROM NEXSTYLE.C30_001W WHERE ROWNUM <= 20;
+
+PROMPT === 3d) INTEXGR.C30_001W ===
+SELECT * FROM INTEXGR.C30_001W WHERE ROWNUM <= 20;
+
+
+REM -----------------------------------------------------------------------------
+REM 4) INTEX2 prototipi C52 (piccola: 448 righe — OK sample ampio)
+REM -----------------------------------------------------------------------------
+
+PROMPT === 4) C52_PROTOTIPI_ATMAN colonne utili ===
+SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
 WHERE owner = 'INTEX2' AND table_name = 'C52_PROTOTIPI_ATMAN'
 ORDER BY column_id;
 
-DESC INTEX2.C52_PROTOTIPI_ATMAN;
+PROMPT === 4) sample 30 (no sort) ===
+SELECT * FROM INTEX2.C52_PROTOTIPI_ATMAN WHERE ROWNUM <= 30;
 
+REM Se serve "ultimi" e esiste C52_DT_EVENTO / C52_KEY (dopo aver visto le colonne):
+PROMPT === 4) ultimi 30 per C52_KEY (tabella piccola, sort OK) ===
 SELECT * FROM (
-    SELECT * FROM INTEX2.C52_PROTOTIPI_ATMAN ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
--- Backup
-SELECT column_id, column_name, data_type, data_length, nullable
-FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'C52_PROTOTIPI_ATMAN_BK'
-ORDER BY column_id;
-
-DESC INTEX2.C52_PROTOTIPI_ATMAN_BK;
-
-SELECT * FROM (
-    SELECT * FROM INTEX2.C52_PROTOTIPI_ATMAN_BK ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
+    SELECT * FROM INTEX2.C52_PROTOTIPI_ATMAN ORDER BY C52_KEY DESC
+) WHERE ROWNUM <= 30;
 
 
-# =============================================================================
-# 4) Cicli di lavorazione (Z06–Z09)
-# =============================================================================
+REM -----------------------------------------------------------------------------
+REM 5) Cicli Z09 / Z08 — tabelle GRANDI: solo struttura + sample ROWNUM
+REM     NON fare ORDER BY qui
+REM -----------------------------------------------------------------------------
 
+PROMPT === 5a) Z09_TESTATE_CICLI_LAVORAZIONE colonne ===
 SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
 WHERE owner = 'INTEX2' AND table_name = 'Z09_TESTATE_CICLI_LAVORAZIONE'
 ORDER BY column_id;
 
-DESC INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE;
+PROMPT === 5a) sample 20 (no sort) ===
+SELECT * FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE WHERE ROWNUM <= 20;
 
-SELECT * FROM (
-    SELECT * FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
+PROMPT === 5b) Z08_CICLI_LAVORAZIONE colonne (solo nomi, no DESC pieno) ===
 SELECT column_id, column_name, data_type, data_length, nullable
 FROM all_tab_columns
 WHERE owner = 'INTEX2' AND table_name = 'Z08_CICLI_LAVORAZIONE'
 ORDER BY column_id;
 
-DESC INTEX2.Z08_CICLI_LAVORAZIONE;
+PROMPT === 5b) sample 20 (no sort) ===
+SELECT * FROM INTEX2.Z08_CICLI_LAVORAZIONE WHERE ROWNUM <= 20;
 
-SELECT * FROM (
-    SELECT * FROM INTEX2.Z08_CICLI_LAVORAZIONE ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
-SELECT column_id, column_name, data_type, data_length, nullable
+PROMPT === 5c) Z09_CICLI altri schema ===
+SELECT column_id, column_name, data_type, data_length
 FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'Z06_GRUPPI_CICLI_LAVORAZIONE'
+WHERE owner = 'NEXSTYLE' AND table_name = 'Z09_CICLI'
 ORDER BY column_id;
 
-DESC INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE;
-
-SELECT * FROM (
-    SELECT * FROM INTEX2.Z06_GRUPPI_CICLI_LAVORAZIONE ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
+SELECT * FROM NEXSTYLE.Z09_CICLI WHERE ROWNUM <= 20;
+SELECT * FROM INTEXGR.Z09_CICLI WHERE ROWNUM <= 20;
 
 
-SELECT column_id, column_name, data_type, data_length, nullable
-FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'Z07_CICLI_MATERIALI'
-ORDER BY column_id;
+REM -----------------------------------------------------------------------------
+REM 6) Disposizioni — tabelle ENORMI (~200k–700k)
+REM     Solo colonne + sample ROWNUM. Skip ORDER BY.
+REM -----------------------------------------------------------------------------
 
-DESC INTEX2.Z07_CICLI_MATERIALI;
-
-SELECT * FROM (
-    SELECT * FROM INTEX2.Z07_CICLI_MATERIALI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
-# =============================================================================
-# 5) Disposizioni / storico (offerta → produzione)
-# =============================================================================
-
-SELECT column_id, column_name, data_type, data_length, nullable
+PROMPT === 6a) EW1 colonne ===
+SELECT column_id, column_name, data_type, data_length
 FROM all_tab_columns
 WHERE owner = 'INTEX2' AND table_name = 'EW1_TESTATA_DISPOSIZIONI'
 ORDER BY column_id;
 
-DESC INTEX2.EW1_TESTATA_DISPOSIZIONI;
+PROMPT === 6a) sample 10 ===
+SELECT * FROM INTEX2.EW1_TESTATA_DISPOSIZIONI WHERE ROWNUM <= 10;
 
-SELECT * FROM (
-    SELECT * FROM INTEX2.EW1_TESTATA_DISPOSIZIONI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
+PROMPT === 6b) EW2 sample 10 ===
+SELECT * FROM INTEX2.EW2_RIGHE_DISPOSIZIONI WHERE ROWNUM <= 10;
 
-
-SELECT column_id, column_name, data_type, data_length, nullable
-FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'EW2_RIGHE_DISPOSIZIONI'
-ORDER BY column_id;
-
-DESC INTEX2.EW2_RIGHE_DISPOSIZIONI;
-
-SELECT * FROM (
-    SELECT * FROM INTEX2.EW2_RIGHE_DISPOSIZIONI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
+PROMPT === 6c) STORICO_DISPOSIZIONI sample 10 ===
+SELECT * FROM INTEX2.STORICO_DISPOSIZIONI WHERE ROWNUM <= 10;
 
 
-SELECT column_id, column_name, data_type, data_length, nullable
-FROM all_tab_columns
-WHERE owner = 'INTEX2' AND table_name = 'STORICO_DISPOSIZIONI'
-ORDER BY column_id;
+REM -----------------------------------------------------------------------------
+REM 7) Join colonne candidate (catalogo, veloce) + join opzionale commentato
+REM -----------------------------------------------------------------------------
 
-DESC INTEX2.STORICO_DISPOSIZIONI;
-
-SELECT * FROM (
-    SELECT * FROM INTEX2.STORICO_DISPOSIZIONI ORDER BY 1 DESC
-) WHERE ROWNUM <= 100;
-
-
-# =============================================================================
-# 6) JOIN di verifica (solo se C30 e C33/Z09 hanno righe)
-#     Attenzione: i nomi colonna FK (C30_ID, C33_ID_LISTINO, …) vanno
-#     confermati dal DESC — se fallisce, correggi dopo la sezione struttura.
-# =============================================================================
-
--- 6a) Colonne di join candidate (cercalesul catalogo)
+PROMPT === 7) colonne ID/cliente/ciclo/stagione/prezzo ===
 SELECT table_name, column_name, data_type
 FROM all_tab_columns
-WHERE owner = 'INTEX2'
+WHERE owner IN ('INTEX2','INTEXGR','NEXSTYLE','INTEXGRIFFE')
   AND table_name IN (
-    'C30_LISTINO_CLIENTI','C33_LISTINO_CLIENTI_CICLI','CX3_LISTINO_CLIENTI_CICLI',
-    'Z09_TESTATE_CICLI_LAVORAZIONE','C31_LISTINO_CLIENTI_FASI'
+    'C30_LISTINO_CLIENTI','C30_TEST_LIST_CLI','C33_LISTINO_CLIENTI_CICLI',
+    'C52_PROTOTIPI_ATMAN','C52_DETT_LIST_CL',
+    'Z09_TESTATE_CICLI_LAVORAZIONE','Z09_CICLI','Z08_CICLI_LAVORAZIONE'
   )
   AND (
        UPPER(column_name) LIKE '%ID%'
@@ -306,18 +258,14 @@ WHERE owner = 'INTEX2'
     OR UPPER(column_name) LIKE '%CICLO%'
     OR UPPER(column_name) LIKE '%UNIVOC%'
     OR UPPER(column_name) LIKE '%PREZZO%'
+    OR UPPER(column_name) LIKE '%LIST%'
   )
-ORDER BY table_name, column_id;
+ORDER BY owner, table_name, column_id;
 
--- 6b) Tentativo join (adatta i nomi colonna dopo 6a / DESC)
--- SELECT
---     C.C30_CD_CLIENTE,
---     C.C30_STAGIONE,
---     C.C30_COD_UNIVOCO,
---     C.C30_PREZZO_CAPO,
---     Z.Z09_COD_CICLO,
---     Z.Z09_DESCR_CICLO
--- FROM INTEX2.C30_LISTINO_CLIENTI C
--- LEFT JOIN INTEX2.C33_LISTINO_CLIENTI_CICLI CC ON C.C30_ID = CC.C33_ID_LISTINO
--- LEFT JOIN INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE Z ON CC.C33_ID_CICLO = Z.Z09_ID
--- WHERE ROWNUM <= 100;
+REM Join di prova — decommenta SOLO dopo aver visto COUNT > 0 e nomi colonna corretti.
+REM Esempio su NEXSTYLE (adatta i campi):
+REM SELECT * FROM NEXSTYLE.C30_TEST_LIST_CLI WHERE ROWNUM <= 5;
+REM SELECT * FROM NEXSTYLE.C52_DETT_LIST_CL WHERE ROWNUM <= 5;
+
+PROMPT === FINE SCRIPT ===
+EXIT

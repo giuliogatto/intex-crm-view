@@ -1,0 +1,42 @@
+
+C38_SEQUENZA FASE   DS_FASE				     T UM
+------------ ------ ---------------------------------------- - ------
+C38_QTA_RIGA VENDITA_CAPO VENDITA_KG COSTO_CAPO   COSTO_KG C38_CD
+------------ ------------ ---------- ---------- ---------- ------
+	   5 000068 DIVISIONE CAPI			     C NR
+	   1		0	   0	      0 	 0
+
+	  10 000001 TINTO				     C NR
+	   1		0	 4,2	      0 	 0
+
+	  20 000005 (ti)+M.PELO 			     C NR
+	   1		0	 1,6	      0 	 0
+
+
+C38_SEQUENZA FASE   DS_FASE				     T UM
+------------ ------ ---------------------------------------- - ------
+C38_QTA_RIGA VENDITA_CAPO VENDITA_KG COSTO_CAPO   COSTO_KG C38_CD
+------------ ------------ ---------- ---------- ---------- ------
+	  30 000107 MARMO				     C NR
+	   1		0	 6,5	      0 	 0
+
+	  40 000063 MANO SILICONICA C			     C NR
+	   1		0	   0	      0 	 0
+
+	  50 000114 PROFUMO				     C NR
+	   1		0	   0	      0 	 0
+
+
+C38_SEQUENZA FASE   DS_FASE				     T UM
+------------ ------ ---------------------------------------- - ------
+C38_QTA_RIGA VENDITA_CAPO VENDITA_KG COSTO_CAPO   COSTO_KG C38_CD
+------------ ------------ ---------- ---------- ---------- ------
+	  60 001128 ASCIUGATURA COTONE 70?X 40' 	     C NR
+	   1		0	   0	      0 	 0
+
+	  70 001049 CONTROLLO QUALITA'			     C NR
+	   1		0	   0	      0 	 0
+
+
+8 rows selected.
+

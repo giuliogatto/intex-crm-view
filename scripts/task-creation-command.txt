@@ -1,0 +1,1 @@
+schtasks /create /tn "Sincronizzazione_Intex_Debian" /tr "python C:\oracle\instantclient_23_26\extract_upload_tables.py" /sc daily /st 13:30 /ru "SYSTEM"

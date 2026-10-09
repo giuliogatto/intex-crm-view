@@ -1,0 +1,772 @@
+
+=== A1) Chiavi primarie delle tabelle di decodifica (per confermare i JOIN) ===
+
+TABLE_NAME			 CONSTRAINT_NAME	   COLUMN_NAME			      POSITION
+-------------------------------- ------------------------- ------------------------------ ------------
+C50_CDC_TAB			 PK_C50 		   C50_CD_AZIENDA			     1
+C50_CDC_TAB			 PK_C50 		   C50_CD_CDC				     2
+C51_RIPARTIZIONI_COSTI_CDC	 C51_PK 		   C51_KEY				     1
+CW0_LINEA_TINTORIA		 PK_CW0 		   CW0_CD_CLIENTE			     1
+CW0_LINEA_TINTORIA		 PK_CW0 		   CW0_CD_LINEA 			     2
+CW4_COMPOSIZIONI		 PK_CW4 		   CW4_CD_COMPOSIZIONE			     1
+CWA_ARTICOLI_CLIENTE		 PK_CWA 		   CWA_CD_CLIENTE			     1
+CWA_ARTICOLI_CLIENTE		 PK_CWA 		   CWA_CD_ARTICOLO_CLIENTE		     2
+R07_CLIENTI			 PK_R07 		   R07_CD_CLIENTE			     1
+Z02_FASI_DI_LAVORO		 PK_Z02 		   Z02_CD_FASE				     1
+Z09_TESTATE_CICLI_LAVORAZIONE	 PK_Z09 		   Z09_CD_CLIENTE			     1
+Z09_TESTATE_CICLI_LAVORAZIONE	 PK_Z09 		   Z09_CD_ARTICOLO_CLIENTE		     2
+Z09_TESTATE_CICLI_LAVORAZIONE	 PK_Z09 		   Z09_CD_CICLO 			     3
+Z09_TESTATE_CICLI_LAVORAZIONE	 PK_Z09 		   Z09_CD_LINEA 			     4
+Z09_TESTATE_CICLI_LAVORAZIONE	 PK_Z09 		   Z09_CD_STAGIONE			     5
+Z09_TESTATE_CICLI_LAVORAZIONE	 PK_Z09 		   Z09_CD_COMPOSIZIONE			     6
+Z11_STAGIONI			 PK_Z11 		   Z11_CD_STAGIONE			     1
+
+17 rows selected.
+
+Elapsed: 00:00:01.55
+
+=== A2) Colonne descrittive delle tabelle di decodifica ===
+
+TABLE_NAME			 COLUMN_NAME			DATA_TYPE
+-------------------------------- ------------------------------ ------------
+CW0_LINEA_TINTORIA		 CW0_CD_LINEA			VARCHAR2
+CW0_LINEA_TINTORIA		 CW0_DS_LINEA			VARCHAR2
+CW0_LINEA_TINTORIA		 CW0_CD_CLIENTE 		VARCHAR2
+CW0_LINEA_TINTORIA		 CW0_CD_STAGIONE		VARCHAR2
+CW4_COMPOSIZIONI		 CW4_CD_COMPOSIZIONE		VARCHAR2
+CW4_COMPOSIZIONI		 CW4_DS_COMPOSIZIONE		VARCHAR2
+CW4_COMPOSIZIONI		 CW4_CD_GRUPPO_COMPOSIZIONE	VARCHAR2
+CW4_COMPOSIZIONI		 CW4_CD_SIGLA			VARCHAR2
+CWA_ARTICOLI_CLIENTE		 CWA_CD_CLIENTE 		VARCHAR2
+CWA_ARTICOLI_CLIENTE		 CWA_CD_ARTICOLO_CLIENTE	VARCHAR2
+CWA_ARTICOLI_CLIENTE		 CWA_DS_ARTICOLO_CLIENTE	VARCHAR2
+R07_CLIENTI			 R07_CD_CLIENTE 		VARCHAR2
+R07_CLIENTI			 R07_RAGIONE_SOC		VARCHAR2
+R07_CLIENTI			 R07_CD_PAGAMENTO		VARCHAR2
+R07_CLIENTI			 R07_CD_NAZIONE 		VARCHAR2
+R07_CLIENTI			 R07_CD_LINGUA			VARCHAR2
+R07_CLIENTI			 R07_CD_ZONA			VARCHAR2
+R07_CLIENTI			 R07_CD_AGENTE			VARCHAR2
+R07_CLIENTI			 R07_CD_VALUTA			VARCHAR2
+R07_CLIENTI			 R07_CD_MOD_CONSEGNA		VARCHAR2
+R07_CLIENTI			 R07_CD_VETTORE 		VARCHAR2
+R07_CLIENTI			 R07_CD_IVA			VARCHAR2
+R07_CLIENTI			 R07_CD_ABI			VARCHAR2
+R07_CLIENTI			 R07_CD_CAB			VARCHAR2
+R07_CLIENTI			 R07_CD_TRASPORTO		VARCHAR2
+R07_CLIENTI			 R07_CD_OPERATORE		VARCHAR2
+R07_CLIENTI			 R07_CD_CAT_CLIFOR		VARCHAR2
+R07_CLIENTI			 R07_CD_IMBALLO 		VARCHAR2
+R07_CLIENTI			 R07_CD_MODULO_DDT		VARCHAR2
+R07_CLIENTI			 R07_CD_MODULO_FAT		VARCHAR2
+R07_CLIENTI			 R07_CD_UNITA_MIS_FAT		VARCHAR2
+R07_CLIENTI			 R07_CD_SCONTO_MAGGIORAZ	VARCHAR2
+R07_CLIENTI			 R07_CD_AGENTE_02		VARCHAR2
+R07_CLIENTI			 R07_CD_AGENTE_03		VARCHAR2
+R07_CLIENTI			 R07_CD_AGENTE_04		VARCHAR2
+R07_CLIENTI			 R07_CD_CAT_MERCEOLOGICA	VARCHAR2
+R07_CLIENTI			 R07_CD_SOTTOCATEGORIA_MERC	VARCHAR2
+R07_CLIENTI			 R07_CD_IVA_DIC_INT		VARCHAR2
+R07_CLIENTI			 R07_CD_BRAND			VARCHAR2
+Z02_FASI_DI_LAVORO		 Z02_CD_FASE			VARCHAR2
+Z02_FASI_DI_LAVORO		 Z02_DS_FASE			VARCHAR2
+Z02_FASI_DI_LAVORO		 Z02_CD_FORNITORE_ABITUA	VARCHAR2
+Z02_FASI_DI_LAVORO		 Z02_CD_REPARTO 		VARCHAR2
+Z02_FASI_DI_LAVORO		 Z02_CD_IVA			VARCHAR2
+Z02_FASI_DI_LAVORO		 Z02_DS_GRUPPO_FASE		VARCHAR2
+Z02_FASI_DI_LAVORO		 Z02_CD_TIPO_CENTRO		VARCHAR2
+Z11_STAGIONI			 Z11_CD_STAGIONE		VARCHAR2
+Z11_STAGIONI			 Z11_DS_STAGIONE		VARCHAR2
+
+48 rows selected.
+
+Elapsed: 00:00:00.09
+
+=== A3) Colonne complete della view C37_001W (view usata dal gestionale?) ===
+
+   COLUMN_ID COLUMN_NAME		    DATA_TYPE
+------------ ------------------------------ ------------
+	   1 C37_CD_CLIENTE		    VARCHAR2
+	   2 C37_CD_LINEA		    VARCHAR2
+	   3 C37_CD_STAGIONE		    VARCHAR2
+	   4 C37_CD_COMPOSIZIONE	    VARCHAR2
+	   5 C37_CD_ARTICOLO		    VARCHAR2
+	   6 C37_CD_CICLO		    VARCHAR2
+	   7 C37_CD_VALUTA		    VARCHAR2
+	   8 C37_ST_RECORD		    VARCHAR2
+	   9 C37_ST_MODIFICA		    NUMBER
+	  10 C37_PZ_TOT_CAPO		    NUMBER
+	  11 C37_PZ_TOT_KG		    NUMBER
+	  12 C37_QT_FASCIA_1		    NUMBER
+	  13 C37_TQ_FASCIA_1		    VARCHAR2
+	  14 C37_PZ_FASCIA_1		    NUMBER
+	  15 C37_TP_FASCIA_1		    VARCHAR2
+	  16 C37_QT_FASCIA_2		    NUMBER
+	  17 C37_TQ_FASCIA_2		    VARCHAR2
+	  18 C37_PZ_FASCIA_2		    NUMBER
+	  19 C37_TP_FASCIA_2		    VARCHAR2
+	  20 C37_QT_FASCIA_3		    NUMBER
+	  21 C37_TQ_FASCIA_3		    VARCHAR2
+	  22 C37_PZ_FASCIA_3		    NUMBER
+	  23 C37_TP_FASCIA_3		    VARCHAR2
+	  24 C37_QT_FASCIA_4		    NUMBER
+	  25 C37_TQ_FASCIA_4		    VARCHAR2
+	  26 C37_PZ_FASCIA_4		    NUMBER
+	  27 C37_TP_FASCIA_4		    VARCHAR2
+	  28 C37_QT_FASCIA_5		    NUMBER
+	  29 C37_TQ_FASCIA_5		    VARCHAR2
+	  30 C37_PZ_FASCIA_5		    NUMBER
+	  31 C37_TP_FASCIA_5		    VARCHAR2
+	  32 C37_QT_FASCIA_6		    NUMBER
+	  33 C37_TQ_FASCIA_6		    VARCHAR2
+	  34 C37_PZ_FASCIA_6		    NUMBER
+	  35 C37_TP_FASCIA_6		    VARCHAR2
+	  36 C37_QT_FASCIA_7		    NUMBER
+	  37 C37_TQ_FASCIA_7		    VARCHAR2
+	  38 C37_PZ_FASCIA_7		    NUMBER
+	  39 C37_TP_FASCIA_7		    VARCHAR2
+	  40 C37_QT_FASCIA_8		    NUMBER
+	  41 C37_TQ_FASCIA_8		    VARCHAR2
+	  42 C37_PZ_FASCIA_8		    NUMBER
+	  43 C37_TP_FASCIA_8		    VARCHAR2
+	  44 C37_QT_FASCIA_9		    NUMBER
+	  45 C37_TQ_FASCIA_9		    VARCHAR2
+	  46 C37_PZ_FASCIA_9		    NUMBER
+	  47 C37_TP_FASCIA_9		    VARCHAR2
+	  48 C37_PZ_FASCIA_C		    NUMBER
+	  49 C37_PZ_FASCIA_C_MIN	    NUMBER
+	  50 C37_TP_FASCIA_C		    VARCHAR2
+	  51 C37_PZ_FASCIA_P		    NUMBER
+	  52 C37_TP_FASCIA_P		    VARCHAR2
+	  53 C37_CAPI_COMMESSA		    NUMBER
+	  54 C37_PRZ_COMMESSA		    NUMBER
+	  55 R07_RAGIONE_SOC		    VARCHAR2
+	  56 CW0_DS_LINEA		    VARCHAR2
+	  57 Z11_DS_STAGIONE		    VARCHAR2
+	  58 CW4_DS_COMPOSIZIONE	    VARCHAR2
+	  59 CWA_DS_ARTICOLO_CLIENTE	    VARCHAR2
+	  60 Z09_DS_CICLO		    VARCHAR2
+	  61 R03_DS_VALUTA		    VARCHAR2
+	  62 Z09_DS_APPLICAZIONE	    VARCHAR2
+	  63 Z09_DS_RICAMO		    VARCHAR2
+	  64 Z09_DS_STAMPA		    VARCHAR2
+	  65 Z09_IMMAGINE_1		    VARCHAR2
+	  66 Z09_IMMAGINE_2		    VARCHAR2
+	  67 Z09_IMMAGINE_3		    VARCHAR2
+	  68 Z09_IMMAGINE_4		    VARCHAR2
+	  69 C37_FLAG_VISIBILE		    CHAR
+	  70 C37_FLAG_PROTOTIPO 	    CHAR
+	  71 C37_CD_CICLO_SHORT 	    VARCHAR2
+	  72 Z09_NR_REVISIONE		    NUMBER
+	  73 Z09_DS_CICLO_BOLLE_FAT	    VARCHAR2
+	  74 Z09_UTENTE_INSERIMENTO	    VARCHAR2
+	  75 Z09_DATA_INS		    DATE
+	  76 C37_NOTE			    VARCHAR2
+	  77 C37_REFERENTE		    VARCHAR2
+	  78 C37_OGGETTO		    VARCHAR2
+	  79 Z09_NOTE			    VARCHAR2
+	  80 C37_CD_CICLO_CLI		    VARCHAR2
+	  81 Z09_CD_CICLO_CLI		    VARCHAR2
+	  82 C37_DATA_VALIDITA		    DATE
+	  83 CW4_CD_GRUPPO_COMPOSIZIONE     VARCHAR2
+	  84 Z09_CD_REPARTO_STAT	    VARCHAR2
+	  85 Z01_DS_REPARTO		    VARCHAR2
+	  86 CW4_TIPO			    VARCHAR2
+	  87 C37_GRUPPO 		    VARCHAR2
+	  88 Z09_CD_GRUPPO		    VARCHAR2
+	  89 Z06_DS_GRUPPO		    VARCHAR2
+	  90 C37_CD_TIPO_CENTRO 	    VARCHAR2
+	  91 S02_DS_TIPO_CENTRO 	    VARCHAR2
+	  92 Z09_PERC_FALLOSITA 	    NUMBER
+	  93 ANNO_INS			    VARCHAR2
+	  94 C37_PRG			    NUMBER
+	  95 C37_NOTE_LIBERE		    VARCHAR2
+
+95 rows selected.
+
+Elapsed: 00:00:00.09
+
+=== A4) Significato dei flag: confronto 39770 (Prototipo) vs 36625 (Accettata) ===
+
+COD_UNIVOCO CLIENTE STAGION CICLO	  FL_PROTO FL_VIS ST Z09_FL_P Z09_NR_REVISIONE Z09_PERC_FALLOSITA C37_PZ_TOT_CAPO C37_PZ_TOT_KG C37_DATA_
+----------- ------- ------- ------------- -------- ------ -- -------- ---------------- ------------------ --------------- ------------- ---------
+      36625 2594    PE 26   T220	  N	   S	  V  S			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N						0	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N						0	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N						0	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N						0	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N						0	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N						0	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  S			     0			4	      4,7	      0 29-MAR-26
+      36625 2594    PE 26   T220	  N	   S	  V  N						0	      4,7	      0 29-MAR-26
+      38594 2594    *	    TR.FINO4FASI* S	   P	  V  S			     0			0		0	      0 27-FEB-25
+      38594 2594    *	    TR.FINO4FASI* S	   P	  V  N			     0			0		0	      0 27-FEB-25
+      39636 2594    *	    TR.FINO2FASI* S	   P	  V  S			     0			0		0	      0 27-SEP-26
+      39636 2594    *	    TR.FINO2FASI* S	   P	  V  N			     0			0		0	      0 27-SEP-26
+      39636 2594    *	    TR.FINO2FASI* S	   P	  V  N			     0			0		0	      0 27-SEP-26
+      39770 2594    AI 27   T141	  S	   P	  V  S			     0			5	    15,55	      0 27-NOV-25
+      39770 2594    AI 27   T141	  S	   P	  V  N			     0			5	    15,55	      0 27-NOV-25
+      39770 2594    AI 27   T141	  S	   P	  V  N						0	    15,55	      0 27-NOV-25
+      39770 2594    AI 27   T141	  S	   P	  V  N						0	    15,55	      0 27-NOV-25
+      39770 2594    AI 27   T141	  S	   P	  V  N			     0			5	    15,55	      0 27-NOV-25
+      39770 2594    AI 27   T141	  S	   P	  V  S			     0			5	    15,55	      0 27-NOV-25
+      39770 2594    AI 27   T141	  S	   P	  V  N			     0			5	    15,55	      0 27-NOV-25
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N						0		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N						0		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N						0		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N						0		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N						0		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N						0		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N						0		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40067 2299    PE 27   T100	  S	   S	  V  N			     0			5		0	    4,8 29-MAR-21
+      40723 2594    AI 26   T104	  S	   P	  V  S			     0			4	     7,25	      0 29-MAR-26
+      40723 2594    AI 26   T104	  S	   P	  V  N			     0			4	     7,25	      0 29-MAR-26
+      40723 2594    AI 26   T104	  S	   P	  V  N			     0			4	     7,25	      0 29-MAR-26
+
+64 rows selected.
+
+Elapsed: 00:00:00.10
+
+=== A5) Distribuzione flag su tutte le offerte ===
+
+FL_PROTO FL_VIS ST	      N
+-------- ------ -- ------------
+S	 S	V	  20730
+N	 S	V	   9331
+S	 P	V	   3571
+N	 P	V	    234
+
+4 rows selected.
+
+Elapsed: 00:00:00.02
+
+=== A6) Distribuzione Z09_FLAG_PROTOTIPO sulle offerte (join ciclo) ===
+
+FL_PROTO Z09_FL_P	     N
+-------- -------- ------------
+S	 N		135551
+N	 N		 40434
+S	 S		  7725
+N	 S		  1439
+N			    13
+S			     2
+
+6 rows selected.
+
+Elapsed: 00:00:00.11
+
+=== A7) C37_PRG: univoco? null? range ===
+
+   N_OFFERTE	N_CON_PRG N_PRG_DISTINTI      PRG_MIN	   PRG_MAX
+------------ ------------ -------------- ------------ ------------
+       33866	    33863	   33837	    1	     41728
+
+1 row selected.
+
+Elapsed: 00:00:00.05
+
+=== A8) C38_C37_PRG affidabile? (se molti NULL si usa la chiave a 7 campi) ===
+
+     N_RIGHE	N_CON_PRG   N_PRG_ZERO
+------------ ------------ ------------
+      113008		0	     0
+
+1 row selected.
+
+Elapsed: 00:00:00.04
+
+=== A9) Offerte per stagione (top 20) ===
+
+STAGION 	   N
+------- ------------
+pe/ai	       15072
+*		2469
+AI 22		2346
+PE 26		2336
+PE 24		2240
+AI 25		1914
+AI 26		1874
+PE 25		1678
+PE 27		1611
+AI 24		1412
+PR LAB		 383
+AI 27		 313
+.		 208
+PE 28		   8
+PE 12		   1
+SR		   1
+
+16 rows selected.
+
+Elapsed: 00:00:00.02
+
+=== A10) Righe C38 dell'offerta 39770 (chiave a 7 campi) — confronto con la foto ===
+
+C38_SEQUENZA C38_CD TP C38_QTA_RIGA C38_PZ_UNITARIO C38_PZ_UNITARIO_KG C38_CS_UNITARIO C38_CS_UNITARIO_KG  C38_C37_PRG
+------------ ------ -- ------------ --------------- ------------------ --------------- ------------------ ------------
+	   5	    C		  1		  0		     0		     0			0
+	  10	    C		  1		  0		   4,2		     0			0
+	  20	    C		  1		  0		   1,6		     0			0
+	  30	    C		  1		  0		   6,5		     0			0
+	  40	    C		  1		  0		     0		     0			0
+	  50	    C		  1		  0		     0		     0			0
+	  60	    C		  1		  0		     0		     0			0
+	  70	    C		  1		  0		     0		     0			0
+
+8 rows selected.
+
+Elapsed: 00:00:00.02
+
+=== A11) Fasi del ciclo dell'offerta 39770 (Z08: descrizione fasi della griglia) ===
+
+Z08_CD Z08_CD_ARTICO Z08_CD_CICLO  Z08_SEQUENZA Z Z08_ST_MODIFICA Z08_CD Z08_CD Z08_NOTE																														       Z Z Z Z Z08_QT_RICHIESTA Z08_CD Z08_CD Z Z08_CD Z08_CD Z08_CD
+------ ------------- ------------- ------------ - --------------- ------ ------ -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- - - - - ---------------- ------ ------ - ------ ------ ------
+2594   00010	     T141		      5 V		0 000068																																       N S N N		      1 NR     120    N .      .      .
+2594   00010	     T141		     10 V		0 000001																																       N S N N		      1 NR     40     N .      .      .
+2594   00010	     T141		     20 V		0 000005																																       N S N N		      1 NR     40     N .      .      .
+2594   00010	     T141		     30 V		0 000107																																       N S N N		      1 NR     40     N .      .      .
+2594   00010	     T141		     40 V		0 000160																																       N S N N		      1 NR     1      N .      .      .
+2594   00010	     T141		     50 V		0 000114																																       N S N N		      1 NR     40     N .      .      .
+2594   00010	     T141		     60 V		0 001128																																       N S N N		      1 NR     1      N .      .      .
+2594   00010	     T141		     70 V		0 001049																																       N S N N		      1 NR     120    N .      .      .
+2594   00010	     T141		      5 V		0 000068																																       N S N N		      1 NR     120    N .      AI 27  10001
+2594   00010	     T141		     10 V		0 000001																																       N S N N		      1 NR     40     N .      AI 27  10001
+2594   00010	     T141		     20 V		0 000005																																       N S N N		      1 NR     40     N .      AI 27  10001
+2594   00010	     T141		     30 V		0 000107																																       N S N N		      1 NR     40     N .      AI 27  10001
+2594   00010	     T141		     40 V		0 000063																																       N S N N		      1 NR     40     N .      AI 27  10001
+2594   00010	     T141		     50 V		0 000114																																       N S N N		      1 NR     40     N .      AI 27  10001
+2594   00010	     T141		     60 V		0 001128																																       N S N N		      1 NR     1      N .      AI 27  10001
+2594   00010	     T141		     70 V		0 001049																																       N S N N		      1 NR     120    N .      AI 27  10001
+2594   00010	     T141		      5 V		  000068																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		     10 V		  000001																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		     20 V		  000005																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		     30 V		  000107																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		     40 V		  000160																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		     50 V		  000114																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		     60 V		  001128																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		     70 V		  001049																																       N S N N		      1 NR	      N .      PE 26  00001
+2594   00010	     T141		      5 V		0 000068																																       N S N N		      1 NR     120    N .      PE 26  10001
+2594   00010	     T141		     10 V		0 000001																																       N S N N		      1 NR     40     N .      PE 26  10001
+2594   00010	     T141		     20 V		0 000005																																       N S N N		      1 NR     40     N .      PE 26  10001
+2594   00010	     T141		     30 V		0 000107																																       N S N N		      1 NR     40     N .      PE 26  10001
+2594   00010	     T141		     40 V		0 000160																																       N S N N		      1 NR     1      N .      PE 26  10001
+2594   00010	     T141		     50 V		0 000114																																       N S N N		      1 NR     40     N .      PE 26  10001
+
+30 rows selected.
+
+Elapsed: 00:00:00.02
+
+=== A12) Centri di costo dell'offerta 39770 (foto: 40 TINTORIA, vendita capo 15,55) ===
+
+CDC    DS_CDC			    C51_COSTO C51_COSTO_KG
+------ ------------------------- ------------ ------------
+40     TINTORIA 			15,55		 0
+
+1 row selected.
+
+Elapsed: 00:00:00.03
+
+=== B1) Ultime 100 offerte con descrizioni (come la schermata "Offerte a Clienti") ===
+    AND cwa.CWA_CD_ARTICOLO = t.C37_CD_ARTICOLO
+        *
+ERROR at line 35:
+ORA-00904: "CWA"."CWA_CD_ARTICOLO": invalid identifier
+Help: https://docs.oracle.com/error-help/db/ora-00904/
+
+
+Elapsed: 00:00:00.01
+
+=== B2) Ultime 100 offerte — solo codici (nessuna decodifica, non può fallire) ===
+
+COD_UNIVOCO CLIENTE LINEA  STAGION COMPOSI ARTICOLO	 CICLO	       CICLO_CLI     VALU C37_PZ_TOT_CAPO C37_PZ_TOT_KG FL_PROTO FL_VIS C37_DATA_
+----------- ------- ------ ------- ------- ------------- ------------- ------------- ---- --------------- ------------- -------- ------ ---------
+	    1770    .	   PE 26   10002   00015	 T111L	       T111L	     01 		0	      0 N	 P	30-DEC-99
+	    772     .	   AI 25   00136   CAPI 	 T250	       T250	     01 		0	    7,7 N	 P	27-JAN-13
+	    9900    08	   PE 25   00285   CAPI 	 W101L	       W101L	     01 		0	      0 N	 P	30-DEC-99
+      41728 2594    .	   AI 27   10001   00008	 T200	       T200	     01 		0	      0 S	 P	30-DEC-99
+      41727 897     .	   AI 27   10002   CAPI 	 T105L	       T105L	     01 		0	      0 S	 P	30-DEC-99
+      41726 1992    99	   PE 27   00005   00012	 331-2	       331-2	     01 		0	      0 S	 P	27-FEB-27
+      41725 2323    99	   PE 27   00005   00010	 0032	       0032	     01 	       25	      0 S	 P	29-JUN-26
+      41724 2323    99	   PE 27   00005   00001	 0032	       0032	     01 	       20	      0 S	 P	29-JUN-26
+      41723 2502    .	   *	   00285   00060	 T711	       T711	     01 		0	     10 N	 S	30-DEC-99
+      41722 2467    99	   AI 27   00005   00001	 348	       348 - UMIT    01 	       14	      0 S	 P	27-DEC-26
+      41721 1569    99	   PE 27   00005   00001	 0012	       0012-SCURO    01 		0	      0 S	 P	30-DEC-99
+      41720 2594    .	   AI 27   10002   CAPI CAMP	 T100L	       TR_15056      01 		0	      0 S	 P	29-APR-26
+      41719 447     99	   PE 27   00005   00026	 LBWLA54       LBWLA54	     01 	    12,06	      0 S	 P	30-DEC-99
+      41718 2594    .	   AI 27   10001   00001	 T110	       T110 (BIANCO) 01 		0	      0 S	 P	27-NOV-26
+      41717 2008    .	   PE 27   10001   00029	 T154	       T154	     01 	       22	    7,5 S	 P	29-JUN-25
+      41716 2093    99	   PE 27   10001   00017	 0022	       0022 - GUCCI  01 		8	      0 S	 P	27-JAN-27
+      41715 2093    99	   PE 27   10001   00029	 0024	       0024 - GUCCI  01 	      6,5	      0 S	 P	27-JAN-27
+      41714 2093    99	   PE 27   10001   00029	 0021	       0021 - GUCCI  01 	       11	      0 S	 P	27-JAN-27
+      41713 5	    15	   *	   00285   CAPI 	 TR.FINO4FASI* TR.FINO4FASI* 01 		0	      0 S	 P	30-DEC-99
+      41712 5	    15	   *	   00285   CAPI 	 TRAT.COMPLESS TRAT.COMPLESS 01 		0	      0 S	 P	27-AUG-25
+      41711 5	    15	   *	   00285   CAPI 	 TR.FINO2FASI* TR.FINO2FASI* 01 	      8,5	      0 S	 P	27-DEC-21
+      41710 5	    15	   *	   00285   CAPI 	 TI.COL.AC SPE TI.COL.AC SPE 01 	      150	      0 S	 P	30-DEC-99
+      41709 5	    01	   *	   00285   00060	 T.COL.AC      T.COL.AC      01 	       50	      0 S	 P	30-DEC-99
+      41708 2659    05	   AI 27   10010   CAPI 	 INMARMO       INMARMO	     01 		0	      0 S	 P	30-DEC-99
+      41707 2659    05	   AI 27   10010   CAPI 	 INTOLAN       INTOLAN	     01 		0	      0 S	 P	30-DEC-99
+      41706 5	    07	   *	   00285   00060	 T.COL.AC      T.COL.AC      01 	       50	      0 S	 P	30-DEC-99
+      41705 5	    07	   *	   00285   00030	 PROT.DENIM    PROT.DENIM    01 	       50	      0 S	 P	30-DEC-99
+      41704 648     .	   AI 26   00012   CAPI 	 T100	       T100	     01 		0	      0 S	 P	30-SEP-11
+      41703 1917    .	   PE 27   00285   CAPI 	 T700	       T700	     01 	      1,3	     13 S	 P	27-JAN-19
+      41702 2671    .	   *	   00285   CAPI 	 TR.FINO4FASI* TR.FINO4FASI* 01 		0	      0 S	 P	29-MAY-23
+      41701 2671    .	   *	   00285   CAPI 	 TR.FINO2FASI* TR.FINO2FASI* 01 		0	      0 S	 P	29-MAY-25
+      41700 1420    03	   PE 27   10001   CAPI 	 INTLINO       INTLINO	     01 		0	      5 S	 P	30-DEC-99
+      41698 2165    .	   AI 27   10001   00015	 T152	       T152	     01 	       10	     10 S	 P	30-SEP-11
+      41697 2349    20	   PE 27   10001   CAPI 	 T152	       T152	     01 		0	      9 S	 P	27-JAN-22
+      41696 1718    01	   AI 27   10001   00001	 W102	       W102	     01 	      2,5	      0 S	 P	29-MAR-26
+      41695 224     .	   AI 27   10001   CAPI 	 T152	       T152	     01 		7	    6,5 S	 P	30-SEP-11
+      41694 224     .	   AI 27   10001   CAPI 	 T700	       T700	     01 		1	     11 S	 P	29-JUN-23
+      41693 224     .	   AI 27   10001   CAPI 	 W300	       W300	     01 		0	    3,5 S	 P	29-MAR-27
+      41692 224     .	   AI 27   10001   CAPI 	 T400	       T400	     01 		0	    8,5 S	 P	30-SEP-11
+      41691 224     .	   AI 27   10001   CAPI 	 T100	       T100	     01 		0	    4,5 S	 P	30-SEP-11
+      41690 224     .	   AI 27   10001   CAPI 	 T200	       T200	     01 		0	      7 S	 P	30-SEP-11
+      41689 2349    20	   PE 27   10001   CAPI 	 T252	       T252	     01 		0	     11 S	 P	27-JAN-22
+      41688 866     .	   AI 27   10010   CAPI 	 T261	       T261CAMP/PROD 01 		0	      0 S	 P	28-APR-20
+      41686 866     .	   AI 27   10010   00067	 T201	       T201 CAMP/PRO 01 		0	      0 S	 P	27-NOV-25
+      41685 866     .	   AI 27   10010   00067	 T101	       T101CAMP/PROD 01 		0	      0 S	 P	27-NOV-18
+      41684 2349    .	   PE 27   10001   CAPI 	 T152	       T152	     01 		0	      9 S	 P	27-JAN-22
+      41683 2349    20	   PE 27   10001   CAPI 	 0045	       0045	     01 		8	      0 S	 P	29-MAY-26
+      41682 2492    99	   PE 27   00005   00179	 290	       290 - LV      01 		6	      0 S	 P	29-JUN-25
+      41681 1992    .	   PE 27   10001   CAPI 	 T400	       T400	     01 		0	      9 N	 S	28-MAY-20
+      41680 447     99	   PE 27   00005   00001	 LCWLAH3       LCWLAH3	     01 	     3,15	      0 S	 P	30-DEC-99
+      41679 866     .	   *	   00285   CAPI 	 TR.FINO6FASI* TR.FINO6FASI* 01 		0	      0 S	 P	29-APR-25
+      41678 2659    05	   AI 27   10010   CAPI 	 INTTR	       INTTR	     01 		0	      0 S	 P	30-DEC-99
+      41677 2659    05	   AI 27   10010   CAPI 	 INTSOLD       INTSOLD	     01 		0	      0 S	 P	30-DEC-99
+      41676 2659    05	   AI 27   10001   CAPI 	 INTOLAN       INTOLAN	     01 		0	      0 S	 P	30-DEC-99
+      41675 2008    .	   PE 27   10001   00016	 W7000	       W7000	     01 	       15	      0 S	 P	29-JUN-25
+      41674 2659    05	   AI 27   10010   CAPI 	 INTTENC       INTTENC	     01 		0	    5,2 S	 P	30-DEC-99
+      41673 2659    05	   AI 27   10010   CAPI 	 INT1003       INT1003	     01 		0	      0 S	 P	30-DEC-99
+      41672 2659    05	   AI 27   10010   00001	 INMARMO       INMARMO	     01 		0	      0 S	 P	30-DEC-99
+      41671 2659    05	   AI 27   10010   CAPI 	 I2026	       I2026	     01 		0	      0 S	 P	30-DEC-99
+      41670 866     99	   AI 26   00005   00025	 W957	       SW POMICE 2H  01 		0	      0 S	 P	29-APR-22
+      41669 897     99	   AI 27   00005   00001	 TLPOLAR DENIM TLPOLAR DENIM 01 		0	      0 S	 P	29-MAY-25
+      41668 2083    .	   AI 27   10002   CAPI 	 T100L	       T100L	     01 		0	    5,5 S	 P	27-AUG-20
+      41667 2083    .	   AI 27   10001   CAPI 	 T400	       T400	     01 		0	    7,5 S	 P	30-DEC-99
+      41666 224     .	   AI 27   00007   CAPI 	 T100L	       T100L	     01 		0	    5,5 S	 P	30-SEP-11
+      41664 910     .	   PE 27   00285   CAPI 	 W300	       W300	     01 		0	      0 S	 P	27-SEP-21
+      41663 2594    01	   PE 27   10010   00012	 T220	       T220	     01 	      4,6	      0 S	 P	29-MAR-26
+      41662 2594    01	   PE 27   10010   00012	 T154	       T154	     01 	      3,9	      0 S	 P	29-MAR-26
+      41661 2594    01	   PE 27   10010   00012	 T109	       T109(BIANCO)  01 		0	      0 S	 P	29-MAR-26
+      41660 5	    .	   PE 27   00005   00001	 214	       214	     01 		0	      0 S	 P	30-DEC-99
+      41659 1569    99	   PE 27   00005   00001	 027	       027-CHIARO    01 		0	      0 S	 P	30-DEC-99
+      41658 1569    99	   PE 27   00005   00001	 017	       017-SCURO     01 		0	      0 S	 P	30-DEC-99
+      41657 1569    99	   PE 27   00005   00001	 021	       021-CHIARO    01 		0	      0 S	 P	30-DEC-99
+      41656 1569    99	   PE 27   00005   00001	 019	       019-MEDIO     01 		0	      0 S	 P	30-DEC-99
+      41655 594     99	   PE 27   00285   00001	 W912	       SWE	     01 		0	      0 S	 P	30-DEC-99
+      41654 594     99	   PE 27   00285   00010	 W912	       SWE	     01 		0	      0 S	 P	30-DEC-99
+      41653 866     99	   AI 26   00005   00001	 W957	       SW POMICE 2H  01 		0	      0 S	 P	29-APR-22
+      41652 1250    .	   PR LAB  00285   00060	 T.COL.AC      T.COL.AC      01 	      110	      0 S	 P	29-APR-27
+      41651 1250    .	   *	   00285   00060	 T900	       T900	     01 		0	     10 S	 P	28-MAY-20
+      41650 1250    .	   *	   00285   00057	 LAB DIPS      LAB DIPS      01 	       30	      0 S	 P	30-SEP-11
+      41649 1250    .	   AI 27   00268   CAPI 	 T152	       T152	     01 		0	    7,5 S	 P	29-APR-27
+      41648 1250    .	   AI 27   00268   CAPI 	 T252	       T252	     01 		0	    9,5 S	 P	29-APR-27
+      41646 897     99	   AI 27   00005   CAPI 	 TLPOLAR DENIM TLPOLAR DENIM 01 		0	      0 S	 P	29-MAY-25
+      41645 1213    .	   AI 27   00006   00058	 T100L	       T100L-TELI    01 		0	      0 S	 P	27-JAN-26
+      41644 2594    .	   AI 27   00347   00001	 T218	       T218	     01 		0	      0 S	 P	29-MAR-26
+      41643 1213    .	   AI 27   10026   00025	 W105L_B       W105L_B GUCCI 01 		6	      0 S	 P	27-NOV-20
+      41642 1569    99	   AI 27   00005   00001	 0044	       0044-N CHIARO 01 		0	      0 S	 P	27-OCT-24
+      41641 1569    99	   AI 27   00005   00001	 028B	       LAV.MEDIO     01 	     10,5	      0 N	 S	27-OCT-26
+      41640 1569    99	   AI 27   00005   00001	 0043	       0043SCURO     01 		8	      0 N	 S	27-OCT-24
+      41639 2513    99	   AI 27   10001   00029	 LASER 1628    1628	     01 	      8,7	      0 S	 P	29-APR-27
+      41638 866     99	   AI 27   10001   00001	 087	       087	     01 	      9,9	      0 S	 P	29-JUN-26
+      41637 866     99	   AI 27   10001   00001	 086	       086	     01 	     10,8	      0 S	 P	29-JUN-26
+      41636 2261    12	   PE 27   00001   CAPI 	 T111	       T111	     01 		0	      0 S	 P	29-MAY-26
+      41635 2093    .	   PE 27   10001   00068	 TL0018        TL0018	     01 		8	      7 S	 P	29-MAR-27
+      41634 1992    .	   PE 27   10001   CAPI 	 T159	       T159	     01 		0	      4 S	 P	29-APR-26
+      41633 772     11	   *	   00285   00060	 T.AC+MPEL+MAR T.AC+MPEL+MAR 01 	      180	      0 S	 P	29-JUN-23
+      41632 772     11	   *	   00017   00060	 T.AC+MPEL+MAR T.AC+MPEL+MAR 01 	      180	      0 S	 P	29-JUN-23
+      41631 895     .	   PE 27   10001   00001	 TL387	       TL387 - AMIRI 01 		3	    8,5 S	 P	29-MAY-26
+      41630 1992    99	   PE 27   00005   00025	 404	       404 - ERD     01 		4	      0 S	 P	27-JAN-27
+      41629 1992    99	   PE 27   00005   00025	 402	       402 - ERD     01 	       28	      0 S	 P	27-JAN-27
+      41628 1992    99	   PE 27   00005   00079	 402	       402 - ERD     01 	       36	      0 S	 P	27-JAN-27
+
+100 rows selected.
+
+Elapsed: 00:00:00.04
+
+=== B3) Righe (fasi/prezzi) delle ultime 20 offerte ===
+
+COD_UNIVOCO C38_SEQUENZA TP C38_QTA_RIGA C38_PZ_UNITARIO C38_PZ_UNITARIO_KG C38_CS_UNITARIO C38_CS_UNITARIO_KG C38_CD
+----------- ------------ -- ------------ --------------- ------------------ --------------- ------------------ ------
+		      10 C	       1	       0		  0		  0		     0
+		      10 C	       1	       0		  0		  0		     0
+		      10 C	       1	       0		  0		  0		     0
+		      20 C	       1	     8,5		  0		  0		     0
+		      20 C	       1	       0		  0		  0		     0
+		      20 K	       1	       0		8,2		  0		     0
+		      30 C	       1	       0		  0		  0		     0
+		      30 C	       1	       0		  0		  0		     0
+		      30 C	       1	       0		  0		  0		     0
+		      40 C	       1	       0		  0		  0		     0
+		      50 C	       1	       0		  0		  0		     0
+		      60 C	       1	       0		  0		  0		     0
+      41728	      10 C	       1	       0		  0		  0		     0
+      41728	      20 C	       1	       0		  0		  0		     0
+      41728	      30 C	       1	       0		  0		  0		     0
+      41728	      40 C	       1	       0		  0		  0		     0
+      41728	      50 C	       1	       0		  0		  0		     0
+      41728	      60 C	       1	       0		  0		  0		     0
+      41727	      10 C	       1	       0		  0		  0		     0
+      41727	      20 C	       1	       0		  0		  0		     0
+      41727	      30 C	       1	       0		  0		  0		     0
+      41726	      10 C	       1	       0		  0		  0		     0
+      41726	      20 C	       1	       0		  0		  0		     0
+      41726	      30 C	       1	       0		  0		  0		     0
+      41726	      40 C	       1	       0		  0		  0		     0
+      41726	      50 C	       1	       0		  0		  0		     0
+      41725	      10 C	       1	       0		  0		 ,6		     0 31132
+      41725	      14 C	       1	       0		  0		 ,8		     0 31132
+      41725	      15 C	       1	       0		  0		2,7		     0 31132
+      41725	      16 C	       1	       0		  0		,45		     0 31132
+      41725	      17 C	       1	       0		  0		 ,9		     0
+      41725	      18 C	       1	       0		  0		 ,3		     0 31132
+      41725	      19 C	       1	       0		  0		  0		     0
+      41725	      20 C	       1	       0		  0		1,8		     0 31132
+      41725	      30 C	       1	       0		  0		,45		     0 31132
+      41725	      40 C	       1	       0		  0		 ,8		     0 31132
+      41725	      50 C	       1	       0		  0		  0		     0
+      41725	      80 C	       1	       0		  0		  0		     0
+      41725	      90 C	       1	       0		  0		  0		     0
+      41724	      10 C	       1	       0		  0		 ,6		     0 31132
+      41724	      14 C	       1	       0		  0		 ,8		     0 31132
+      41724	      15 C	       1	       0		  0		2,7		     0 31132
+      41724	      16 C	       1	       0		  0		,45		     0 31132
+      41724	      17 C	       1	       0		  0		 ,9		     0
+      41724	      18 C	       1	       0		  0		 ,3		     0 31132
+      41724	      19 C	       1	       0		  0		  0		     0
+      41724	      20 C	       1	       0		  0		1,8		     0 31132
+      41724	      30 C	       1	       0		  0		,45		     0 31132
+      41724	      40 C	       1	       0		  0		 ,8		     0 31132
+      41724	      50 C	       1	       0		  0		  0		     0
+      41724	      80 C	       1	       0		  0		  0		     0
+      41724	      90 C	       1	       0		  0		  0		     0
+      41723	      10 C	       1	       0		  0		  0		     0
+      41722	      10 C	       1	       0		  0		 ,4		     0 31132
+      41722	      20 C	       1	       0		  0		 ,8		     0 31132
+      41722	      30 C	       1	       0		  0		  0		     0
+      41722	      40 C	       1	       0		  0		  0		     0
+      41722	      50 C	       1	       0		  0		  0		     0
+      41722	      60 C	       1	       0		  0		 ,9		     0 31132
+      41722	      70 C	       1	       0		  0		  0		     0
+      41722	      80 C	       1	       0		  0		  0		     0
+      41722	      85 C	       1	       0		  0		  0		     0
+      41722	      90 C	       1	       0		  0		  0		     0
+      41722	     110 C	       1	       0		  0		  0		     0
+      41721	      10 C	       1	       0		  0		  0		     0
+      41721	      20 C	       1	       0		  0		  0		     0
+      41721	      30 C	       1	       0		  0		  0		     0
+      41720	       5 C	       1	       0		  0		  0		     0
+      41720	       6 C	       1	       0		  0		  0		     0
+      41720	      10 K	       1	      ,5		5,1		  0		   1,5
+      41720	      20 C	       1	       0		  0		  0		     0
+      41720	      30 C	       1	       0		  0		  0		     0
+      41720	      45 C	       1	       0		  0		  0		     0
+      41720	      55 C	       1	       0		  0		  0		     0
+      41719	      10 C	       1	       0		  0		  0		     0
+      41719	      20 C	       1	       0		  0		  0		     0
+      41719	      30 C	       1	       0		  0		  0		     0
+      41719	      50 C	       1	       0		  0		  0		     0
+      41719	      60 C	       1	       0		  0		  0		     0
+      41719	      70 C	       1	       0		  0		  0		     0
+      41719	      80 C	       1	       0		  0		  0		     0
+      41719	      90 C	       1	       0		  0		  0		     0
+      41719	     100 C	       1	       0		  0		  0		     0
+      41719	     110 C	       1	       0		  0		  0		     0
+      41719	     120 C	       1	       0		  0		  0		     0
+      41719	     130 C	       1	       0		  0		  0		     0
+      41718	       5 C	       1	       0		  0		  0		     0
+      41718	      10 K	       1	       0		  0		  0		   1,5
+      41718	      20 C	       1	       0		  0		  0		     0
+      41718	      30 C	       1	       0		  0		  0		     0
+      41718	      40 C	       1	       0		  0		  0		     0
+      41717	      10 C	       1	       0		  0		  0		     0
+      41717	      20 C	       1	       0		  0		  0		     0
+      41717	      25 C	       1	       0		  0		  5		     0 31132
+      41717	      40 C	       1	       0		  0		  1		     0
+      41717	      50 C	       1	       0		  0		  0		     0
+      41717	      60 C	       1	       0		  0		  0		     0
+      41716	      10 C	       1	       0		  0		  0		     0
+      41716	      20 C	       1	       0		  0		  0		     0
+      41716	      30 C	       1	       0		  0		  0		     0
+      41716	      40 C	       1	       0		  0		  0		     0
+      41715	      10 C	       1	       0		  0		  0		     0
+      41715	      20 C	       1	       0		  0		  0		     0
+      41715	      30 C	       1	       0		  0		  0		     0
+      41715	      40 C	       1	       0		  0		  0		     0
+      41714	      30 C	       1	       0		  0		  0		     0
+      41714	      40 C	       1	       0		  0		  0		     0
+      41714	      50 C	       1	       0		  0		  0		     0
+      41714	      60 C	       1	       0		  0		  0		     0
+      41713	      10 C	       1	       0		  0		  0		     0
+      41712	      10 C	       1	       0		  0		  0		     0
+
+111 rows selected.
+
+Elapsed: 00:00:00.06
+
+=== B4) Offerte di un cliente/stagione (esempio: 2594 JACOB COHEN, AI 27) ===
+
+COD_UNIVOCO CICLO	  CICLO_CLI	LINEA  COMPOSI ARTICOLO      C37_PZ_TOT_CAPO C37_PZ_TOT_KG FL_PROTO
+----------- ------------- ------------- ------ ------- ------------- --------------- ------------- --------
+      41728 T200	  T200		.      10001   00008			   0		 0 S
+      41720 T100L	  TR_15056	.      10002   CAPI CAMP		   0		 0 S
+      41718 T110	  T110 (BIANCO) .      10001   00001			   0		 0 S
+      41644 T218	  T218		.      00347   00001			   0		 0 S
+      41592 1041_2	  TR_10102	99     00005   00001			   0		 0 S
+      41518 T200	  T200		.      10001   00001			   0		 0 S
+      41517 T100	  T100		.      10001   00001			 4,7		 0 S
+      41516 T220	  T220		.      10010   00001			   0		 0 S
+      41515 T154	  T154		.      10010   00001			   0		 0 S
+      41374 1069-BIS	  1069-TR 10112 .      00005   00001		       11,55		 0 S
+      41335 1069	  1069-TR 10112 .      00005   00001			   0		 0 S
+      41333 T109-540	  S3848-TR10019 .      10010   00001			   0		 0 S
+      41310 1323	  1323		99     00005   00008			6,75		 0 S
+      41309 1322	  1322		99     00005   00008			3,75		 0 S
+      41308 1324	  1324		99     00005   00008		       10,45		 0 S
+      41307 1321	  1321		99     00005   00008		       10,25		 0 S
+      41306 1320	  1320		99     00005   00008			4,75		 0 S
+      41305 1319	  1319		99     00005   00008			3,75		 0 S
+      41304 1318	  1318		99     00005   00008			3,75		 0 S
+      41301 1317	  1317		99     00005   00008			7,75		 0 S
+      41093 1314	  TR_10180	99     00005   00001			 9,8		 0 S
+      41092 1315	  1315		99     00005   00049			4,75		 0 S
+      41091 1315	  1315		99     00005   00001			4,75		 0 S
+      41090 1316	  1316		99     00005   00049			4,15		 0 S
+      41089 1316	  1316		99     00005   00001			4,15		 0 S
+      41007 T302	  T302		.      00136   00001			16,6		 0 S
+      40651 1313	  1313		99     00005   00001			 3,5		 0 S
+      40650 1312	  1312		99     00005   00001			 2,9		 0 S
+      40472 1311	  TR_10166	99     00005   00001			9,05		 0 S
+      40471 1310	  1310		99     00005   00001			3,85		 0 S
+      40337 1309	  1309		99     00005   00001			9,05		 0 S
+      40336 1308	  1308		99     00005   00001			10,3		 0 S
+      40335 1307	  TR_10173	99     00005   00001		       10,55		 0 S
+      40334 1306	  TR_10167	99     00005   00001			10,3		 0 S
+      40333 1304	  1304		99     00005   00001			9,05		 0 S
+      40331 1303	  1303		99     00005   00001			 9,2		 0 S
+      40330 1302	  1302		99     00005   00001			9,05		 0 S
+      40329 1301	  1301		99     00005   00001			9,05		 0 S
+      40328 1300	  1300		99     00005   00001		       12,25		 0 S
+      40327 1299	  1299		99     00005   00001			8,05		 0 S
+      40325 1298	  1298		99     00005   00001			9,05		 0 S
+      40324 1297	  1297		99     00005   00001			9,05		 0 S
+      40320 1296	  1296		99     00005   00001			9,05		 0 S
+      40317 1295	  1295		99     00005   00001			8,05		 0 S
+      40313 1294	  1294		99     00005   00001			3,25		 0 S
+      40312 1289	  1289		99     00005   00001			9,05		 0 S
+      40311 1288	  1288		99     00005   00001			9,05		 0 S
+      40310 1286	  1286		99     00005   00001			 4,9		 0 S
+      40308 1293	  TR_10165	99     00005   00001			9,55		 0 S
+      40306 1292	  TR_10172	99     00005   00001			9,05		 0 S
+      40303 1291	  TR_10168	99     00005   00001			8,05		 0 S
+      40299 1290	  1290		99     00005   00001		       12,25		 0 S
+      40281 1287	  1287		99     00005   00001			9,05		 0 S
+      40278 1285	  1285		99     00005   00001			5,15		 0 S
+      40270 1284	  1284		99     00005   00001			 4,9		 0 S
+      40268 1283	  1283		99     00005   00001			 4,9		 0 S
+      40267 1282	  1282		99     00005   00001			 4,9		 0 S
+      40176 TL1305*	  1305		99     00005   00001		       10,25		 0 S
+      40001 T109L	  T109L 	.      10002   00001			 9,5		 0 S
+      39771 T141	  T141		.      10001   00001			  13		 0 S
+      39770 T141	  T141		.      10001   00010		       15,55		 0 S
+      39769 T152	  T152		.      10001   00010		       17,55		 0 S
+      39768 T152	  T152		.      10001   00001			  15		 0 S
+
+63 rows selected.
+
+Elapsed: 00:00:00.01
+
+=== B5) View del gestionale C37_001W per le offerte delle foto ===
+
+C37_CD C37_CD C37_CD C37_CD C37_CD_ARTICO C37_CD_CICLO	C37 C C37_ST_MODIFICA C37_PZ_TOT_CAPO C37_PZ_TOT_KG C37_QT_FASCIA_1 C C37_PZ_FASCIA_1 C C37_QT_FASCIA_2 C C37_PZ_FASCIA_2 C C37_QT_FASCIA_3 C C37_PZ_FASCIA_3 C C37_QT_FASCIA_4 C C37_PZ_FASCIA_4 C C37_QT_FASCIA_5 C C37_PZ_FASCIA_5 C C37_QT_FASCIA_6 C C37_PZ_FASCIA_6 C C37_QT_FASCIA_7 C C37_PZ_FASCIA_7 C C37_QT_FASCIA_8 C C37_PZ_FASCIA_8 C
+------ ------ ------ ------ ------------- ------------- --- - --------------- --------------- ------------- --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- - --------------- -
+C37_QT_FASCIA_9 C C37_PZ_FASCIA_9 C C37_PZ_FASCIA_C C37_PZ_FASCIA_C_MIN C C37_PZ_FASCIA_P C C37_CAPI_COMMESSA C37_PRZ_COMMESSA R07_RAGIONE_SOC				CW0_DS_LINEA				 Z11_DS_STAGIONE			  CW4_DS_COMPOSIZIONE					       CWA_DS_ARTICOLO_CLIENTE			Z09_DS_CICLO
+--------------- - --------------- - --------------- ------------------- - --------------- - ----------------- ---------------- ---------------------------------------- ---------------------------------------- ---------------------------------------- ------------------------------------------------------------ ---------------------------------------- ----------------------------------------
+R03_DS_VALUTA				 Z09_DS_APPLICAZIONE	   Z09_DS_RICAMO	     Z09_DS_STAMPA	       Z09_IMMAGINE_1
+---------------------------------------- ------------------------- ------------------------- ------------------------- --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_2
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_3
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_IMMAGINE_4																								 C C C37_CD_CICLO_ Z09_NR_REVISIONE
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- - - ------------- ----------------
+Z09_DS_CICLO_BOLLE_FAT																														Z09_UTENTE Z09_DATA_
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ---------- ---------
+C37_NOTE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C37_REFERENTE						     C37_OGGETTO
+------------------------------------------------------------ --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Z09_NOTE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+C37_CD_CICLO_ Z09_CD_CICLO_ C37_DATA_ CW4_CD Z09_CD Z01_DS_REPARTO			     C C37_GRUPPO				Z09_CD_GRUPPO Z06_DS_GRUPPO			       C37_CD_TIP
+------------- ------------- --------- ------ ------ ---------------------------------------- - ---------------------------------------- ------------- ---------------------------------------- ----------
+S02_DS_TIPO_CENTRO																														Z09_PERC_FALLOSITA ANNO      C37_PRG
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- ------------------ ---- ------------
+C37_NOTE_LIBERE
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2594   .      AI 27  10001  00010	  T141		01  V		    0		15,55		  0		  0 K		    0 P 	      0 K		0 P		  0 K		    0 P 	      0 K		0 P		 20 C		  100 P 	     40 C	       50 P		 60 C		   30 P 	      0 C		0 P
+	      0 C		0 P		  0		      0 P		0 P		    0		     0 JACOB COHEN COMPANY SPA			.					 AI 27/28				  naturali						       GIUBBINI 				TINTO+MPELO+MARMO+A/S+PROF+DIV.CAPI
+EURO
+
+
+																									 P S T				  0
+TINTO+MPELO+MARMO+A/S+PROF+DIV.CAPI																												FLORINA    27-MAY-26
+
+
+
+T141	      T141	    27-NOV-25 10001  TINTO  TINTO				     G						.	      NON DEFINITO
+																																		 5 2026        39770
+4,95+2+8,6
+
+2594   01     PE 26  10010  00001	  T220		01  V		    0		  4,7		  0		  0 K		    0 F 	      0 K		0 F		  0 K		    0 M 	      0 K		0 M		 20 C		  100 P 	     40 C	       50 P		 60 C		   30 P 	      0 C		0 P
+	      0 C		0 P		  0		      0 P		0 P		    0		     0 JACOB COHEN COMPANY SPA			AMERICA 				 PE 26					  naturali elasticizzate				       PANTALONI				TINTO REATTIVO STR+A/S+PROF+DIV.CAPI
+EURO
+
+
+																									 S N T				  0
+TINTO REATTIVO STR+A/S+PROF+DIV.CAPI																												FLORINA    05-NOV-25
+
+
+
+T220	      T220	    29-MAR-26 10010  TINTO  TINTO				     G						.	      NON DEFINITO
+																																		 4 2025        36625
+
+
+
+2 rows selected.
+
+Elapsed: 00:00:00.11
+=== FINE SCRIPT ===

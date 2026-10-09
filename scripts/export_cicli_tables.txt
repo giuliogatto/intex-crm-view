@@ -1,0 +1,238 @@
+REM =============================================================================
+REM Export tabelle cicli di lavorazione (campi per filtri + risultati ricerca)
+REM
+REM Contesto ricerca UI:
+REM   Filtri:  cliente, stagione, composizione, articolo (+ linea per distinguere PK)
+REM   Risultati: ciclo, descrizioni, note, fasi
+REM
+REM File CSV prodotti (cwd = cartella scripts/):
+REM   z09_cicli_testate.csv      -- testate ciclo (entita' cercata)
+REM   z08_cicli_fasi.csv         -- fasi del ciclo (dettaglio risultato)
+REM   z02_fasi.csv               -- anagrafica descrizioni fase
+REM   r07_clienti.csv            -- filtro cliente (solo clienti in Z09)
+REM   z11_stagioni.csv           -- filtro stagione (solo stagioni in Z09)
+REM   cw4_composizioni.csv       -- filtro composizione (solo in Z09)
+REM   cwa_articoli_cliente.csv   -- filtro articolo (solo articoli in Z09)
+REM   cw0_linee.csv              -- decodifica linea (cliente+linea in Z09)
+REM
+REM Esecuzione (da cartella scripts/):
+REM   sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB @export_cicli_tables.txt
+REM =============================================================================
+
+WHENEVER SQLERROR CONTINUE
+WHENEVER OSERROR CONTINUE
+
+SET ECHO OFF
+SET FEEDBACK OFF
+SET HEADING OFF
+SET PAGESIZE 0
+SET LINESIZE 32767
+SET LONG 5000
+SET LONGCHUNKSIZE 5000
+SET TRIMSPOOL ON
+SET TRIMOUT ON
+SET TERMOUT ON
+SET VERIFY OFF
+SET DEFINE OFF
+
+PROMPT === Export cicli: inizio ===
+
+REM ---------------------------------------------------------------------------
+REM 1) Z09 — testate cicli (chiavi filtro + campi risultato)
+REM ---------------------------------------------------------------------------
+PROMPT --- z09_cicli_testate.csv ---
+SET TERMOUT OFF
+SPOOL z09_cicli_testate.csv
+PROMPT codice_cliente,codice_articolo,codice_ciclo,codice_ciclo_cli,codice_linea,codice_stagione,codice_composizione,st_record,ds_ciclo,ds_ciclo_bolle_fat,ds_applicazione,ds_ricamo,ds_stampa,note,codice_reparto,codice_gruppo,nr_revisione,perc_fallosita,data_ins,data_validita,flag_visibile,flag_prototipo,utente_inserimento
+SELECT
+  '"' || REPLACE(NVL(Z09_CD_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_ARTICOLO_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_CICLO, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_CICLO_CLI, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_LINEA, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_STAGIONE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_COMPOSIZIONE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_ST_RECORD, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_DS_CICLO, ''), '"', '""') || '",' ||
+  '"' || REPLACE(REPLACE(REPLACE(NVL(Z09_DS_CICLO_BOLLE_FAT, ''), '"', '""'), CHR(10), ' '), CHR(13), '') || '",' ||
+  '"' || REPLACE(NVL(Z09_DS_APPLICAZIONE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_DS_RICAMO, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_DS_STAMPA, ''), '"', '""') || '",' ||
+  '"' || REPLACE(REPLACE(REPLACE(NVL(Z09_NOTE, ''), '"', '""'), CHR(10), ' '), CHR(13), '') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_REPARTO_STAT, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_CD_GRUPPO, ''), '"', '""') || '",' ||
+  NVL(TO_CHAR(Z09_NR_REVISIONE), '') || ',' ||
+  NVL(TO_CHAR(Z09_PERC_FALLOSITA), '') || ',' ||
+  '"' || NVL(TO_CHAR(Z09_DATA_INS, 'YYYY-MM-DD'), '') || '",' ||
+  '"' || NVL(TO_CHAR(Z09_DATA_VALIDITA, 'YYYY-MM-DD'), '') || '",' ||
+  '"' || REPLACE(NVL(Z09_FLAG_VISIBILE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_FLAG_PROTOTIPO, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(Z09_UTENTE_INSERIMENTO, ''), '"', '""') || '"'
+FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE;
+SPOOL OFF
+SET TERMOUT ON
+
+REM ---------------------------------------------------------------------------
+REM 2) Z08 — fasi ciclo (solo chiavi + fase/seq/UM/note; joinabile a Z09)
+REM ---------------------------------------------------------------------------
+PROMPT --- z08_cicli_fasi.csv ---
+SET TERMOUT OFF
+SPOOL z08_cicli_fasi.csv
+PROMPT codice_cliente,codice_articolo,codice_ciclo,codice_linea,codice_stagione,codice_composizione,sequenza,codice_fase,codice_macrofase,codice_unita_mis,note,st_record
+SELECT
+  '"' || REPLACE(NVL(z8.Z08_CD_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_ARTICOLO_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_CICLO, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_LINEA, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_STAGIONE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_COMPOSIZIONE, ''), '"', '""') || '",' ||
+  NVL(TO_CHAR(z8.Z08_SEQUENZA), '') || ',' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_FASE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_MACROFASE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_CD_UNITA_MIS, ''), '"', '""') || '",' ||
+  '"' || REPLACE(REPLACE(REPLACE(NVL(z8.Z08_NOTE, ''), '"', '""'), CHR(10), ' '), CHR(13), '') || '",' ||
+  '"' || REPLACE(NVL(z8.Z08_ST_RECORD, ''), '"', '""') || '"'
+FROM INTEX2.Z08_CICLI_LAVORAZIONE z8
+WHERE EXISTS (
+  SELECT 1
+  FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z9
+  WHERE z9.Z09_CD_CLIENTE          = z8.Z08_CD_CLIENTE
+    AND z9.Z09_CD_ARTICOLO_CLIENTE = z8.Z08_CD_ARTICOLO_CLIENTE
+    AND z9.Z09_CD_CICLO            = z8.Z08_CD_CICLO
+    AND z9.Z09_CD_LINEA            = z8.Z08_CD_LINEA
+    AND z9.Z09_CD_STAGIONE         = z8.Z08_CD_STAGIONE
+    AND z9.Z09_CD_COMPOSIZIONE     = z8.Z08_CD_COMPOSIZIONE
+);
+SPOOL OFF
+SET TERMOUT ON
+
+REM ---------------------------------------------------------------------------
+REM 3) Z02 — anagrafica fasi (solo fasi usate in Z08 dei cicli Z09)
+REM ---------------------------------------------------------------------------
+PROMPT --- z02_fasi.csv ---
+SET TERMOUT OFF
+SPOOL z02_fasi.csv
+PROMPT codice_fase,ds_fase
+SELECT
+  '"' || REPLACE(NVL(z2.Z02_CD_FASE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z2.Z02_DS_FASE, ''), '"', '""') || '"'
+FROM INTEX2.Z02_FASI_DI_LAVORO z2
+WHERE EXISTS (
+  SELECT 1
+  FROM INTEX2.Z08_CICLI_LAVORAZIONE z8
+  WHERE z8.Z08_CD_FASE = z2.Z02_CD_FASE
+    AND EXISTS (
+      SELECT 1
+      FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z9
+      WHERE z9.Z09_CD_CLIENTE          = z8.Z08_CD_CLIENTE
+        AND z9.Z09_CD_ARTICOLO_CLIENTE = z8.Z08_CD_ARTICOLO_CLIENTE
+        AND z9.Z09_CD_CICLO            = z8.Z08_CD_CICLO
+        AND z9.Z09_CD_LINEA            = z8.Z08_CD_LINEA
+        AND z9.Z09_CD_STAGIONE         = z8.Z08_CD_STAGIONE
+        AND z9.Z09_CD_COMPOSIZIONE     = z8.Z08_CD_COMPOSIZIONE
+    )
+);
+SPOOL OFF
+SET TERMOUT ON
+
+REM ---------------------------------------------------------------------------
+REM 4) R07 — clienti (filtro: solo clienti presenti in Z09)
+REM ---------------------------------------------------------------------------
+PROMPT --- r07_clienti.csv ---
+SET TERMOUT OFF
+SPOOL r07_clienti.csv
+PROMPT codice_cliente,ragione_sociale
+SELECT
+  '"' || REPLACE(NVL(r.R07_CD_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(r.R07_RAGIONE_SOC, ''), '"', '""') || '"'
+FROM INTEX2.R07_CLIENTI r
+WHERE EXISTS (
+  SELECT 1
+  FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z9
+  WHERE z9.Z09_CD_CLIENTE = r.R07_CD_CLIENTE
+);
+SPOOL OFF
+SET TERMOUT ON
+
+REM ---------------------------------------------------------------------------
+REM 5) Z11 — stagioni (filtro: solo stagioni presenti in Z09)
+REM ---------------------------------------------------------------------------
+PROMPT --- z11_stagioni.csv ---
+SET TERMOUT OFF
+SPOOL z11_stagioni.csv
+PROMPT codice_stagione,ds_stagione
+SELECT
+  '"' || REPLACE(NVL(z.Z11_CD_STAGIONE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(z.Z11_DS_STAGIONE, ''), '"', '""') || '"'
+FROM INTEX2.Z11_STAGIONI z
+WHERE EXISTS (
+  SELECT 1
+  FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z9
+  WHERE z9.Z09_CD_STAGIONE = z.Z11_CD_STAGIONE
+);
+SPOOL OFF
+SET TERMOUT ON
+
+REM ---------------------------------------------------------------------------
+REM 6) CW4 — composizioni (filtro: solo composizioni presenti in Z09)
+REM ---------------------------------------------------------------------------
+PROMPT --- cw4_composizioni.csv ---
+SET TERMOUT OFF
+SPOOL cw4_composizioni.csv
+PROMPT codice_composizione,ds_composizione
+SELECT
+  '"' || REPLACE(NVL(c.CW4_CD_COMPOSIZIONE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(c.CW4_DS_COMPOSIZIONE, ''), '"', '""') || '"'
+FROM INTEX2.CW4_COMPOSIZIONI c
+WHERE EXISTS (
+  SELECT 1
+  FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z9
+  WHERE z9.Z09_CD_COMPOSIZIONE = c.CW4_CD_COMPOSIZIONE
+);
+SPOOL OFF
+SET TERMOUT ON
+
+REM ---------------------------------------------------------------------------
+REM 7) CWA — articoli cliente (filtro: solo coppie cliente+articolo in Z09)
+REM ---------------------------------------------------------------------------
+PROMPT --- cwa_articoli_cliente.csv ---
+SET TERMOUT OFF
+SPOOL cwa_articoli_cliente.csv
+PROMPT codice_cliente,codice_articolo,ds_articolo
+SELECT
+  '"' || REPLACE(NVL(a.CWA_CD_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(a.CWA_CD_ARTICOLO_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(a.CWA_DS_ARTICOLO_CLIENTE, ''), '"', '""') || '"'
+FROM INTEX2.CWA_ARTICOLI_CLIENTE a
+WHERE EXISTS (
+  SELECT 1
+  FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z9
+  WHERE z9.Z09_CD_CLIENTE          = a.CWA_CD_CLIENTE
+    AND z9.Z09_CD_ARTICOLO_CLIENTE = a.CWA_CD_ARTICOLO_CLIENTE
+);
+SPOOL OFF
+SET TERMOUT ON
+
+REM ---------------------------------------------------------------------------
+REM 8) CW0 — linee tintoria (decodifica: solo cliente+linea presenti in Z09)
+REM ---------------------------------------------------------------------------
+PROMPT --- cw0_linee.csv ---
+SET TERMOUT OFF
+SPOOL cw0_linee.csv
+PROMPT codice_cliente,codice_linea,ds_linea
+SELECT DISTINCT
+  '"' || REPLACE(NVL(l.CW0_CD_CLIENTE, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(l.CW0_CD_LINEA, ''), '"', '""') || '",' ||
+  '"' || REPLACE(NVL(l.CW0_DS_LINEA, ''), '"', '""') || '"'
+FROM INTEX2.CW0_LINEA_TINTORIA l
+WHERE EXISTS (
+  SELECT 1
+  FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE z9
+  WHERE z9.Z09_CD_CLIENTE = l.CW0_CD_CLIENTE
+    AND z9.Z09_CD_LINEA   = l.CW0_CD_LINEA
+);
+SPOOL OFF
+SET TERMOUT ON
+
+PROMPT === Export cicli: fine ===
+EXIT
