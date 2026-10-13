@@ -681,10 +681,12 @@ function App() {
         </nav>
       </div>
 
-      <div className="dashboard-grid">
-        <div className="dashboard-chat">
-          <ChatPanel onResponse={applyLlmResponse} onClienteSelect={applyClienteSelection} initialQuery={initialQuery} />
-        </div>
+      <div className={`dashboard-grid${activeTab === 'cicli' ? ' dashboard-grid--main-only' : ''}`}>
+        {activeTab !== 'cicli' && (
+          <div className="dashboard-chat">
+            <ChatPanel onResponse={applyLlmResponse} onClienteSelect={applyClienteSelection} initialQuery={initialQuery} />
+          </div>
+        )}
 
         <div className="dashboard-main">
           {activeTab === 'analisi' ? (
@@ -925,97 +927,99 @@ function App() {
         </div>
 
         {/* Sidebar Questions Suggestions */}
-        <div className="dashboard-sidebar">
-          <div className="sidebar-panel">
-            <div className="chat-suggestions">
-              <h3 className="chat-suggestions__title">💬 Scorciatoie Domande</h3>
-              <div className="chat-suggestions__list">
-                <button
-                  className="chat-suggestion-btn"
-                  onClick={() =>
-                    applyQuestionShortcut('fatture', {
-                      codice_cliente: '2618',
-                      data_inizio: '2026-01-01',
-                      data_fine: '2026-03-31'
-                    })
-                  }
-                >
-                  <span className="chat-suggestion-num">1</span>
-                  “Mostrami tutte le fatture del cliente PRIMA SRL emesse tra gennaio e marzo.”
-                </button>
-                <button
-                  className="chat-suggestion-btn"
-                  onClick={() =>
-                    applyQuestionShortcut('fatture', {
-                      codice_cliente: '2618',
-                      data_inizio: '',
-                      data_fine: ''
-                    })
-                  }
-                >
-                  <span className="chat-suggestion-num">2</span>
-                  “Mostrami tutte le fatture di PRIMA SRL.”
-                </button>
-                <button
-                  className="chat-suggestion-btn"
-                  onClick={() =>
-                    applyQuestionShortcut('bolle', {
-                      codice_cliente: '2618',
-                      data_inizio: '2026-03-01',
-                      data_fine: '2026-03-31'
-                    })
-                  }
-                >
-                  <span className="chat-suggestion-num">5</span>
-                  “Quali bolle/DDT sono state emesse per PRIMA SRL nel mese di marzo?”
-                </button>
-                <button
-                  className="chat-suggestion-btn"
-                  onClick={() =>
-                    applyQuestionShortcut('offerte', {
-                      codice_cliente: '1071',
-                      stagione: 'PE2026',
-                      data_inizio: '',
-                      data_fine: ''
-                    })
-                  }
-                >
-                  <span className="chat-suggestion-num">7</span>
-                  “Cerca i cartellini di Zanuso per la stagione PE2026.”
-                </button>
-                <button
-                  className="chat-suggestion-btn"
-                  onClick={() =>
-                    applyQuestionShortcut('discrepanze', {
-                      codice_cliente: '2618'
-                    })
-                  }
-                >
-                  <span className="chat-suggestion-num">9</span>
-                  “Confrontami ordine, bolla e fattura per verificare differenze di Prima Srl.”
-                </button>
-                <button
-                  className="chat-suggestion-btn"
-                  onClick={() => handleTabChange('assistente')}
-                >
-                  <span className="chat-suggestion-num">🤖</span>
-                  “Apri assistente DDT”
-                </button>
-                {ANALISI_QUESTION_SHORTCUTS.map((shortcut) => (
+        {activeTab !== 'cicli' && (
+          <div className="dashboard-sidebar">
+            <div className="sidebar-panel">
+              <div className="chat-suggestions">
+                <h3 className="chat-suggestions__title">💬 Scorciatoie Domande</h3>
+                <div className="chat-suggestions__list">
                   <button
-                    key={shortcut.target_section}
                     className="chat-suggestion-btn"
-                    onClick={() => applyAnalisiShortcut(shortcut.target_tab, shortcut.target_section)}
+                    onClick={() =>
+                      applyQuestionShortcut('fatture', {
+                        codice_cliente: '2618',
+                        data_inizio: '2026-01-01',
+                        data_fine: '2026-03-31'
+                      })
+                    }
                   >
-                    <span className="chat-suggestion-num">{shortcut.num}</span>
-                    “{shortcut.question}”
+                    <span className="chat-suggestion-num">1</span>
+                    “Mostrami tutte le fatture del cliente PRIMA SRL emesse tra gennaio e marzo.”
                   </button>
-                ))}
+                  <button
+                    className="chat-suggestion-btn"
+                    onClick={() =>
+                      applyQuestionShortcut('fatture', {
+                        codice_cliente: '2618',
+                        data_inizio: '',
+                        data_fine: ''
+                      })
+                    }
+                  >
+                    <span className="chat-suggestion-num">2</span>
+                    “Mostrami tutte le fatture di PRIMA SRL.”
+                  </button>
+                  <button
+                    className="chat-suggestion-btn"
+                    onClick={() =>
+                      applyQuestionShortcut('bolle', {
+                        codice_cliente: '2618',
+                        data_inizio: '2026-03-01',
+                        data_fine: '2026-03-31'
+                      })
+                    }
+                  >
+                    <span className="chat-suggestion-num">5</span>
+                    “Quali bolle/DDT sono state emesse per PRIMA SRL nel mese di marzo?”
+                  </button>
+                  <button
+                    className="chat-suggestion-btn"
+                    onClick={() =>
+                      applyQuestionShortcut('offerte', {
+                        codice_cliente: '1071',
+                        stagione: 'PE2026',
+                        data_inizio: '',
+                        data_fine: ''
+                      })
+                    }
+                  >
+                    <span className="chat-suggestion-num">7</span>
+                    “Cerca i cartellini di Zanuso per la stagione PE2026.”
+                  </button>
+                  <button
+                    className="chat-suggestion-btn"
+                    onClick={() =>
+                      applyQuestionShortcut('discrepanze', {
+                        codice_cliente: '2618'
+                      })
+                    }
+                  >
+                    <span className="chat-suggestion-num">9</span>
+                    “Confrontami ordine, bolla e fattura per verificare differenze di Prima Srl.”
+                  </button>
+                  <button
+                    className="chat-suggestion-btn"
+                    onClick={() => handleTabChange('assistente')}
+                  >
+                    <span className="chat-suggestion-num">🤖</span>
+                    “Apri assistente DDT”
+                  </button>
+                  {ANALISI_QUESTION_SHORTCUTS.map((shortcut) => (
+                    <button
+                      key={shortcut.target_section}
+                      className="chat-suggestion-btn"
+                      onClick={() => applyAnalisiShortcut(shortcut.target_tab, shortcut.target_section)}
+                    >
+                      <span className="chat-suggestion-num">{shortcut.num}</span>
+                      “{shortcut.question}”
+                    </button>
+                  ))}
+                </div>
               </div>
+              
             </div>
-            
           </div>
-        </div>
+        )}
       </div>
     </div>
   )

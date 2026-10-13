@@ -479,6 +479,10 @@ html {
   align-items: start;
 }
 
+.dashboard-grid--main-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .dashboard-main,
 .dashboard-chat,
 .dashboard-sidebar {
