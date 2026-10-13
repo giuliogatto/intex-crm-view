@@ -22,29 +22,26 @@ DEBIAN_REMOTE_DIR = "/intex/"
 LOCAL_DIR = r"C:\Automazioni\export_temp"
 os.makedirs(LOCAL_DIR, exist_ok=True)
 
-# Finestra incrementale (giorni) su data bolla cliente (filtro UI "Da/A Data Bolla")
-LOOKBACK_DAYS = 14
+# Finestra su data bolla cliente (filtro UI "Da/A Data Bolla").
+# Fonte LIVE della schermata: EW1 + EW2 (~11k / ~40k su 365 gg — ok).
+# STORICO_DISPOSIZIONI in Oracle è archivio quasi fermo: nell'ultimo anno
+# matcha solo ~13 chiavi EW1. Non usarlo per la griglia recente.
+LOOKBACK_DAYS = 365  # None = full dump EW1/EW2 (~200k testate)
 
-# Storico Disposizioni Completo (Wi@sh3):
-#   STORICO_DISPOSIZIONI = griglia denormalizzata (filtri + colonne + note/descrizioni)
-#   EW1 / EW2            = testata e righe sorgente
-#
-# Anagrafiche (R07, CW4, Z09, Z11, G31, Z01, CW0, CW8, …) e P06/P07/P28
-# (cartellini / ripreso / vasche) sono già joinate/aggregate in STORICO:
-# non le esportiamo ad ogni run (eventuale sync full periodico a parte).
-#
-# Candidati futuri (dopo verify colonne su DB): EW3_CICLI_DISPOSIZIONI,
-# EW4_MATERIALI_DISPOSIZIONI — dettaglio ciclo/materiali per disposizione.
+# True = esporta anche STORICO senza filtro data (~670k, file grosso, raro).
+# False = solo EW1/EW2 (consigliato per sync regolari).
+EXPORT_STORICO_ARCHIVE = False
+
+def _lookback_predicate(alias: str = "t") -> str:
+    if LOOKBACK_DAYS is None:
+        return "1=1"
+    return f"{alias}.EW1_DATA_BOLLA_CLI >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}"
+
 QUERIES = {
-    "storico_disposizioni.csv": f"""
-        SELECT s.*
-        FROM INTEX2.STORICO_DISPOSIZIONI s
-        WHERE s.EW1_DATA_BOLLA_CLI >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}
-    """,
     "ew1_testata_disposizioni.csv": f"""
         SELECT t.*
         FROM INTEX2.EW1_TESTATA_DISPOSIZIONI t
-        WHERE t.EW1_DATA_BOLLA_CLI >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}
+        WHERE {_lookback_predicate("t")}
     """,
     "ew2_righe_disposizioni.csv": f"""
         SELECT r.*
@@ -54,10 +51,16 @@ QUERIES = {
             FROM INTEX2.EW1_TESTATA_DISPOSIZIONI t
             WHERE t.EW1_ANNO_DISPOSIZIONE = r.EW2_ANNO_DISPOSIZIONE
               AND t.EW1_NR_DISPOSIZIONE   = r.EW2_NR_DISPOSIZIONE
-              AND t.EW1_DATA_BOLLA_CLI >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}
+              AND {_lookback_predicate("t")}
         )
     """,
 }
+
+if EXPORT_STORICO_ARCHIVE:
+    QUERIES["storico_disposizioni.csv"] = """
+        SELECT s.*
+        FROM INTEX2.STORICO_DISPOSIZIONI s
+    """
 
 def export_and_send():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
