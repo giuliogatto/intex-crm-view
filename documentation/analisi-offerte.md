@@ -44,7 +44,7 @@ Il **"Cod. Univoco"** mostrato in gestionale è la colonna **`C37_PRG`**.
 | Scheda offerta — riquadro "Centro 40 TINTORIA" | `C51_RIPARTIZIONI_COSTI_CDC` + `C50_CDC_TAB` |
 | Badge "Prototipo" / "Offerta accettata" | `C37_FLAG_VISIBILE` (`P` / `S`) |
 | Ricerca ciclo per fase | `Z09_TESTATE_CICLI_LAVORAZIONE` + `Z08` |
-| Storico Disposizioni Completo | `STORICO_DISPOSIZIONI` (+ `EW1`/`EW2`) — post-offerta |
+| Storico Disposizioni Completo | `EW1`/`EW2` live (non `STORICO_DISPOSIZIONI`, archivio fermo) — vedi [`analisi-storico.md`](./analisi-storico.md) |
 
 ---
 
