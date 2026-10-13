@@ -25,6 +25,9 @@ DEFAULT_ORDER = [
     "fatture-composite-pk.sql",
     "remove-offerte-stato.sql",
     "create-analytics.sql",
+    "create-cicli-tables.sql",
+    "create-storico-disposizioni-tables.sql",
+    "cicli-storico-search.sql",
 ]
 
 

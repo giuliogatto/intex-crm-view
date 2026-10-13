@@ -1,0 +1,21 @@
+{
+  "BMA_VIEW": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/bma_view/",
+  "BTA_VIEW": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/bta_view/",
+  "C01_CODICI_IVA_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/C01_CODICI_IVA_001W/",
+  "C07_R02_C023_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/C07_R02_C023_001W/",
+  "CW0_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/CW0_001W/",
+  "CW1_ARTICOLI_FISCALI_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/CW1_ARTICOLI_FISCALI_001W/",
+  "CW4_COMPOSIZIONI_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/CW4_COMPOSIZIONI_001W/",
+  "CWA_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/CWA_001W/",
+  "D02_DDT_TESTATA_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/D02_DDT_TESTATA_001W/",
+  "D03_DDT_RIGHE_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/D03_DDT_RIGHE_001W/",
+  "D03_DDT_RIGHE_002W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/D03_DDT_RIGHE_002W/",
+  "F03_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/F03_001W/",
+  "F07_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/F07_001W/",
+  "F07_002W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/f07_002w/",
+  "F07_003W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/F07_003W/",
+  "F33_TESTATE_FATTURE": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/f33_testate_fatture/",
+  "R07_R0236_C012456789_001W": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/R07_R0236_C012456789_001W/",
+  "v1_api": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/v1/",
+  "v2": "http://analisi.intexsrl.com/ords/intex2/open-api-catalog/v2/"
+}
