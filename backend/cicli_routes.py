@@ -534,12 +534,14 @@ def _enrich_page(cursor, items: List[Dict[str, Any]], storico_available: bool) -
 
 
 def _storico_range(cursor) -> Optional[Dict[str, Optional[str]]]:
+    """MIN/MAX data bolla storico, escludendo date anomale del gestionale (es. anno 2202)."""
     try:
         cursor.execute(
             """
             SELECT MIN(ew1_data_bolla_cli), MAX(ew1_data_bolla_cli)
             FROM ew1_testata_disposizioni
-            WHERE ew1_data_bolla_cli IS NOT NULL
+            WHERE ew1_data_bolla_cli BETWEEN '1990-01-01'
+                  AND (CURRENT_DATE + INTERVAL '30 days')
             """
         )
         row = cursor.fetchone()
