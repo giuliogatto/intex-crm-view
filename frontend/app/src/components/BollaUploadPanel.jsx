@@ -162,7 +162,14 @@ export default function BollaUploadPanel({ onOpenInRicerca }) {
       const res = await authFetch('/api/cicli/ocr-bolla', { method: 'POST', body: form })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(data.error || `Errore server (${res.status})`)
+        if (data.code === 'ocr_no_credits' || res.status === 402) {
+          setError(
+            data.error
+            || 'Credito OpenAI esaurito: ricaricare il piano su platform.openai.com (Billing) e riprovare.'
+          )
+        } else {
+          setError(data.error || `Errore server (${res.status})`)
+        }
         return
       }
       applyResult(data)

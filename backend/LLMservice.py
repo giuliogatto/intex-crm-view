@@ -166,9 +166,28 @@ def call_openai_vision_json(
     )
     if response.status_code >= 400:
         try:
-            detail_msg = response.json().get("error", {}).get("message") or response.text
+            err = response.json().get("error") or {}
+            detail_msg = err.get("message") or response.text
+            err_code = (err.get("code") or err.get("type") or "").lower()
         except ValueError:
             detail_msg = response.text
+            err_code = ""
+        low = (detail_msg or "").lower()
+        if response.status_code == 429 and (
+            "credit" in low
+            or "billing" in low
+            or "quota" in low
+            or err_code in ("insufficient_quota", "billing_not_active")
+        ):
+            raise RuntimeError(
+                "OCR_NO_CREDITS: Il credito OpenAI per l'OCR è esaurito. "
+                "Ricaricare il piano su platform.openai.com (Billing) e riprovare."
+            )
+        if response.status_code == 429:
+            raise RuntimeError(
+                "OCR_RATE_LIMIT: Troppe richieste OpenAI in questo momento. "
+                "Attendere qualche secondo e riprovare."
+            )
         raise RuntimeError(f"OpenAI {response.status_code}: {detail_msg[:500]}")
     data = response.json()
     return {

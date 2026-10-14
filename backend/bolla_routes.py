@@ -200,6 +200,18 @@ def register_bolla_routes(app, db_pool):
                 _log(f"OCR Exception: {e}")
                 traceback.print_exc(file=sys.stderr)
                 msg = str(e)
+                if msg.startswith("OCR_NO_CREDITS:"):
+                    response.status = 402
+                    return {
+                        "error": msg.split(":", 1)[1].strip(),
+                        "code": "ocr_no_credits",
+                    }
+                if msg.startswith("OCR_RATE_LIMIT:"):
+                    response.status = 429
+                    return {
+                        "error": msg.split(":", 1)[1].strip(),
+                        "code": "ocr_rate_limit",
+                    }
                 if "timeout" in msg.lower() or "connessione" in msg.lower():
                     response.status = 504
                     return {"error": msg}
