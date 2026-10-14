@@ -3,9 +3,20 @@ import CustomerAutocomplete from '../components/CustomerAutocomplete'
 import SeasonAutocomplete from '../components/SeasonAutocomplete'
 import Pagination from '../components/Pagination'
 import LoadingOverlay from '../components/LoadingOverlay'
+import BollaUploadPanel from '../components/BollaUploadPanel'
 import { authFetch } from '../utils/auth'
 
 const PAGE_SIZE = 50
+
+const MODES = [
+  { id: 'ricerca', label: 'Ricerca' },
+  { id: 'upload', label: 'Upload bolla' },
+]
+
+function readModeFromUrl() {
+  const mode = new URLSearchParams(window.location.search).get('mode')
+  return MODES.some((m) => m.id === mode) ? mode : 'ricerca'
+}
 
 const EMPTY_FILTERS = {
   codice_cliente: '',
@@ -70,6 +81,7 @@ function buildQueryParams(nextFilters, nextPage) {
 }
 
 export default function CicliPage() {
+  const [mode, setModeState] = useState(readModeFromUrl)
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS })
   const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_FILTERS })
   const [faseInput, setFaseInput] = useState('')
@@ -173,6 +185,24 @@ export default function CicliPage() {
     fetchCicli(appliedFilters, nextPage)
   }
 
+  const setMode = (next) => {
+    setModeState(next)
+    const url = new URL(window.location.href)
+    if (next === 'ricerca') url.searchParams.delete('mode')
+    else url.searchParams.set('mode', next)
+    window.history.replaceState(window.history.state, '', url)
+  }
+
+  const openInRicerca = (patch) => {
+    const next = { ...EMPTY_FILTERS, ...patch }
+    setFilters(next)
+    setAppliedFilters(next)
+    setFaseInput('')
+    fetchCicli(next, 1)
+    setMode('ricerca')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const setVista = (vista) => {
     const next = { ...filters, vista }
     setFilters(next)
@@ -252,7 +282,30 @@ export default function CicliPage() {
 
   return (
     <>
-      {loading && <LoadingOverlay />}
+      <div className="cicli-mode-bar">
+        <h2 className="cicli-mode-bar__title">Cicli di lavorazione</h2>
+        <div className="cicli-mode-switch" role="tablist" aria-label="Modalità pagina cicli">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="tab"
+              aria-selected={mode === m.id}
+              className={`cicli-mode-switch__btn${mode === m.id ? ' cicli-mode-switch__btn--active' : ''}`}
+              onClick={() => setMode(m.id)}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div hidden={mode !== 'upload'}>
+        <BollaUploadPanel onOpenInRicerca={openInRicerca} />
+      </div>
+
+      <div hidden={mode !== 'ricerca'}>
+      {loading && mode === 'ricerca' && <LoadingOverlay />}
       <div className="panel">
         <div className="panel__head">Ricerca cicli di lavorazione</div>
         <div className="panel__body">
@@ -756,6 +809,7 @@ export default function CicliPage() {
             </>
           )}
         </div>
+      </div>
       </div>
     </>
   )

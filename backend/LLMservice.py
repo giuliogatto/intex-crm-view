@@ -1,3 +1,4 @@
+import base64
 import os
 from typing import List, Optional
 
@@ -8,6 +9,12 @@ load_dotenv()
 
 DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
+DEFAULT_OPENAI_OCR_MODEL = "gpt-5.4"
+DEFAULT_OPENAI_OCR_DETAIL = "original"
+
+
+def get_ocr_model_name() -> str:
+    return os.getenv("OPENAI_OCR_MODEL") or DEFAULT_OPENAI_OCR_MODEL
 
 
 def _get_provider() -> str:
@@ -67,6 +74,72 @@ def _call_openai(
     return {
         "text": _extract_openai_response_text(data),
         "response_id": data["id"],
+    }
+
+
+def call_openai_vision_json(
+    image_bytes: bytes,
+    mime_type: str,
+    prompt: str,
+    instructions: str,
+    json_schema: dict,
+    schema_name: str = "estrazione",
+    timeout: int = 150,
+) -> dict:
+    """
+    OCR / estrazione strutturata da immagine via Responses API.
+    Returns {"text": str (JSON conforme a json_schema), "response_id": str, "model": str}.
+    """
+    api_key = os.getenv("OPENAI_APIKEY")
+    if not api_key:
+        raise ValueError("OPENAI_APIKEY environment variable is not set")
+
+    model = get_ocr_model_name()
+    detail = os.getenv("OPENAI_OCR_DETAIL") or DEFAULT_OPENAI_OCR_DETAIL
+    data_url = f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+    payload = {
+        "model": model,
+        "instructions": instructions,
+        "input": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "input_text", "text": prompt},
+                    {"type": "input_image", "image_url": data_url, "detail": detail},
+                ],
+            }
+        ],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": schema_name,
+                "schema": json_schema,
+                "strict": True,
+            }
+        },
+        "store": False,
+    }
+
+    response = requests.post(
+        "https://api.openai.com/v1/responses",
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        },
+        json=payload,
+        timeout=timeout,
+    )
+    if response.status_code >= 400:
+        try:
+            detail_msg = response.json().get("error", {}).get("message") or response.text
+        except ValueError:
+            detail_msg = response.text
+        raise RuntimeError(f"OpenAI {response.status_code}: {detail_msg[:500]}")
+    data = response.json()
+    return {
+        "text": _extract_openai_response_text(data),
+        "response_id": data.get("id"),
+        "model": model,
     }
 
 

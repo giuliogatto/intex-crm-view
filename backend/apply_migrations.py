@@ -28,6 +28,7 @@ DEFAULT_ORDER = [
     "create-cicli-tables.sql",
     "create-storico-disposizioni-tables.sql",
     "cicli-storico-search.sql",
+    "ocr-bolla.sql",
 ]
 
 

@@ -684,3 +684,46 @@ Ordine consigliato; ogni step è indipendentemente verificabile.
 | Contratto API | Un orchestratore `POST /api/cicli/ocr-bolla` + spezzati in fase 2 |
 
 Fine analisi — pronto per stima effort e implementazione a fasi senza ambiguità di perimetro.
+
+---
+
+## 14. Stato implementazione (MVP, ott 2026)
+
+### 14.1 File
+
+| Area | File | Contenuto |
+| :--- | :--- | :--- |
+| DB | `data/migrations/ocr-bolla.sql` (in `apply_migrations.py`) | Indice trigram `cicli_clienti.ragione_sociale`, tabella `ocr_bolla_sessioni` |
+| OpenAI | `backend/LLMservice.py` → `call_openai_vision_json` | Responses API, `input_image` base64, output `json_schema` strict |
+| OCR | `backend/bolla_ocr.py` | Schema JSON, istruzioni, normalizzazione (§2.0: mittente ≠ INTEX, codici `T…`, qty) |
+| Matching | `backend/bolla_match.py` | `match_cliente` (pg_trgm su mittente), `match_righe` (manoscritto + copertura fasi + articolo/composizione su cicli; commessa/colore/modello su EW1/EW2) |
+| API | `backend/bolla_routes.py` | `POST /api/cicli/ocr-bolla` (multipart `file`, opz. `codice_cliente`, `force`), `POST /api/cicli/ocr-bolla/match` (JSON `session_id`/`ocr` + `codice_cliente`) |
+| UI | `frontend/app/src/components/BollaUploadPanel.jsx`, `CicliPage.jsx`, `index.css` | Switch «Ricerca \| Upload bolla» (`?mode=upload`), upload, revisione, «Apri in ricerca», fasi |
+| Test | `tests/test_bolla_ocr_offline.py`, `scripts/ocr_bolle_golden.py` | Regole normalizzazione offline; run OCR reale sul golden set |
+
+### 14.2 Scelte rispetto all’analisi
+
+- **Modello OCR:** default `OPENAI_OCR_MODEL=gpt-5.4`, `OPENAI_OCR_DETAIL=original` (override via env). Sul golden set `gpt-4o` perdeva una riga Transit, sbagliava codice articolo e kg manoscritti su Cage; `gpt-5.4` estrae 6/6 righe Transit con colori esatti e i kg a mano di Cage.
+- **Campo `annotazioni_manoscritte`:** aggiunto allo schema. Obbligare il modello a trascrivere ogni scritta a mano è servito a recuperare `T182 T242` (Transit), altrimenti ignorati; i codici `T…` vengono poi estratti via regex.
+- **Prompt con data odierna:** risolve l’anno letto come 2023 invece di 2026.
+- **Score candidati:** noisy-OR pesato (`PESI_EVIDENZE` in `bolla_match.py`); ordinamento a parità per ultimo utilizzo storico e `data_ins`.
+- **Cache:** stessa immagine (sha256) + stesso modello entro 30 giorni → nessuna nuova chiamata OpenAI (`force=1` per rianalizzare).
+- **Auth:** le route OCR fanno `abort` 401 esplicito (l’hook `before_request` di `app.py` imposta 401 ma Bottle esegue comunque l’handler).
+
+### 14.3 Golden set (`esempi-bolle/`, `gpt-5.4`)
+
+| Bolla | Mittente | Codici `T…` | Righe | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| Transit | ✓ (a volte senza «TRANSIT») | `T182`, `T242` (documento) | 6/6, colori corretti | — |
+| Project | ✓ | `T183B` | 1/1, commessa `45855`, kg 33,5 | — |
+| Cage | ✓ | `T205` | 3/3, articolo esatto, kg 40,5 / 18,9 / 164,2 | 3° kg letto 164,2 vs 167,2 |
+| Meeting | ✓ | `T200` | 1/1, commessa `PROT/2026/90280` | n. bolla non stampato |
+
+Il matching è stato verificato su un Postgres di prova (migration reali + dati sintetici): cliente corretto in prima posizione anche con omonimi parziali (PROJECT MODA, MEETING POINT), INTEX mai proposto, ciclo con codice manoscritto in cima, e in assenza di codice prevale il ciclo collegato via commessa nello storico.
+
+### 14.4 Deploy
+
+1. `python apply_migrations.py ocr-bolla.sql` (dopo le migration cicli/storico).
+2. Riavviare il container backend: `supervisord.conf` ora avvia gunicorn con `--timeout 180` (l’OCR richiede 10–30 s).
+3. Opzionale: `OPENAI_OCR_MODEL` / `OPENAI_OCR_DETAIL` in `.env`.
+4. Verifica: `cd backend && python ../scripts/ocr_bolle_golden.py`.

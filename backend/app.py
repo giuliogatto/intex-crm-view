@@ -1750,9 +1750,11 @@ def ddt_assist_batch():
 
 from analisi import register_analisi_routes
 from cicli_routes import register_cicli_routes
+from bolla_routes import register_bolla_routes
 
 register_analisi_routes(app, db_pool)
 register_cicli_routes(app, db_pool)
+register_bolla_routes(app, db_pool)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)
