@@ -1,0 +1,18 @@
+echo SELECT * FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE WHERE Z09_CD_CICLO = 'T139'; | sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB > t139.txt
+
+echo SELECT Z09_CD_CLIENTE, Z09_CD_STAGIONE, Z09_CD_ARTICOLO_CLIENTE, Z09_CD_LINEA, Z09_CD_COMPOSIZIONE, Z09_CD_CICLO, Z09_CD_CICLO_CLI, Z09_DS_CICLO, Z09_DS_CICLO_BOLLE_FAT, Z09_DS_APPLICAZIONE, Z09_DS_RICAMO, Z09_DS_STAMPA, Z09_NOTE FROM INTEX2.Z09_TESTATE_CICLI_LAVORAZIONE WHERE Z09_CD_CICLO = 'T139'; | sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB > t139_righe.txt
+
+scp 'intex\giulio.ai'@100.83.255.25:'C:/oracle/instantclient_23_26/t139.txt' .
+
+scp export_cicli_tables.txt 'intex\giulio.ai'@100.83.255.25:'C:/oracle/instantclient_23_26/export_cicli_tables.txt'
+scp conta_records_tabelle_cicli.txt 'intex\giulio.ai'@100.83.255.25:'C:/oracle/instantclient_23_26/conta_records_tabelle_cicli.txt'
+
+
+sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB @export_cicli_tables.txt
+sqlplus -s INTEX2/SD@192.168.1.10:1521/INT2DB @conta_records_tabelle_cicli.txt
+
+scp 'intex\giulio.ai'@100.83.255.25:'C:/oracle/instantclient_23_26/*.csv' .
+
+
+scp -i ~/github_deploy_key *.csv debian@57.131.22.138:/opt/intex/intex-crm-view/csv
+
