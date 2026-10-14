@@ -4,17 +4,32 @@ from __future__ import annotations
 
 import hashlib
 import json
-from typing import Any, Dict, Optional
+import os
+import sys
+import traceback
+from typing import Any, Dict, Optional, Tuple
 
-from bottle import HTTPResponse, request, response
+from bottle import HTTPResponse, MultipartError, request, response
 
 from bolla_match import match_cliente, match_righe
 from bolla_ocr import MAX_IMAGE_BYTES, extract_bolla, sniff_image_mime
 from cicli_routes import _cicli_table_exists
 from LLMservice import get_ocr_model_name
 
+
+def _log(msg: str) -> None:
+    print(f"[ocr-bolla] {msg}", file=sys.stderr, flush=True)
+
 CACHE_DAYS = 30
 MAX_JSON_BODY = 2 * 1024 * 1024
+
+_CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+    "Access-Control-Allow-Headers": (
+        "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization"
+    ),
+}
 
 
 def _int_param(value: Any, default: int, lo: int, hi: int) -> int:
@@ -32,8 +47,32 @@ def _username() -> Optional[str]:
 def _require_user() -> None:
     # Il return dell'hook before_request è ignorato da Bottle: senza abort l'handler girerebbe comunque.
     if not request.environ.get("intex.user"):
-        raise HTTPResponse(status=401, body=json.dumps({"error": "Authentication required"}),
-                           headers={"Content-Type": "application/json"})
+        raise HTTPResponse(
+            status=401,
+            body=json.dumps({"error": "Authentication required"}),
+            headers={"Content-Type": "application/json", **_CORS_HEADERS},
+        )
+
+
+def _read_upload() -> Tuple[Any, Optional[bytes]]:
+    """Legge il file multipart; gestisce MultipartError (MEMFILE) e assenza file."""
+    try:
+        upload = request.files.get("file")
+    except MultipartError as e:
+        raise HTTPResponse(
+            status=413,
+            body=json.dumps({
+                "error": (
+                    "Upload troppo grande o multipart non valido. "
+                    f"Dettaglio: {e}"
+                )
+            }),
+            headers={"Content-Type": "application/json", **_CORS_HEADERS},
+        )
+    if upload is None:
+        return None, None
+    image = upload.file.read(MAX_IMAGE_BYTES + 1)
+    return upload, image
 
 
 def _sessions_ready(cursor) -> bool:
@@ -77,15 +116,42 @@ def _match_all(cursor, ocr: Dict[str, Any], codice_cliente: Optional[str], max_c
 def register_bolla_routes(app, db_pool):
     """Registra /api/cicli/ocr-bolla* sull'app Bottle."""
 
+    @app.route("/api/cicli/ocr-bolla/diag", method="GET")
+    def ocr_bolla_diag():
+        """Diagnostica OCR: chiave presente + reachability OpenAI (senza spendere token vision)."""
+        _require_user()
+        import requests as req
+
+        key = os.getenv("OPENAI_APIKEY") or ""
+        out: Dict[str, Any] = {
+            "openai_key_present": bool(key),
+            "openai_key_prefix": (key[:7] + "…") if key else None,
+            "ocr_model": get_ocr_model_name(),
+            "ocr_detail": os.getenv("OPENAI_OCR_DETAIL") or "original",
+            "memfile_max": int(__import__("bottle").BaseRequest.MEMFILE_MAX),
+        }
+        try:
+            r = req.get(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {key}"} if key else {},
+                timeout=(5, 15),
+            )
+            out["openai_reachable"] = True
+            out["openai_models_status"] = r.status_code
+        except Exception as e:
+            out["openai_reachable"] = False
+            out["openai_error"] = f"{type(e).__name__}: {e}"
+        return out
+
     @app.route("/api/cicli/ocr-bolla", method="POST")
     def ocr_bolla():
         _require_user()
-        upload = request.files.get("file")
-        if upload is None:
+        _log(f"POST start user={_username()!r}")
+        upload, image = _read_upload()
+        if upload is None or image is None:
             response.status = 400
             return {"error": "Nessun file: inviare l'immagine nel campo multipart 'file'."}
 
-        image = upload.file.read(MAX_IMAGE_BYTES + 1)
         if len(image) > MAX_IMAGE_BYTES:
             response.status = 413
             return {"error": f"Immagine troppo grande (max {MAX_IMAGE_BYTES // (1024 * 1024)} MB)."}
@@ -99,12 +165,20 @@ def register_bolla_routes(app, db_pool):
         max_cicli = _int_param(request.forms.get("max_cicli_per_riga"), 5, 1, 20)
         sha = hashlib.sha256(image).hexdigest()
         model = get_ocr_model_name()
+        _log(f"file ok mime={mime} bytes={len(image)} sha={sha[:12]} model={model} force={force}")
+
+        if not (os.getenv("OPENAI_APIKEY") or ""):
+            _log("OPENAI_APIKEY mancante nell'ambiente del container")
+            response.status = 503
+            return {"error": "OPENAI_APIKEY non configurata sul server."}
 
         cached = None
+        sessions_ok = False
         conn = db_pool.get_conn()
         try:
             cursor = conn.cursor()
             sessions_ok = _sessions_ready(cursor)
+            _log(f"sessions_table={'yes' if sessions_ok else 'no'}")
             if sessions_ok and not force:
                 cached = _cached_ocr(cursor, sha, model)
             cursor.close()
@@ -112,21 +186,34 @@ def register_bolla_routes(app, db_pool):
             db_pool.release_conn(conn)
 
         if cached:
+            _log(f"cache hit session_id={cached['session_id']}")
             ocr, response_id = cached["ocr"], cached["response_id"]
         else:
+            _log("cache miss → chiamo OpenAI Vision")
             try:
                 extracted = extract_bolla(image, mime)
             except ValueError as e:
+                _log(f"OCR ValueError: {e}")
                 response.status = 503
                 return {"error": str(e)}
             except Exception as e:
+                _log(f"OCR Exception: {e}")
+                traceback.print_exc(file=sys.stderr)
+                msg = str(e)
+                if "timeout" in msg.lower() or "connessione" in msg.lower():
+                    response.status = 504
+                    return {"error": msg}
                 response.status = 502
                 return {"error": f"Errore OCR: {e}"}
             ocr, response_id = extracted["ocr"], extracted["response_id"]
+            _log(f"OCR ok response_id={response_id} righe={len(ocr.get('righe') or [])}")
 
         conn = db_pool.get_conn()
         try:
             cursor = conn.cursor()
+            if not sessions_ok:
+                sessions_ok = _sessions_ready(cursor)
+            _log("matching…")
             result = _match_all(cursor, ocr, codice_cliente, max_cicli)
             session_id = cached["session_id"] if cached else None
             if sessions_ok:
@@ -166,8 +253,11 @@ def register_bolla_routes(app, db_pool):
                     session_id = cursor.fetchone()[0]
                 conn.commit()
             cursor.close()
+            _log(f"done session_id={session_id} cliente={result.get('codice_cliente')}")
         except Exception as e:
             conn.rollback()
+            _log(f"matching Exception: {e}")
+            traceback.print_exc(file=sys.stderr)
             response.status = 500
             return {"error": f"Errore matching: {e}", "ocr": ocr}
         finally:

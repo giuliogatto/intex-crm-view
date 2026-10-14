@@ -1,6 +1,7 @@
 import base64
 import os
-from typing import List, Optional
+import sys
+from typing import List, Optional, Tuple, Union
 
 import requests
 from dotenv import load_dotenv
@@ -11,6 +12,11 @@ DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
 DEFAULT_GEMINI_MODEL = "gemini-2.0-flash"
 DEFAULT_OPENAI_OCR_MODEL = "gpt-5.4"
 DEFAULT_OPENAI_OCR_DETAIL = "original"
+
+# (connect, read): se api.openai.com non è raggiungibile dal container, fallire in pochi
+# secondi invece di restare appesi fino al 502 di Cloudflare (senza header CORS).
+OpenAITimeout = Union[float, Tuple[float, float]]
+DEFAULT_OCR_TIMEOUT: OpenAITimeout = (10, 90)
 
 
 def get_ocr_model_name() -> str:
@@ -84,7 +90,7 @@ def call_openai_vision_json(
     instructions: str,
     json_schema: dict,
     schema_name: str = "estrazione",
-    timeout: int = 150,
+    timeout: Optional[OpenAITimeout] = None,
 ) -> dict:
     """
     OCR / estrazione strutturata da immagine via Responses API.
@@ -120,14 +126,43 @@ def call_openai_vision_json(
         "store": False,
     }
 
-    response = requests.post(
-        "https://api.openai.com/v1/responses",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=timeout,
+    if timeout is None:
+        timeout = DEFAULT_OCR_TIMEOUT
+
+    print(
+        f"[ocr] OpenAI POST model={model} detail={detail} "
+        f"image_bytes={len(image_bytes)} timeout={timeout}",
+        file=sys.stderr,
+        flush=True,
+    )
+    try:
+        response = requests.post(
+            "https://api.openai.com/v1/responses",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=timeout,
+        )
+    except requests.exceptions.ConnectTimeout as e:
+        raise RuntimeError(
+            "Timeout di connessione verso api.openai.com "
+            "(il container non raggiunge OpenAI entro 10s)."
+        ) from e
+    except requests.exceptions.ReadTimeout as e:
+        raise RuntimeError(
+            "Timeout in lettura dalla risposta OpenAI OCR (limite 90s)."
+        ) from e
+    except requests.exceptions.ConnectionError as e:
+        raise RuntimeError(
+            f"Connessione a api.openai.com fallita dal container: {e}"
+        ) from e
+
+    print(
+        f"[ocr] OpenAI status={response.status_code} body_len={len(response.content)}",
+        file=sys.stderr,
+        flush=True,
     )
     if response.status_code >= 400:
         try:

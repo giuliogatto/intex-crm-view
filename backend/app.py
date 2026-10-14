@@ -1,4 +1,4 @@
-from bottle import Bottle, request, response, HTTPResponse
+from bottle import BaseRequest, Bottle, request, response, HTTPResponse
 from database import DatabasePool
 from datetime import datetime
 import json
@@ -9,8 +9,20 @@ from LLMservice import send_prompt, get_model_name
 from pdf_export import build_pdf
 from stagioni_aliases import apply_stagione_filter, build_stagioni_api_list, stagione_display_label
 
+# Default Bottle: 100 KB — troppo basso per upload foto bolla (tipicamente 200 KB–5 MB).
+BaseRequest.MEMFILE_MAX = 20 * 1024 * 1024
+
 app = Bottle()
 db_pool = DatabasePool()
+
+
+def _apply_cors_headers():
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = (
+        "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization"
+    )
+    response.headers["Access-Control-Max-Age"] = "86400"
 
 def parse_date(date_str):
     if not date_str:
@@ -111,13 +123,13 @@ PUBLIC_PATHS = {'/health', '/api/auth/login'}
 # CORS Headers Hooks
 @app.hook('after_request')
 def enable_cors():
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, OPTIONS'
-    response.headers['Access-Control-Allow-Headers'] = 'Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization'
+    _apply_cors_headers()
 
 @app.hook('before_request')
 def require_auth():
+    # OPTIONS deve rispondere subito con CORS (preflight browser cross-origin).
     if request.method == 'OPTIONS':
+        _apply_cors_headers()
         return
     path = request.path
     if path in PUBLIC_PATHS:
@@ -125,12 +137,25 @@ def require_auth():
     if path.startswith('/api/') or path == '/llmrequest':
         user = get_current_user(db_pool)
         if not user:
-            response.status = 401
-            return {"error": "Authentication required"}
+            # Bottle ignora il return dell'hook: abort esplicito altrimenti l'handler gira comunque.
+            raise HTTPResponse(
+                status=401,
+                body=json.dumps({"error": "Authentication required"}),
+                headers={
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+                    "Access-Control-Allow-Headers": (
+                        "Origin, Accept, Content-Type, X-Requested-With, "
+                        "X-CSRF-Token, Authorization"
+                    ),
+                },
+            )
         request.environ['intex.user'] = user
 
 @app.route('/<:re:.*>', method='OPTIONS')
 def options_handler():
+    _apply_cors_headers()
     response.status = 200
     return {}
 
