@@ -1888,6 +1888,11 @@ table.data tfoot .table-totals-row:hover td {
   background: var(--bg-muted);
 }
 
+.users-role--cicli {
+  color: #0f766e;
+  background: rgba(15, 118, 110, 0.12);
+}
+
 .users-status--active {
   color: var(--success);
   font-weight: 600;

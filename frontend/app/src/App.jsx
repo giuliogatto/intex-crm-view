@@ -38,7 +38,14 @@ const ANALISI_QUESTION_SHORTCUTS = [
 
 function App() {
   const { user } = useAuth()
+  const isCicliOnly = user?.role === 'cicli'
   const [activeTab, setActiveTab] = useState(() => {
+    if (user?.role === 'cicli') {
+      if (window.location.pathname !== '/cicli') {
+        window.history.replaceState({}, document.title, '/cicli')
+      }
+      return 'cicli'
+    }
     const pathname = window.location.pathname
     if (pathname === '/analisi') return 'analisi'
     if (pathname === '/cicli') return 'cicli'
@@ -172,6 +179,18 @@ function App() {
     fetchData(tab, tabFilters, 1)
     setActiveTab(tab)
   }
+
+  // Operatore Cicli: forza sempre la sola pagina cicli
+  useEffect(() => {
+    if (!isCicliOnly) return
+    if (activeTab !== 'cicli') {
+      handleTabChange('cicli')
+      return
+    }
+    if (window.location.pathname !== '/cicli') {
+      window.history.replaceState({}, document.title, '/cicli')
+    }
+  }, [isCicliOnly, activeTab])
 
   // Fetch list data when activeTab changes
   useEffect(() => {
@@ -636,48 +655,54 @@ function App() {
         </header>
 
         <nav className="nav-primary">
-        <button
-          className={`nav-tab ${activeTab === 'bolle' ? 'is-active' : ''}`}
-          onClick={() => handleTabChange('bolle')}
-        >
-          📦 Bolle / DDT
-        </button>
-        <button
-          className={`nav-tab ${activeTab === 'fatture' ? 'is-active' : ''}`}
-          onClick={() => handleTabChange('fatture')}
-        >
-          🧾 Fatture
-        </button>
-        <button
-          className={`nav-tab ${activeTab === 'offerte' ? 'is-active' : ''}`}
-          onClick={() => handleTabChange('offerte')}
-        >
-          📋 Ordini / Cartellino
-        </button>
-        <button
-          className={`nav-tab ${activeTab === 'discrepanze' ? 'is-active' : ''}`}
-          onClick={() => handleTabChange('discrepanze')}
-        >
-          ⚖️ Auditing Confronto
-        </button>
-        <button
-          className={`nav-tab ${activeTab === 'assistente' ? 'is-active' : ''}`}
-          onClick={() => handleTabChange('assistente')}
-        >
-          🤖 Assistente DDT
-        </button>
+        {!isCicliOnly && (
+          <>
+            <button
+              className={`nav-tab ${activeTab === 'bolle' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('bolle')}
+            >
+              📦 Bolle / DDT
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'fatture' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('fatture')}
+            >
+              🧾 Fatture
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'offerte' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('offerte')}
+            >
+              📋 Ordini / Cartellino
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'discrepanze' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('discrepanze')}
+            >
+              ⚖️ Auditing Confronto
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'assistente' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('assistente')}
+            >
+              🤖 Assistente DDT
+            </button>
+          </>
+        )}
         <button
           className={`nav-tab ${activeTab === 'cicli' ? 'is-active' : ''}`}
           onClick={() => handleTabChange('cicli')}
         >
           🧵 Cicli
         </button>
-        <button
-          className={`nav-tab ${activeTab === 'analisi' ? 'is-active' : ''}`}
-          onClick={() => handleTabChange('analisi')}
-        >
-          📊 Analisi
-        </button>
+        {!isCicliOnly && (
+          <button
+            className={`nav-tab ${activeTab === 'analisi' ? 'is-active' : ''}`}
+            onClick={() => handleTabChange('analisi')}
+          >
+            📊 Analisi
+          </button>
+        )}
         </nav>
       </div>
 

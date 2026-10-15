@@ -16,6 +16,9 @@ export default function LoginPage() {
 
     try {
       const user = await login(username.trim(), password)
+      if (user?.role === 'cicli' && window.location.pathname !== '/cicli') {
+        window.history.replaceState({}, document.title, '/cicli')
+      }
       loginSuccess(user)
     } catch (err) {
       setError(err.message || 'Accesso non riuscito')

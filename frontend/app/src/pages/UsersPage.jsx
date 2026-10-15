@@ -5,6 +5,7 @@ import AdminNav from '../components/AdminNav'
 
 const ROLES = [
   { value: 'user', label: 'Utente' },
+  { value: 'cicli', label: 'Operatore Cicli' },
   { value: 'admin', label: 'Amministratore' },
 ]
 

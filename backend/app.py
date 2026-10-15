@@ -120,6 +120,30 @@ OFFERTE_TOTAL_FIELDS = {
 
 PUBLIC_PATHS = {'/health', '/api/auth/login'}
 
+# Ruolo "cicli": solo auth + API cicli (il resto della UI non è accessibile).
+CICLI_ROLE_ALLOWED_PREFIXES = ('/api/auth/', '/api/cicli')
+
+
+def _json_error_response(status, message):
+    return HTTPResponse(
+        status=status,
+        body=json.dumps({"error": message}),
+        headers={
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+            "Access-Control-Allow-Headers": (
+                "Origin, Accept, Content-Type, X-Requested-With, "
+                "X-CSRF-Token, Authorization"
+            ),
+        },
+    )
+
+
+def _cicli_role_may_access(path):
+    return any(path.startswith(prefix) for prefix in CICLI_ROLE_ALLOWED_PREFIXES)
+
+
 # CORS Headers Hooks
 @app.hook('after_request')
 def enable_cors():
@@ -138,19 +162,9 @@ def require_auth():
         user = get_current_user(db_pool)
         if not user:
             # Bottle ignora il return dell'hook: abort esplicito altrimenti l'handler gira comunque.
-            raise HTTPResponse(
-                status=401,
-                body=json.dumps({"error": "Authentication required"}),
-                headers={
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*",
-                    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
-                    "Access-Control-Allow-Headers": (
-                        "Origin, Accept, Content-Type, X-Requested-With, "
-                        "X-CSRF-Token, Authorization"
-                    ),
-                },
-            )
+            raise _json_error_response(401, "Authentication required")
+        if user.get('role') == 'cicli' and not _cicli_role_may_access(path):
+            raise _json_error_response(403, "Access denied for this role")
         request.environ['intex.user'] = user
 
 @app.route('/<:re:.*>', method='OPTIONS')
@@ -892,7 +906,7 @@ def export_discrepanze_pdf():
         response.status = 500
         return {"error": str(e)}
 
-VALID_USER_ROLES = {'admin', 'user'}
+VALID_USER_ROLES = {'admin', 'user', 'cicli'}
 
 
 def _require_admin():

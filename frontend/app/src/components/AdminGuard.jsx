@@ -4,7 +4,7 @@ export default function AdminGuard({ children }) {
   const { user } = useAuth()
 
   if (user?.role !== 'admin') {
-    window.location.href = '/'
+    window.location.href = user?.role === 'cicli' ? '/cicli' : '/'
     return null
   }
 
