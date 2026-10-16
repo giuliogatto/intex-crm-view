@@ -501,12 +501,14 @@ export default function CicliPage() {
               </div>
               <div className="field">
                 <label>Articolo fiscale</label>
-                <input
-                  type="text"
+                <FilterSuggest
                   name="articolo_fiscale"
                   value={filters.articolo_fiscale}
                   onChange={handleChange}
+                  endpoint="/api/cicli/suggest/articolo_fiscale"
                   placeholder="Es. CAPI..."
+                  minChars={1}
+                  allowClear
                 />
               </div>
               <div className="field">

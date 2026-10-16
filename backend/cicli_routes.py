@@ -270,8 +270,16 @@ def _storico_where(
     filters: Dict[str, Any],
     params: Dict[str, Any],
     note_variants: Optional[List[str]] = None,
+    ew2_alias: str = "r",
+    ew1_alias: str = "t",
 ) -> str:
-    """Condizioni su alias r (ew2) + t (ew1). Tutti AND sulla stessa riga."""
+    """Condizioni su alias ew2 + ew1. Tutti AND sulla stessa riga.
+
+    Usa alias espliciti (niente replace su 'r.'/'t.') per non corrompere
+    placeholder tipo %(articolo_fiscale)s o nomi colonna.
+    """
+    r = ew2_alias
+    t = ew1_alias
     clauses = ["1=1"]
 
     colore = filters.get("colore")
@@ -281,9 +289,9 @@ def _storico_where(
         params["colore_prefix"] = f"{_escape_like(colore)}%"
         clauses.append(
             "("
-            "r.ew2_cd_colore ILIKE %(colore_prefix)s ESCAPE '\\'"
-            " OR r.ew2_ds_colore ILIKE %(colore_like)s ESCAPE '\\'"
-            " OR word_similarity(%(colore)s, COALESCE(r.ew2_ds_colore, '')) > 0.5"
+            f"{r}.ew2_cd_colore ILIKE %(colore_prefix)s ESCAPE '\\'"
+            f" OR {r}.ew2_ds_colore ILIKE %(colore_like)s ESCAPE '\\'"
+            f" OR word_similarity(%(colore)s, COALESCE({r}.ew2_ds_colore, '')) > 0.5"
             ")"
         )
 
@@ -293,9 +301,9 @@ def _storico_where(
         params["commessa_like"] = f"%{_escape_like(commessa)}%"
         clauses.append(
             "("
-            "UPPER(%(commessa)s) = ANY (COALESCE(r.ew2_rif_tokens, ARRAY[]::text[]))"
-            " OR r.ew2_rif_disp_cliente ILIKE %(commessa_like)s ESCAPE '\\'"
-            " OR COALESCE(t.ew1_rifer_cliente, '') ILIKE %(commessa_like)s ESCAPE '\\'"
+            f"UPPER(%(commessa)s) = ANY (COALESCE({r}.ew2_rif_tokens, ARRAY[]::text[]))"
+            f" OR {r}.ew2_rif_disp_cliente ILIKE %(commessa_like)s ESCAPE '\\'"
+            f" OR COALESCE({t}.ew1_rifer_cliente, '') ILIKE %(commessa_like)s ESCAPE '\\'"
             ")"
         )
 
@@ -305,9 +313,9 @@ def _storico_where(
         params["modello_like"] = f"%{_escape_like(modello)}%"
         clauses.append(
             "("
-            "r.ew2_modello ILIKE %(modello_like)s ESCAPE '\\'"
-            " OR r.ew2_ds_articolo ILIKE %(modello_like)s ESCAPE '\\'"
-            " OR word_similarity(%(modello)s, COALESCE(r.ew2_modello, '')) > 0.5"
+            f"{r}.ew2_modello ILIKE %(modello_like)s ESCAPE '\\'"
+            f" OR {r}.ew2_ds_articolo ILIKE %(modello_like)s ESCAPE '\\'"
+            f" OR word_similarity(%(modello)s, COALESCE({r}.ew2_modello, '')) > 0.5"
             ")"
         )
 
@@ -317,25 +325,32 @@ def _storico_where(
         params["tessuto_like"] = f"%{_escape_like(tessuto)}%"
         clauses.append(
             "("
-            "UPPER(%(tessuto)s) = ANY (COALESCE(r.ew2_tessuto_tokens, ARRAY[]::text[]))"
-            " OR COALESCE(r.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-            " OR COALESCE(r.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-            " OR COALESCE(r.ew2_cd_colore, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-            " OR COALESCE(r.ew2_note, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+            f"UPPER(%(tessuto)s) = ANY (COALESCE({r}.ew2_tessuto_tokens, ARRAY[]::text[]))"
+            f" OR COALESCE({r}.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+            f" OR COALESCE({r}.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+            f" OR COALESCE({r}.ew2_cd_colore, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+            f" OR COALESCE({r}.ew2_note, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
             ")"
         )
 
     art_fisc = filters.get("articolo_fiscale")
     if art_fisc:
-        params["articolo_fiscale"] = art_fisc
-        clauses.append("r.ew2_cd_articolo_fiscale = %(articolo_fiscale)s")
+        # Case-insensitive + trim: i codici Oracle arrivano spesso upper e con padding
+        params["articolo_fiscale"] = art_fisc.strip()
+        params["articolo_fiscale_like"] = f"%{_escape_like(art_fisc.strip())}%"
+        clauses.append(
+            "("
+            f"btrim(COALESCE({r}.ew2_cd_articolo_fiscale, '')) ILIKE %(articolo_fiscale)s ESCAPE '\\'"
+            f" OR btrim(COALESCE({r}.ew2_cd_articolo_fiscale, '')) ILIKE %(articolo_fiscale_like)s ESCAPE '\\'"
+            ")"
+        )
 
     if filters.get("data_bolla_da"):
         params["data_bolla_da"] = filters["data_bolla_da"]
-        clauses.append("t.ew1_data_bolla_cli >= %(data_bolla_da)s")
+        clauses.append(f"{t}.ew1_data_bolla_cli >= %(data_bolla_da)s")
     if filters.get("data_bolla_a"):
         params["data_bolla_a"] = filters["data_bolla_a"]
-        clauses.append("t.ew1_data_bolla_cli <= %(data_bolla_a)s")
+        clauses.append(f"{t}.ew1_data_bolla_cli <= %(data_bolla_a)s")
 
     if filters.get("fasi_note_storico") and note_variants:
         note_parts = []
@@ -345,8 +360,8 @@ def _storico_where(
             key = f"note_storico_{i}"
             params[key] = f"%{_escape_like(v)}%"
             note_parts.append(
-                f"(COALESCE(r.ew2_note, '') ILIKE %({key})s ESCAPE '\\'"
-                f" OR COALESCE(r.ew2_note_ricetta, '') ILIKE %({key})s ESCAPE '\\')"
+                f"(COALESCE({r}.ew2_note, '') ILIKE %({key})s ESCAPE '\\'"
+                f" OR COALESCE({r}.ew2_note_ricetta, '') ILIKE %({key})s ESCAPE '\\')"
             )
         if note_parts:
             clauses.append("(" + " OR ".join(note_parts) + ")")
@@ -661,13 +676,14 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             "modello",
             "tessuto",
             "commessa",
+            "articolo_fiscale",
         }
         if field not in allowed:
             response.status = 400
             return {"error": f"Campo suggest non supportato: {field}"}
 
         q = (request.query.get("q") or "").strip()
-        min_chars = 3 if field == "commessa" else 2
+        min_chars = 3 if field == "commessa" else (1 if field == "articolo_fiscale" else 2)
         if len(q) < min_chars:
             return {"total": 0, "data": [], "min_chars": min_chars}
 
@@ -771,6 +787,36 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                     # Se la query sembra descrizione, il value inviabile può essere la label
                     value = r[0] if code_like else (r[1] or r[0])
                     data.append({"value": value, "label": r[1], "secondary": r[2]})
+
+            elif field == "articolo_fiscale":
+                if not _cicli_table_exists(cursor, "ew2_righe_disposizioni"):
+                    return {"total": 0, "data": [], "storico_disponibile": False}
+                cursor.execute(
+                    """
+                    SELECT value, label, secondary FROM (
+                      SELECT DISTINCT
+                        btrim(r.ew2_cd_articolo_fiscale) AS value,
+                        btrim(r.ew2_cd_articolo_fiscale) AS label,
+                        NULL::text AS secondary,
+                        CASE
+                          WHEN btrim(r.ew2_cd_articolo_fiscale) ILIKE %(prefix)s ESCAPE '\\' THEN 0
+                          ELSE 1
+                        END AS rank_pref,
+                        btrim(r.ew2_cd_articolo_fiscale) AS sort_key
+                      FROM ew2_righe_disposizioni r
+                      WHERE NULLIF(btrim(r.ew2_cd_articolo_fiscale), '') IS NOT NULL
+                        AND btrim(r.ew2_cd_articolo_fiscale) ILIKE %(contains)s ESCAPE '\\'
+                    ) x
+                    ORDER BY rank_pref, sort_key
+                    LIMIT %(limit)s
+                    """,
+                    params,
+                )
+                data = [
+                    {"value": r[0], "label": r[1], "secondary": r[2]}
+                    for r in cursor.fetchall()
+                    if r[0]
+                ]
 
             elif field in ("colore", "modello", "tessuto", "commessa"):
                 if not _cicli_table_exists(cursor, "ew2_righe_disposizioni"):
@@ -1044,7 +1090,9 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                     filters,
                     params,
                     note_variants if filters.get("fasi_note_storico") else None,
-                ).replace("r.", "ew2.").replace("t.", "ew1.")
+                    ew2_alias="ew2",
+                    ew1_alias="ew1",
+                )
                 from_where += f"""
                   AND EXISTS (
                     SELECT 1
@@ -1191,39 +1239,44 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                 params["colore_like"] = f"%{_escape_like(filters['colore'])}%"
                 params["colore_prefix"] = f"{_escape_like(filters['colore'])}%"
                 clauses.append(
-                    "(r.ew2_cd_colore ILIKE %(colore_prefix)s ESCAPE '\\'"
-                    " OR r.ew2_ds_colore ILIKE %(colore_like)s ESCAPE '\\')"
+                    "(ew2.ew2_cd_colore ILIKE %(colore_prefix)s ESCAPE '\\'"
+                    " OR ew2.ew2_ds_colore ILIKE %(colore_like)s ESCAPE '\\')"
                 )
             if filters.get("commessa"):
                 params["commessa_like"] = f"%{_escape_like(filters['commessa'])}%"
                 clauses.append(
-                    "(r.ew2_rif_disp_cliente ILIKE %(commessa_like)s ESCAPE '\\'"
-                    " OR COALESCE(t.ew1_rifer_cliente, '') ILIKE %(commessa_like)s ESCAPE '\\')"
+                    "(ew2.ew2_rif_disp_cliente ILIKE %(commessa_like)s ESCAPE '\\'"
+                    " OR COALESCE(ew1.ew1_rifer_cliente, '') ILIKE %(commessa_like)s ESCAPE '\\')"
                 )
             if filters.get("modello"):
                 params["modello_like"] = f"%{_escape_like(filters['modello'])}%"
                 clauses.append(
-                    "(r.ew2_modello ILIKE %(modello_like)s ESCAPE '\\'"
-                    " OR r.ew2_ds_articolo ILIKE %(modello_like)s ESCAPE '\\')"
+                    "(ew2.ew2_modello ILIKE %(modello_like)s ESCAPE '\\'"
+                    " OR ew2.ew2_ds_articolo ILIKE %(modello_like)s ESCAPE '\\')"
                 )
             if filters.get("tessuto"):
                 params["tessuto_like"] = f"%{_escape_like(filters['tessuto'])}%"
                 clauses.append(
-                    "(COALESCE(r.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-                    " OR COALESCE(r.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-                    " OR COALESCE(r.ew2_cd_colore, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-                    " OR COALESCE(r.ew2_note, '') ILIKE %(tessuto_like)s ESCAPE '\\')"
+                    "(COALESCE(ew2.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+                    " OR COALESCE(ew2.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+                    " OR COALESCE(ew2.ew2_cd_colore, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+                    " OR COALESCE(ew2.ew2_note, '') ILIKE %(tessuto_like)s ESCAPE '\\')"
                 )
             if filters.get("articolo_fiscale"):
-                params["articolo_fiscale"] = filters["articolo_fiscale"]
-                clauses.append("r.ew2_cd_articolo_fiscale = %(articolo_fiscale)s")
+                art = (filters["articolo_fiscale"] or "").strip()
+                params["articolo_fiscale"] = art
+                params["articolo_fiscale_like"] = f"%{_escape_like(art)}%"
+                clauses.append(
+                    "(btrim(COALESCE(ew2.ew2_cd_articolo_fiscale, '')) ILIKE %(articolo_fiscale)s ESCAPE '\\'"
+                    " OR btrim(COALESCE(ew2.ew2_cd_articolo_fiscale, '')) ILIKE %(articolo_fiscale_like)s ESCAPE '\\')"
+                )
             if filters.get("data_bolla_da"):
                 params["data_bolla_da"] = filters["data_bolla_da"]
-                clauses.append("t.ew1_data_bolla_cli >= %(data_bolla_da)s")
+                clauses.append("ew1.ew1_data_bolla_cli >= %(data_bolla_da)s")
             if filters.get("data_bolla_a"):
                 params["data_bolla_a"] = filters["data_bolla_a"]
-                clauses.append("t.ew1_data_bolla_cli <= %(data_bolla_a)s")
-            storico_cond = " AND ".join(clauses).replace("r.", "ew2.").replace("t.", "ew1.")
+                clauses.append("ew1.ew1_data_bolla_cli <= %(data_bolla_a)s")
+            storico_cond = " AND ".join(clauses)
             from_where += f"""
               AND EXISTS (
                 SELECT 1
