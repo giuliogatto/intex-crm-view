@@ -179,6 +179,11 @@ def _load_sinonimi(cursor) -> Dict[str, List[str]]:
         return {k: list(v) for k, v in _FALLBACK_SINONIMI.items()}
 
 
+# Sotto questa lunghezza il match per contenimento (term in keyword) è troppo
+# aggressivo: es. "T" ∈ "AMMORBIDENTE" agganciava tutto il gruppo TINTURA.
+_MIN_SINONIMO_CONTAINMENT_LEN = 4
+
+
 def _expand_fasi_keywords(
     keywords: Sequence[str], sinonimi: Dict[str, List[str]]
 ) -> Tuple[List[Dict[str, Any]], Dict[str, List[str]]]:
@@ -198,16 +203,24 @@ def _expand_fasi_keywords(
             continue
         norm = _norm_token(raw)
         variants = {raw.upper(), norm}
-        # match gruppo per uguaglianza o contenimento
+        # match gruppo: uguaglianza sempre; contenimento solo per termini lunghi
         matched_groups = set()
         for term, gruppo in term_to_group.items():
-            if norm == term or term in norm or norm in term:
+            if norm == term:
+                matched_groups.add(gruppo)
+            elif (
+                len(term) >= _MIN_SINONIMO_CONTAINMENT_LEN
+                and term in norm
+            ) or (
+                len(norm) >= _MIN_SINONIMO_CONTAINMENT_LEN
+                and norm in term
+            ):
                 matched_groups.add(gruppo)
         for gruppo in matched_groups:
             for t in sinonimi.get(gruppo, []):
                 variants.add(t)
                 variants.add(_norm_token(t))
-        # parti multi-parola
+        # parti multi-parola: solo lookup esatto sul token (già len >= 2)
         for part in norm.split():
             if len(part) >= 2:
                 variants.add(part)
