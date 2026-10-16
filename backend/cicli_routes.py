@@ -441,6 +441,39 @@ def _cicli_table_exists(cursor, name: str) -> bool:
     return cursor.fetchone() is not None
 
 
+def _column_exists(cursor, table: str, column: str) -> bool:
+    cursor.execute(
+        """
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = %(table)s AND column_name = %(column)s
+        """,
+        {"table": table, "column": column},
+    )
+    return cursor.fetchone() is not None
+
+
+def _looks_like_code(query: str) -> bool:
+    """Preferisci match su codici se la query è prevalentemente numerica/codice-like."""
+    s = (query or "").strip()
+    if not s:
+        return False
+    letters = sum(1 for c in s if c.isalpha())
+    digits = sum(1 for c in s if c.isdigit())
+    if digits > 0 and digits >= letters:
+        return True
+    if " " not in s and len(s) <= 12 and digits > 0:
+        return True
+    return False
+
+
+def _suggest_limit(raw: Optional[str], default: int = 30, max_limit: int = 50) -> int:
+    try:
+        limit = int(raw or default)
+    except (TypeError, ValueError):
+        limit = default
+    return max(1, min(limit, max_limit))
+
+
 def _enrich_page(cursor, items: List[Dict[str, Any]], storico_available: bool) -> None:
     if not items or not storico_available:
         for it in items:
@@ -612,6 +645,323 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
         except Exception as e:
             response.status = 500
             return {"error": str(e)}
+
+    @app.route("/api/cicli/suggest/<field>", method="GET")
+    def get_cicli_suggest(field):
+        """Autocomplete case-insensitive con testo libero (valore = stringa digitata/selezionata).
+
+        Campi: codice_ciclo, articolo, colore, modello, tessuto, commessa.
+        Ranking: prefisso prima di contains; per query codice-like priorità ai codici.
+        """
+        field = (field or "").strip().lower().replace("-", "_")
+        allowed = {
+            "codice_ciclo",
+            "articolo",
+            "colore",
+            "modello",
+            "tessuto",
+            "commessa",
+        }
+        if field not in allowed:
+            response.status = 400
+            return {"error": f"Campo suggest non supportato: {field}"}
+
+        q = (request.query.get("q") or "").strip()
+        min_chars = 3 if field == "commessa" else 2
+        if len(q) < min_chars:
+            return {"total": 0, "data": [], "min_chars": min_chars}
+
+        limit = _suggest_limit(request.query.get("limit"))
+        codice_cliente = (request.query.get("codice_cliente") or "").strip() or None
+        code_like = _looks_like_code(q)
+        escaped = _escape_like(q)
+        params: Dict[str, Any] = {
+            "prefix": f"{escaped}%",
+            "contains": f"%{escaped}%",
+            "limit": limit,
+        }
+
+        conn = None
+        cursor = None
+        try:
+            conn = db_pool.get_conn()
+            cursor = conn.cursor()
+            data: List[Dict[str, Any]] = []
+
+            if field == "codice_ciclo":
+                if codice_cliente:
+                    params["codice_cliente"] = codice_cliente
+                cli_filter = "AND t.codice_cliente = %(codice_cliente)s" if codice_cliente else ""
+                # Unisce codice ciclo e codice ciclo cliente; prefisso prima
+                cursor.execute(
+                    f"""
+                    SELECT value, label, secondary FROM (
+                      SELECT DISTINCT
+                        t.codice_ciclo AS value,
+                        t.codice_ciclo AS label,
+                        NULLIF(btrim(t.codice_ciclo_cli), '') AS secondary,
+                        CASE
+                          WHEN t.codice_ciclo ILIKE %(prefix)s ESCAPE '\\' THEN 0
+                          WHEN COALESCE(t.codice_ciclo_cli, '') ILIKE %(prefix)s ESCAPE '\\' THEN 1
+                          ELSE 2
+                        END AS rank_pref,
+                        t.codice_ciclo AS sort_key
+                      FROM cicli_testate t
+                      WHERE (
+                        t.codice_ciclo ILIKE %(contains)s ESCAPE '\\'
+                        OR COALESCE(t.codice_ciclo_cli, '') ILIKE %(contains)s ESCAPE '\\'
+                      )
+                      {cli_filter}
+                    ) x
+                    ORDER BY rank_pref, sort_key
+                    LIMIT %(limit)s
+                    """,
+                    params,
+                )
+                data = [
+                    {"value": r[0], "label": r[1], "secondary": r[2]}
+                    for r in cursor.fetchall()
+                    if r[0]
+                ]
+
+            elif field == "articolo":
+                if codice_cliente:
+                    params["codice_cliente"] = codice_cliente
+                cli_filter = "AND a.codice_cliente = %(codice_cliente)s" if codice_cliente else ""
+                # Query codice-like → codice prima; altrimenti descrizione prima
+                order_sql = (
+                    "rank_code, rank_pref, sort_key"
+                    if code_like
+                    else "rank_desc, rank_pref, sort_key"
+                )
+                cursor.execute(
+                    f"""
+                    SELECT value, label, secondary FROM (
+                      SELECT DISTINCT
+                        a.codice_articolo AS value,
+                        COALESCE(NULLIF(btrim(a.ds_articolo), ''), a.codice_articolo) AS label,
+                        a.codice_articolo AS secondary,
+                        CASE WHEN a.codice_articolo ILIKE %(prefix)s ESCAPE '\\' THEN 0
+                             WHEN a.codice_articolo ILIKE %(contains)s ESCAPE '\\' THEN 1
+                             ELSE 2 END AS rank_code,
+                        CASE WHEN COALESCE(a.ds_articolo, '') ILIKE %(prefix)s ESCAPE '\\' THEN 0
+                             WHEN COALESCE(a.ds_articolo, '') ILIKE %(contains)s ESCAPE '\\' THEN 1
+                             ELSE 2 END AS rank_desc,
+                        CASE WHEN a.codice_articolo ILIKE %(prefix)s ESCAPE '\\'
+                               OR COALESCE(a.ds_articolo, '') ILIKE %(prefix)s ESCAPE '\\'
+                             THEN 0 ELSE 1 END AS rank_pref,
+                        COALESCE(a.ds_articolo, a.codice_articolo) AS sort_key
+                      FROM articoli_cliente a
+                      WHERE (
+                        a.codice_articolo ILIKE %(contains)s ESCAPE '\\'
+                        OR COALESCE(a.ds_articolo, '') ILIKE %(contains)s ESCAPE '\\'
+                      )
+                      {cli_filter}
+                    ) x
+                    ORDER BY {order_sql}
+                    LIMIT %(limit)s
+                    """,
+                    params,
+                )
+                rows = cursor.fetchall()
+                data = []
+                for r in rows:
+                    if not r[0]:
+                        continue
+                    # Se la query sembra descrizione, il value inviabile può essere la label
+                    value = r[0] if code_like else (r[1] or r[0])
+                    data.append({"value": value, "label": r[1], "secondary": r[2]})
+
+            elif field in ("colore", "modello", "tessuto", "commessa"):
+                if not _cicli_table_exists(cursor, "ew2_righe_disposizioni"):
+                    return {"total": 0, "data": [], "storico_disponibile": False}
+
+                if field == "colore":
+                    order_sql = (
+                        "rank_code, rank_pref, sort_key"
+                        if code_like
+                        else "rank_desc, rank_pref, sort_key"
+                    )
+                    cursor.execute(
+                        f"""
+                        SELECT cd_colore, ds_colore FROM (
+                          SELECT DISTINCT
+                            NULLIF(btrim(r.ew2_cd_colore), '') AS cd_colore,
+                            NULLIF(btrim(r.ew2_ds_colore), '') AS ds_colore,
+                            CASE WHEN COALESCE(r.ew2_cd_colore, '') ILIKE %(prefix)s ESCAPE '\\' THEN 0
+                                 WHEN COALESCE(r.ew2_cd_colore, '') ILIKE %(contains)s ESCAPE '\\' THEN 1
+                                 ELSE 2 END AS rank_code,
+                            CASE WHEN COALESCE(r.ew2_ds_colore, '') ILIKE %(prefix)s ESCAPE '\\' THEN 0
+                                 WHEN COALESCE(r.ew2_ds_colore, '') ILIKE %(contains)s ESCAPE '\\' THEN 1
+                                 ELSE 2 END AS rank_desc,
+                            CASE WHEN COALESCE(r.ew2_cd_colore, '') ILIKE %(prefix)s ESCAPE '\\'
+                                   OR COALESCE(r.ew2_ds_colore, '') ILIKE %(prefix)s ESCAPE '\\'
+                                 THEN 0 ELSE 1 END AS rank_pref,
+                            COALESCE(r.ew2_ds_colore, r.ew2_cd_colore) AS sort_key
+                          FROM ew2_righe_disposizioni r
+                          WHERE (
+                            COALESCE(r.ew2_cd_colore, '') ILIKE %(contains)s ESCAPE '\\'
+                            OR COALESCE(r.ew2_ds_colore, '') ILIKE %(contains)s ESCAPE '\\'
+                          )
+                        ) x
+                        WHERE cd_colore IS NOT NULL OR ds_colore IS NOT NULL
+                        ORDER BY {order_sql}
+                        LIMIT %(limit)s
+                        """,
+                        params,
+                    )
+                    data = []
+                    for cd, ds in cursor.fetchall():
+                        if code_like:
+                            value = cd or ds
+                            label = cd or ds
+                            secondary = ds if cd and ds else None
+                        else:
+                            value = ds or cd
+                            label = ds or cd
+                            secondary = cd if cd and ds else None
+                        if value:
+                            data.append(
+                                {"value": value, "label": label, "secondary": secondary}
+                            )
+
+                elif field == "modello":
+                    cursor.execute(
+                        """
+                        SELECT value, label, secondary FROM (
+                          SELECT DISTINCT
+                            NULLIF(btrim(r.ew2_modello), '') AS value,
+                            NULLIF(btrim(r.ew2_modello), '') AS label,
+                            NULLIF(btrim(r.ew2_ds_articolo), '') AS secondary,
+                            CASE WHEN r.ew2_modello ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                            r.ew2_modello AS sort_key
+                          FROM ew2_righe_disposizioni r
+                          WHERE NULLIF(btrim(r.ew2_modello), '') IS NOT NULL
+                            AND (
+                              r.ew2_modello ILIKE %(contains)s ESCAPE '\\'
+                              OR COALESCE(r.ew2_ds_articolo, '') ILIKE %(contains)s ESCAPE '\\'
+                            )
+                        ) x
+                        ORDER BY rank_pref, sort_key
+                        LIMIT %(limit)s
+                        """,
+                        params,
+                    )
+                    data = [
+                        {"value": r[0], "label": r[1], "secondary": r[2]}
+                        for r in cursor.fetchall()
+                        if r[0]
+                    ]
+
+                elif field == "tessuto":
+                    if _column_exists(cursor, "ew2_righe_disposizioni", "ew2_tessuto_tokens"):
+                        cursor.execute(
+                            """
+                            SELECT value, label, secondary FROM (
+                              SELECT DISTINCT
+                                tok AS value,
+                                tok AS label,
+                                NULL::text AS secondary,
+                                CASE WHEN tok ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                                tok AS sort_key
+                              FROM ew2_righe_disposizioni r
+                              CROSS JOIN LATERAL unnest(COALESCE(r.ew2_tessuto_tokens, ARRAY[]::text[])) AS tok
+                              WHERE NULLIF(btrim(tok), '') IS NOT NULL
+                                AND length(tok) >= 2
+                                AND tok ILIKE %(contains)s ESCAPE '\\'
+                            ) x
+                            ORDER BY rank_pref, sort_key
+                            LIMIT %(limit)s
+                            """,
+                            params,
+                        )
+                    else:
+                        cursor.execute(
+                            """
+                            SELECT value, label, secondary FROM (
+                              SELECT DISTINCT
+                                NULLIF(btrim(r.ew2_qualita), '') AS value,
+                                NULLIF(btrim(r.ew2_qualita), '') AS label,
+                                NULL::text AS secondary,
+                                CASE WHEN r.ew2_qualita ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                                r.ew2_qualita AS sort_key
+                              FROM ew2_righe_disposizioni r
+                              WHERE NULLIF(btrim(r.ew2_qualita), '') IS NOT NULL
+                                AND r.ew2_qualita ILIKE %(contains)s ESCAPE '\\'
+                            ) x
+                            ORDER BY rank_pref, sort_key
+                            LIMIT %(limit)s
+                            """,
+                            params,
+                        )
+                    data = [
+                        {"value": r[0], "label": r[1], "secondary": r[2]}
+                        for r in cursor.fetchall()
+                        if r[0]
+                    ]
+
+                elif field == "commessa":
+                    if _column_exists(cursor, "ew2_righe_disposizioni", "ew2_rif_tokens"):
+                        cursor.execute(
+                            """
+                            SELECT value, label, secondary FROM (
+                              SELECT DISTINCT
+                                tok AS value,
+                                tok AS label,
+                                NULL::text AS secondary,
+                                CASE WHEN tok ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                                tok AS sort_key
+                              FROM ew2_righe_disposizioni r
+                              CROSS JOIN LATERAL unnest(COALESCE(r.ew2_rif_tokens, ARRAY[]::text[])) AS tok
+                              WHERE NULLIF(btrim(tok), '') IS NOT NULL
+                                AND length(tok) >= 2
+                                AND tok ILIKE %(contains)s ESCAPE '\\'
+                            ) x
+                            ORDER BY rank_pref, sort_key
+                            LIMIT %(limit)s
+                            """,
+                            params,
+                        )
+                    else:
+                        cursor.execute(
+                            """
+                            SELECT value, label, secondary FROM (
+                              SELECT DISTINCT
+                                NULLIF(btrim(r.ew2_rif_disp_cliente), '') AS value,
+                                NULLIF(btrim(r.ew2_rif_disp_cliente), '') AS label,
+                                NULL::text AS secondary,
+                                CASE WHEN r.ew2_rif_disp_cliente ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                                r.ew2_rif_disp_cliente AS sort_key
+                              FROM ew2_righe_disposizioni r
+                              WHERE NULLIF(btrim(r.ew2_rif_disp_cliente), '') IS NOT NULL
+                                AND r.ew2_rif_disp_cliente ILIKE %(contains)s ESCAPE '\\'
+                            ) x
+                            ORDER BY rank_pref, sort_key
+                            LIMIT %(limit)s
+                            """,
+                            params,
+                        )
+                    data = [
+                        {"value": r[0], "label": r[1], "secondary": r[2]}
+                        for r in cursor.fetchall()
+                        if r[0]
+                    ]
+
+            return {"total": len(data), "data": data, "min_chars": min_chars}
+        except Exception as e:
+            response.status = 500
+            return {"error": str(e)}
+        finally:
+            if cursor is not None:
+                try:
+                    cursor.close()
+                except Exception:
+                    pass
+            if conn is not None:
+                try:
+                    db_pool.release_conn(conn)
+                except Exception:
+                    pass
 
     @app.route("/api/cicli/refresh-search", method="POST")
     def refresh_cicli_search_endpoint():

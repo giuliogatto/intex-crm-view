@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 import CustomerAutocomplete from '../components/CustomerAutocomplete'
 import SeasonAutocomplete from '../components/SeasonAutocomplete'
+import FilterSuggest from '../components/FilterSuggest'
 import Pagination from '../components/Pagination'
 import LoadingOverlay from '../components/LoadingOverlay'
 import BollaUploadPanel from '../components/BollaUploadPanel'
@@ -335,22 +336,28 @@ export default function CicliPage() {
               </div>
               <div className="field">
                 <label>Codice ciclo</label>
-                <input
-                  type="text"
+                <FilterSuggest
                   name="codice_ciclo"
                   value={filters.codice_ciclo}
                   onChange={handleChange}
+                  endpoint="/api/cicli/suggest/codice_ciclo"
                   placeholder="Es. T139..."
+                  minChars={2}
+                  params={{ codice_cliente: filters.codice_cliente }}
+                  allowClear
                 />
               </div>
               <div className="field">
                 <label>Articolo cliente</label>
-                <input
-                  type="text"
+                <FilterSuggest
                   name="articolo"
                   value={filters.articolo}
                   onChange={handleChange}
+                  endpoint="/api/cicli/suggest/articolo"
                   placeholder="Codice o descrizione articolo cliente..."
+                  minChars={2}
+                  params={{ codice_cliente: filters.codice_cliente }}
+                  allowClear
                 />
               </div>
               <div className="field">
@@ -446,42 +453,50 @@ export default function CicliPage() {
             <div className="filters-grid">
               <div className="field">
                 <label>Commessa</label>
-                <input
-                  type="text"
+                <FilterSuggest
                   name="commessa"
                   value={filters.commessa}
                   onChange={handleChange}
+                  endpoint="/api/cicli/suggest/commessa"
                   placeholder="Rif. disp. cliente..."
+                  minChars={3}
+                  allowClear
                 />
               </div>
               <div className="field">
                 <label>Modello</label>
-                <input
-                  type="text"
+                <FilterSuggest
                   name="modello"
                   value={filters.modello}
                   onChange={handleChange}
+                  endpoint="/api/cicli/suggest/modello"
                   placeholder="Nome capo codice cliente..."
+                  minChars={2}
+                  allowClear
                 />
               </div>
               <div className="field">
                 <label>Colore</label>
-                <input
-                  type="text"
+                <FilterSuggest
                   name="colore"
                   value={filters.colore}
                   onChange={handleChange}
+                  endpoint="/api/cicli/suggest/colore"
                   placeholder="Codice o descrizione colore..."
+                  minChars={2}
+                  allowClear
                 />
               </div>
               <div className="field">
                 <label>Tessuto</label>
-                <input
-                  type="text"
+                <FilterSuggest
                   name="tessuto"
                   value={filters.tessuto}
                   onChange={handleChange}
+                  endpoint="/api/cicli/suggest/tessuto"
                   placeholder="Es. S3651..."
+                  minChars={2}
+                  allowClear
                 />
               </div>
               <div className="field">
