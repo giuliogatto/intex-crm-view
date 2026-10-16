@@ -56,13 +56,41 @@ function AuthImage({ sessionId }) {
   return <img src={url} alt={`Bolla sessione ${sessionId}`} className="ocr-bolle-image" />
 }
 
-function MatchSummary({ match, ocr }) {
-  if (!match) return <p className="users-empty">Nessun risultato di matching salvato.</p>
+function parseJsonField(value) {
+  if (value == null) return null
+  if (typeof value === 'object') return value
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value)
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+function MatchSummary({ match: matchRaw, ocr: ocrRaw, clienteScelto }) {
+  const match = parseJsonField(matchRaw) || {}
+  const ocr = parseJsonField(ocrRaw) || {}
   const cliente = match.cliente || {}
   const selezionato = cliente.selezionato
-  const candidati = cliente.candidati || []
-  const righe = match.righe_match || []
-  const ocrByRiga = new Map((ocr?.righe || []).map((r) => [r.riga, r]))
+  const candidatiCliente = cliente.candidati || []
+  const matchByRiga = new Map((match.righe_match || []).map((r) => [r.riga, r]))
+  const ocrRighe = ocr.righe || []
+
+  // Preferisci le righe OCR; se assenti (OCR vecchio/incompleto) usa solo match_json
+  const rowKeys = ocrRighe.length > 0
+    ? ocrRighe.map((r) => r.riga)
+    : (match.righe_match || []).map((r) => r.riga)
+
+  if (rowKeys.length === 0 && !match.cliente && !(match.righe_match || []).length) {
+    return (
+      <p className="users-empty">
+        Nessun risultato di matching salvato per questa sessione
+        {clienteScelto ? ` (cliente ${clienteScelto}).` : '.'}
+      </p>
+    )
+  }
 
   return (
     <div className="ocr-bolle-match">
@@ -72,54 +100,98 @@ function MatchSummary({ match, ocr }) {
           <span className="detail-info-item__value">
             {selezionato
               ? `${selezionato.codice_cliente || '—'} — ${selezionato.ragione_sociale || ''}`
-              : '—'}
+              : (clienteScelto || '—')}
           </span>
         </div>
         <div className="detail-info-item">
           <span className="detail-info-item__label">Candidati cliente</span>
-          <span className="detail-info-item__value">{candidati.length}</span>
+          <span className="detail-info-item__value">{candidatiCliente.length}</span>
         </div>
         <div className="detail-info-item">
-          <span className="detail-info-item__label">Righe matchate</span>
-          <span className="detail-info-item__value">{righe.length}</span>
+          <span className="detail-info-item__label">Righe OCR</span>
+          <span className="detail-info-item__value">{ocrRighe.length}</span>
+        </div>
+        <div className="detail-info-item">
+          <span className="detail-info-item__label">Righe con match</span>
+          <span className="detail-info-item__value">{match.righe_match?.length || 0}</span>
         </div>
       </div>
 
-      {righe.length > 0 && (
+      {candidatiCliente.length > 0 && (
+        <div className="table-wrap">
+          <table className="data">
+            <thead>
+              <tr>
+                <th>Codice</th>
+                <th>Ragione sociale</th>
+                <th>Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {candidatiCliente.slice(0, 5).map((c) => (
+                <tr key={c.codice_cliente}>
+                  <td><code className="chats-code">{c.codice_cliente}</code></td>
+                  <td>{c.ragione_sociale || '—'}</td>
+                  <td>{c.score != null ? Number(c.score).toFixed(2) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {rowKeys.length === 0 ? (
+        <p className="users-empty">
+          Nessuna riga OCR/match. Se in analisi non era selezionato un cliente,
+          i cicli non vengono cercati e `righe_match` resta vuoto.
+        </p>
+      ) : (
         <div className="table-wrap">
           <table className="data">
             <thead>
               <tr>
                 <th>#</th>
-                <th>Testo riga / fasi</th>
-                <th>Top ciclo</th>
-                <th>Score</th>
+                <th>Articolo / fasi</th>
+                <th>Codici cercati</th>
+                <th>Top cicli</th>
               </tr>
             </thead>
             <tbody>
-              {righe.map((item, idx) => {
-                const top = (item.candidati_ciclo || [])[0]
-                const ocrRiga = ocrByRiga.get(item.riga) || {}
+              {rowKeys.map((rigaNum, idx) => {
+                const ocrRiga = ocrRighe.find((r) => r.riga === rigaNum) || {}
+                const item = matchByRiga.get(rigaNum) || {}
+                const tops = (item.candidati_ciclo || []).slice(0, 3)
                 return (
-                  <tr key={idx}>
-                    <td>{item.riga ?? idx + 1}</td>
+                  <tr key={`${rigaNum}-${idx}`}>
+                    <td>{rigaNum ?? idx + 1}</td>
                     <td>
                       <div className="ocr-bolle-riga-text">
                         {ocrRiga.fasi_testo
                           || ocrRiga.descrizione_articolo
+                          || ocrRiga.codice_articolo_cliente
                           || ocrRiga.codice_articolo
-                          || (item.codici_cercati || []).join(', ')
+                          || ocrRiga.testo_grezzo
                           || '—'}
                       </div>
                     </td>
                     <td>
-                      {top ? (
-                        <code className="chats-code">{top.codice_ciclo || '—'}</code>
+                      {(item.codici_cercati || ocrRiga.codice_ciclo_manoscritto || []).join(', ') || '—'}
+                    </td>
+                    <td>
+                      {tops.length === 0 ? (
+                        <span className="text-secondary">nessun candidato</span>
                       ) : (
-                        '—'
+                        <ul className="ocr-bolle-top-cicli">
+                          {tops.map((top) => (
+                            <li key={`${top.codice_ciclo}-${top.codice_articolo}`}>
+                              <code className="chats-code">{top.codice_ciclo}</code>
+                              {top.score != null ? ` (${Number(top.score).toFixed(2)})` : ''}
+                              {top.ds_ciclo ? ` — ${top.ds_ciclo}` : ''}
+                            </li>
+                          ))}
+                        </ul>
                       )}
                     </td>
-                    <td>{top?.score != null ? Number(top.score).toFixed(2) : '—'}</td>
                   </tr>
                 )
               })}
@@ -359,23 +431,31 @@ export default function OcrBollePage() {
 
                 <section className="ocr-bolle-section">
                   <h3 className="ocr-bolle-section__title">Matching</h3>
-                  <MatchSummary match={detail.match} ocr={detail.ocr} />
+                  <MatchSummary
+                    match={detail.match}
+                    ocr={detail.ocr}
+                    clienteScelto={detail.cliente_scelto}
+                  />
                 </section>
 
                 <section className="ocr-bolle-section">
                   <div className="ocr-bolle-section__head">
-                    <h3 className="ocr-bolle-section__title">OCR JSON</h3>
+                    <h3 className="ocr-bolle-section__title">JSON grezzo</h3>
                     <button
                       type="button"
                       className="btn btn--sm"
                       onClick={() => setShowOcrJson((v) => !v)}
                     >
-                      {showOcrJson ? 'Nascondi' : 'Mostra'}
+                      {showOcrJson ? 'Nascondi' : 'Mostra OCR + match'}
                     </button>
                   </div>
                   {showOcrJson && (
                     <pre className="ocr-bolle-json">
-                      {JSON.stringify(detail.ocr, null, 2)}
+                      {JSON.stringify(
+                        { ocr: parseJsonField(detail.ocr), match: parseJsonField(detail.match) },
+                        null,
+                        2
+                      )}
                     </pre>
                   )}
                 </section>

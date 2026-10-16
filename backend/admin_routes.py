@@ -46,6 +46,22 @@ def _normalize_termine(value: Any) -> str:
     return " ".join(str(value or "").strip().upper().split())
 
 
+def _as_json_obj(value: Any) -> Any:
+    """psycopg2 a volte restituisce jsonb già come dict, a volte come str."""
+    if value is None:
+        return None
+    if isinstance(value, (dict, list)):
+        return value
+    if isinstance(value, (bytes, memoryview)):
+        value = bytes(value).decode("utf-8")
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except (TypeError, ValueError):
+            return None
+    return value
+
+
 def register_admin_routes(app, db_pool):
     """Registra /api/admin/* sull'app Bottle."""
 
@@ -285,6 +301,13 @@ def register_admin_routes(app, db_pool):
                 return {"error": "Sessione non trovata"}
 
             rel = row[5]
+            ocr = _as_json_obj(row[8])
+            match = _as_json_obj(row[10])
+            if not isinstance(ocr, dict):
+                ocr = {}
+            if not isinstance(match, dict):
+                match = {}
+            righe_match = match.get("righe_match") if isinstance(match.get("righe_match"), list) else []
             return {
                 "id": row[0],
                 "username": row[1],
@@ -294,12 +317,14 @@ def register_admin_routes(app, db_pool):
                 "image_path": rel,
                 "model": row[6],
                 "openai_response_id": row[7],
-                "ocr": row[8],
+                "ocr": ocr,
                 "cliente_scelto": row[9],
-                "match": row[10],
+                "match": match,
                 "created_at": row[11],
                 "updated_at": row[12],
                 "has_image": bool(resolve_bolla_image(rel)),
+                "n_righe_ocr": len(ocr.get("righe") or []),
+                "n_righe_match": len(righe_match),
             }
         except Exception as e:
             response.status = 500
