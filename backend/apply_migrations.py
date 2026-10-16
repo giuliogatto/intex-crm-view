@@ -29,6 +29,7 @@ DEFAULT_ORDER = [
     "create-storico-disposizioni-tables.sql",
     "cicli-storico-search.sql",
     "ocr-bolla.sql",
+    "ocr-bolla-image-path.sql",
 ]
 
 

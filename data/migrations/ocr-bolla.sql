@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS ocr_bolla_sessioni (
     image_sha256       CHAR(64)     NOT NULL,
     mime_type          VARCHAR(50),
     image_bytes        INTEGER,
+    image_path         VARCHAR(500),
     model              VARCHAR(100),
     openai_response_id VARCHAR(100),
     ocr_json           JSONB        NOT NULL,

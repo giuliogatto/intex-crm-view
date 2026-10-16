@@ -18,7 +18,7 @@ db_pool = DatabasePool()
 
 def _apply_cors_headers():
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, OPTIONS"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = (
         "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization"
     )
@@ -131,7 +131,7 @@ def _json_error_response(status, message):
         headers={
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+            "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": (
                 "Origin, Accept, Content-Type, X-Requested-With, "
                 "X-CSRF-Token, Authorization"
@@ -1790,10 +1790,12 @@ def ddt_assist_batch():
 from analisi import register_analisi_routes
 from cicli_routes import register_cicli_routes
 from bolla_routes import register_bolla_routes
+from admin_routes import register_admin_routes
 
 register_analisi_routes(app, db_pool)
 register_cicli_routes(app, db_pool)
 register_bolla_routes(app, db_pool)
+register_admin_routes(app, db_pool)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080)

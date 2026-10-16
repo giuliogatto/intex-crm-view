@@ -7,6 +7,7 @@ import json
 import os
 import sys
 import traceback
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
 
 from bottle import HTTPResponse, MultipartError, request, response
@@ -23,13 +24,54 @@ def _log(msg: str) -> None:
 CACHE_DAYS = 30
 MAX_JSON_BODY = 2 * 1024 * 1024
 
+_MIME_EXT = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+
 _CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": (
         "Origin, Accept, Content-Type, X-Requested-With, X-CSRF-Token, Authorization"
     ),
 }
+
+
+def images_dir() -> Path:
+    """Directory persistente per le foto bolle (volume Docker in produzione)."""
+    configured = (os.getenv("OCR_BOLLA_IMAGES_DIR") or "").strip()
+    if configured:
+        path = Path(configured)
+    else:
+        path = Path(__file__).resolve().parent / "var" / "ocr-bolla-images"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def persist_bolla_image(sha: str, mime: str, image: bytes) -> str:
+    """Salva l'immagine su disco (idempotente per sha). Ritorna path relativo."""
+    ext = _MIME_EXT.get(mime or "", ".bin")
+    rel = f"{sha}{ext}"
+    dest = images_dir() / rel
+    if not dest.exists():
+        tmp = dest.with_suffix(dest.suffix + ".tmp")
+        tmp.write_bytes(image)
+        tmp.replace(dest)
+        _log(f"image saved {rel} ({len(image)} bytes)")
+    return rel
+
+
+def resolve_bolla_image(rel_path: Optional[str]) -> Optional[Path]:
+    if not rel_path:
+        return None
+    # Solo basename: evita path traversal
+    name = Path(rel_path).name
+    if name != rel_path or ".." in rel_path:
+        return None
+    path = images_dir() / name
+    return path if path.is_file() else None
 
 
 def _int_param(value: Any, default: int, lo: int, hi: int) -> int:
@@ -228,25 +270,38 @@ def register_bolla_routes(app, db_pool):
             _log("matching…")
             result = _match_all(cursor, ocr, codice_cliente, max_cicli)
             session_id = cached["session_id"] if cached else None
+            image_path = None
+            try:
+                image_path = persist_bolla_image(sha, mime, image)
+            except OSError as e:
+                _log(f"image persist failed: {e}")
             if sessions_ok:
                 match_json = json.dumps({k: result[k] for k in ("cliente", "righe_match")})
                 if session_id:
                     cursor.execute(
                         """
                         UPDATE ocr_bolla_sessioni
-                        SET cliente_scelto = %(cli)s, match_json = %(match)s::jsonb, updated_at = now()
+                        SET cliente_scelto = %(cli)s,
+                            match_json = %(match)s::jsonb,
+                            image_path = COALESCE(image_path, %(path)s),
+                            updated_at = now()
                         WHERE id = %(id)s
                         """,
-                        {"cli": result["codice_cliente"], "match": match_json, "id": session_id},
+                        {
+                            "cli": result["codice_cliente"],
+                            "match": match_json,
+                            "path": image_path,
+                            "id": session_id,
+                        },
                     )
                 else:
                     cursor.execute(
                         """
                         INSERT INTO ocr_bolla_sessioni (
-                          username, image_sha256, mime_type, image_bytes, model,
+                          username, image_sha256, mime_type, image_bytes, image_path, model,
                           openai_response_id, ocr_json, cliente_scelto, match_json
                         ) VALUES (
-                          %(user)s, %(sha)s, %(mime)s, %(size)s, %(model)s,
+                          %(user)s, %(sha)s, %(mime)s, %(size)s, %(path)s, %(model)s,
                           %(rid)s, %(ocr)s::jsonb, %(cli)s, %(match)s::jsonb
                         ) RETURNING id
                         """,
@@ -255,6 +310,7 @@ def register_bolla_routes(app, db_pool):
                             "sha": sha,
                             "mime": mime,
                             "size": len(image),
+                            "path": image_path,
                             "model": model,
                             "rid": response_id,
                             "ocr": json.dumps(ocr),

@@ -527,7 +527,7 @@ ocr_bolla_sessioni (
 )
 ```
 
-Retention: 30–90 giorni. Immagini: **non** obbligatorie in DB (privacy/spazio); basta hash + JSON. Se servono per contestazioni, storage file locale/S3 fuori DB.
+Retention: 30–90 giorni. Immagini: **non** in DB (privacy/spazio); hash + JSON in tabella, file su disco in `OCR_BOLLA_IMAGES_DIR` (default Docker: volume `ocr_bolla_images` → `/data/ocr-bolla-images`, path relativo in `image_path`). Consultazione admin: `/ocr-bolle`.
 
 ### 7.4 Prerequisiti dati
 

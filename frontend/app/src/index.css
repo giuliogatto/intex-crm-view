@@ -1998,6 +1998,88 @@ table.data tfoot .table-totals-row:hover td {
   font-size: 0.9rem;
 }
 
+/* Sinonimi + OCR bolle admin */
+.sinonimi-filters {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.sinonimi-filters .users-form__field {
+  flex: 1;
+  min-width: 160px;
+  margin: 0;
+}
+
+.sinonimi-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.ocr-bolle-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ocr-bolle-section__title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.ocr-bolle-section__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ocr-bolle-section__head .ocr-bolle-section__title {
+  margin: 0;
+}
+
+.ocr-bolle-image {
+  display: block;
+  width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-muted);
+}
+
+.ocr-bolle-json {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  overflow: auto;
+  max-height: 420px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ocr-bolle-riga-text {
+  max-width: 280px;
+  white-space: normal;
+  font-size: 0.9rem;
+}
+
+.ocr-bolle-match {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 /* DDT Assistente */
 .ddt-assist-panel {
   display: flex;
