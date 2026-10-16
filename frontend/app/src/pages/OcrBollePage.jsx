@@ -3,6 +3,7 @@ import { authFetch } from '../utils/auth'
 import UserMenu from '../components/UserMenu'
 import AdminNav from '../components/AdminNav'
 import Pagination from '../components/Pagination'
+import BollaAnalysisView from '../components/BollaAnalysisView'
 
 const PAGE_SIZE = 20
 
@@ -11,6 +12,19 @@ function formatBytes(n) {
   if (n < 1024) return `${n} B`
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function parseJsonField(value) {
+  if (value == null) return null
+  if (typeof value === 'object') return value
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value)
+    } catch {
+      return null
+    }
+  }
+  return null
 }
 
 function AuthImage({ sessionId }) {
@@ -53,153 +67,10 @@ function AuthImage({ sessionId }) {
       </div>
     )
   }
-  return <img src={url} alt={`Bolla sessione ${sessionId}`} className="ocr-bolle-image" />
-}
-
-function parseJsonField(value) {
-  if (value == null) return null
-  if (typeof value === 'object') return value
-  if (typeof value === 'string') {
-    try {
-      return JSON.parse(value)
-    } catch {
-      return null
-    }
-  }
-  return null
-}
-
-function MatchSummary({ match: matchRaw, ocr: ocrRaw, clienteScelto }) {
-  const match = parseJsonField(matchRaw) || {}
-  const ocr = parseJsonField(ocrRaw) || {}
-  const cliente = match.cliente || {}
-  const selezionato = cliente.selezionato
-  const candidatiCliente = cliente.candidati || []
-  const matchByRiga = new Map((match.righe_match || []).map((r) => [r.riga, r]))
-  const ocrRighe = ocr.righe || []
-
-  // Preferisci le righe OCR; se assenti (OCR vecchio/incompleto) usa solo match_json
-  const rowKeys = ocrRighe.length > 0
-    ? ocrRighe.map((r) => r.riga)
-    : (match.righe_match || []).map((r) => r.riga)
-
-  if (rowKeys.length === 0 && !match.cliente && !(match.righe_match || []).length) {
-    return (
-      <p className="users-empty">
-        Nessun risultato di matching salvato per questa sessione
-        {clienteScelto ? ` (cliente ${clienteScelto}).` : '.'}
-      </p>
-    )
-  }
-
   return (
-    <div className="ocr-bolle-match">
-      <div className="detail-header-info chats-detail-meta">
-        <div className="detail-info-item">
-          <span className="detail-info-item__label">Cliente scelto</span>
-          <span className="detail-info-item__value">
-            {selezionato
-              ? `${selezionato.codice_cliente || '—'} — ${selezionato.ragione_sociale || ''}`
-              : (clienteScelto || '—')}
-          </span>
-        </div>
-        <div className="detail-info-item">
-          <span className="detail-info-item__label">Candidati cliente</span>
-          <span className="detail-info-item__value">{candidatiCliente.length}</span>
-        </div>
-        <div className="detail-info-item">
-          <span className="detail-info-item__label">Righe OCR</span>
-          <span className="detail-info-item__value">{ocrRighe.length}</span>
-        </div>
-        <div className="detail-info-item">
-          <span className="detail-info-item__label">Righe con match</span>
-          <span className="detail-info-item__value">{match.righe_match?.length || 0}</span>
-        </div>
-      </div>
-
-      {candidatiCliente.length > 0 && (
-        <div className="table-wrap">
-          <table className="data">
-            <thead>
-              <tr>
-                <th>Codice</th>
-                <th>Ragione sociale</th>
-                <th>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidatiCliente.slice(0, 5).map((c) => (
-                <tr key={c.codice_cliente}>
-                  <td><code className="chats-code">{c.codice_cliente}</code></td>
-                  <td>{c.ragione_sociale || '—'}</td>
-                  <td>{c.score != null ? Number(c.score).toFixed(2) : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {rowKeys.length === 0 ? (
-        <p className="users-empty">
-          Nessuna riga OCR/match. Se in analisi non era selezionato un cliente,
-          i cicli non vengono cercati e `righe_match` resta vuoto.
-        </p>
-      ) : (
-        <div className="table-wrap">
-          <table className="data">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Articolo / fasi</th>
-                <th>Codici cercati</th>
-                <th>Top cicli</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rowKeys.map((rigaNum, idx) => {
-                const ocrRiga = ocrRighe.find((r) => r.riga === rigaNum) || {}
-                const item = matchByRiga.get(rigaNum) || {}
-                const tops = (item.candidati_ciclo || []).slice(0, 3)
-                return (
-                  <tr key={`${rigaNum}-${idx}`}>
-                    <td>{rigaNum ?? idx + 1}</td>
-                    <td>
-                      <div className="ocr-bolle-riga-text">
-                        {ocrRiga.fasi_testo
-                          || ocrRiga.descrizione_articolo
-                          || ocrRiga.codice_articolo_cliente
-                          || ocrRiga.codice_articolo
-                          || ocrRiga.testo_grezzo
-                          || '—'}
-                      </div>
-                    </td>
-                    <td>
-                      {(item.codici_cercati || ocrRiga.codice_ciclo_manoscritto || []).join(', ') || '—'}
-                    </td>
-                    <td>
-                      {tops.length === 0 ? (
-                        <span className="text-secondary">nessun candidato</span>
-                      ) : (
-                        <ul className="ocr-bolle-top-cicli">
-                          {tops.map((top) => (
-                            <li key={`${top.codice_ciclo}-${top.codice_articolo}`}>
-                              <code className="chats-code">{top.codice_ciclo}</code>
-                              {top.score != null ? ` (${Number(top.score).toFixed(2)})` : ''}
-                              {top.ds_ciclo ? ` — ${top.ds_ciclo}` : ''}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    <a href={url} target="_blank" rel="noreferrer">
+      <img src={url} alt={`Bolla sessione ${sessionId}`} className="ocr-bolle-image" />
+    </a>
   )
 }
 
@@ -217,7 +88,7 @@ export default function OcrBollePage() {
   const [detail, setDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
-  const [showOcrJson, setShowOcrJson] = useState(false)
+  const [showRawJson, setShowRawJson] = useState(false)
 
   const loadList = useCallback(() => {
     setLoading(true)
@@ -253,7 +124,7 @@ export default function OcrBollePage() {
     }
     setDetailLoading(true)
     setDetailError('')
-    setShowOcrJson(false)
+    setShowRawJson(false)
     authFetch(`/api/admin/ocr-bolle/${selectedId}`)
       .then(async (res) => {
         const data = await res.json()
@@ -273,6 +144,12 @@ export default function OcrBollePage() {
     setQApplied(q.trim())
   }
 
+  const ocr = parseJsonField(detail?.ocr) || {}
+  const match = parseJsonField(detail?.match) || {}
+  const cliente = match.cliente || null
+  const righeMatch = Array.isArray(match.righe_match) ? match.righe_match : []
+  const codiceCliente = detail?.cliente_scelto || cliente?.selezionato?.codice_cliente || ''
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -291,8 +168,8 @@ export default function OcrBollePage() {
         </div>
       </header>
 
-      <div className="chats-layout">
-        <div className="panel chats-list-panel">
+      <div className="ocr-bolle-page">
+        <div className="panel ocr-bolle-list-panel">
           <div className="panel__head">
             <span>Sessioni ({total})</span>
           </div>
@@ -365,16 +242,16 @@ export default function OcrBollePage() {
           </div>
         </div>
 
-        <div className="panel chats-detail-panel">
+        <div className="panel ocr-bolle-detail-panel">
           <div className="panel__head">
             <span>
               {selectedId ? `Sessione #${selectedId}` : 'Seleziona una sessione'}
             </span>
           </div>
-          <div className="panel__body">
+          <div className="panel__body ocr-bolle-detail-body">
             {!selectedId ? (
               <p className="chats-empty">
-                Clicca su una riga per vedere immagine, OCR e matching.
+                Clicca su una riga per vedere immagine e risultato completo dell&apos;analisi.
               </p>
             ) : detailLoading ? (
               <div className="loading-indicator">
@@ -418,47 +295,55 @@ export default function OcrBollePage() {
                   </div>
                 </div>
 
-                <section className="ocr-bolle-section">
-                  <h3 className="ocr-bolle-section__title">Immagine bolla</h3>
-                  {detail.has_image ? (
-                    <AuthImage sessionId={detail.id} />
-                  ) : (
-                    <p className="users-empty">
-                      Immagine non presente su disco (sessione precedente alla persistenza file).
-                    </p>
-                  )}
-                </section>
+                <div className={`bolla-layout${detail.has_image ? ' bolla-layout--with-preview' : ''}`}>
+                  <div className="bolla-main">
+                    <BollaAnalysisView
+                      ocr={ocr}
+                      cliente={cliente}
+                      righeMatch={righeMatch}
+                      codiceCliente={codiceCliente}
+                      capabilities={match.capabilities}
+                      readOnly
+                      onOpenInRicerca={({ codice_cliente, codice_ciclo }) => {
+                        const params = new URLSearchParams({ tab: 'cicli' })
+                        if (codice_cliente) params.set('codice_cliente', codice_cliente)
+                        if (codice_ciclo) params.set('codice_ciclo', codice_ciclo)
+                        window.location.href = `/cicli?${params.toString()}`
+                      }}
+                    />
 
-                <section className="ocr-bolle-section">
-                  <h3 className="ocr-bolle-section__title">Matching</h3>
-                  <MatchSummary
-                    match={detail.match}
-                    ocr={detail.ocr}
-                    clienteScelto={detail.cliente_scelto}
-                  />
-                </section>
-
-                <section className="ocr-bolle-section">
-                  <div className="ocr-bolle-section__head">
-                    <h3 className="ocr-bolle-section__title">JSON grezzo</h3>
-                    <button
-                      type="button"
-                      className="btn btn--sm"
-                      onClick={() => setShowOcrJson((v) => !v)}
-                    >
-                      {showOcrJson ? 'Nascondi' : 'Mostra OCR + match'}
-                    </button>
-                  </div>
-                  {showOcrJson && (
-                    <pre className="ocr-bolle-json">
-                      {JSON.stringify(
-                        { ocr: parseJsonField(detail.ocr), match: parseJsonField(detail.match) },
-                        null,
-                        2
+                    <div className="ocr-bolle-section" style={{ marginTop: '1.5rem' }}>
+                      <div className="ocr-bolle-section__head">
+                        <h3 className="ocr-bolle-section__title">JSON grezzo</h3>
+                        <button
+                          type="button"
+                          className="btn btn--sm"
+                          onClick={() => setShowRawJson((v) => !v)}
+                        >
+                          {showRawJson ? 'Nascondi' : 'Mostra OCR + match'}
+                        </button>
+                      </div>
+                      {showRawJson && (
+                        <pre className="ocr-bolle-json">
+                          {JSON.stringify({ ocr, match }, null, 2)}
+                        </pre>
                       )}
-                    </pre>
-                  )}
-                </section>
+                    </div>
+                  </div>
+
+                  <div className="bolla-preview panel">
+                    <div className="panel__head">Immagine bolla</div>
+                    <div className="panel__body">
+                      {detail.has_image ? (
+                        <AuthImage sessionId={detail.id} />
+                      ) : (
+                        <p className="users-empty">
+                          Immagine non presente su disco (sessione precedente alla persistenza file).
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : null}
           </div>

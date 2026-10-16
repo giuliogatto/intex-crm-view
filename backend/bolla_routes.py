@@ -276,7 +276,9 @@ def register_bolla_routes(app, db_pool):
             except OSError as e:
                 _log(f"image persist failed: {e}")
             if sessions_ok:
-                match_json = json.dumps({k: result[k] for k in ("cliente", "righe_match")})
+                match_json = json.dumps({
+                    k: result[k] for k in ("cliente", "righe_match", "capabilities")
+                })
                 if session_id:
                     cursor.execute(
                         """
@@ -380,7 +382,9 @@ def register_bolla_routes(app, db_pool):
                     """,
                     {
                         "cli": result["codice_cliente"],
-                        "match": json.dumps({k: result[k] for k in ("cliente", "righe_match")}),
+                        "match": json.dumps({
+                            k: result[k] for k in ("cliente", "righe_match", "capabilities")
+                        }),
                         "id": session_id,
                     },
                 )

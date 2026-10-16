@@ -2020,10 +2020,34 @@ table.data tfoot .table-totals-row:hover td {
   line-height: 1.4;
 }
 
+.ocr-bolle-page {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.6fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .ocr-bolle-page {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ocr-bolle-detail-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 8rem);
+}
+
+.ocr-bolle-detail-body {
+  overflow: auto !important;
+  min-height: 0;
+}
+
 .ocr-bolle-detail {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .ocr-bolle-section__title {
@@ -2047,9 +2071,9 @@ table.data tfoot .table-totals-row:hover td {
 .ocr-bolle-image {
   display: block;
   width: 100%;
-  max-height: 480px;
+  max-height: 75vh;
   object-fit: contain;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid var(--border-color);
   background: var(--bg-muted);
 }
@@ -2068,26 +2092,13 @@ table.data tfoot .table-totals-row:hover td {
   word-break: break-word;
 }
 
-.ocr-bolle-riga-text {
-  max-width: 280px;
-  white-space: normal;
-  font-size: 0.9rem;
-}
-
-.ocr-bolle-match {
+.bolla-analysis-view {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
-.ocr-bolle-top-cicli {
-  margin: 0;
-  padding-left: 1.1rem;
-  font-size: 0.9rem;
-}
-
-.ocr-bolle-top-cicli li + li {
-  margin-top: 0.25rem;
+div.bolla-cliente__option {
+  cursor: default;
 }
 
 /* DDT Assistente */
