@@ -594,6 +594,7 @@ export default function CicliPage() {
                     {data.map((item, idx) => (
                       <tr
                         key={`${item.anno_disposizione}-${item.nr_disposizione}-${item.riga_disposizione}-${idx}`}
+                        className={`cicli-row${idx % 2 === 1 ? ' cicli-row--alt' : ''}`}
                       >
                         <td>{item.data_bolla || '—'}</td>
                         <td>{item.nr_bolla || '—'}</td>
@@ -651,15 +652,23 @@ export default function CicliPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((item) => {
+                    {data.map((item, idx) => {
                       const key = cicloKey(item)
                       const isFasiOpen = expandedKey === key && expandedKind === 'fasi'
                       const isUtilizziOpen = expandedKey === key && expandedKind === 'utilizzi'
+                      const isSelected = isFasiOpen || isUtilizziOpen
                       const fasi = fasiByKey[key] || []
                       const utilizzi = utilizziByKey[key] || []
+                      const rowClass = [
+                        'cicli-row',
+                        idx % 2 === 1 ? 'cicli-row--alt' : '',
+                        isSelected ? 'cicli-row--selected' : '',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')
                       return (
                         <React.Fragment key={key}>
-                          <tr>
+                          <tr className={rowClass}>
                             <td>{formatDateIso(item.data_ins)}</td>
                             <td>
                               {formatDateIso(item.ultima_bolla)}
@@ -709,7 +718,7 @@ export default function CicliPage() {
                             </td>
                           </tr>
                           {isFasiOpen && (
-                            <tr>
+                            <tr className="cicli-row cicli-row--detail cicli-row--selected">
                               <td colSpan={9}>
                                 {detailLoading === key ? (
                                   <div className="text-secondary">Caricamento fasi…</div>
@@ -743,7 +752,7 @@ export default function CicliPage() {
                             </tr>
                           )}
                           {isUtilizziOpen && (
-                            <tr>
+                            <tr className="cicli-row cicli-row--detail cicli-row--selected">
                               <td colSpan={9}>
                                 {detailLoading === key ? (
                                   <div className="text-secondary">Caricamento utilizzi…</div>

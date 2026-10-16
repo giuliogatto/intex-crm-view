@@ -2356,6 +2356,33 @@ table.data tfoot .table-totals-row:hover td {
   box-shadow: var(--shadow-sm);
 }
 
+/* Cicli: righe risultati alternate + selezione fasi/utilizzi */
+table.data tr.cicli-row--alt > td {
+  background: var(--bg-muted);
+}
+
+table.data tr.cicli-row:hover > td {
+  background: var(--bg-hover);
+}
+
+table.data tr.cicli-row--alt:hover > td {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+table.data tr.cicli-row--selected > td,
+table.data tr.cicli-row--selected:hover > td {
+  background: rgba(var(--accent-rgb), 0.18);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+table.data tr.cicli-row--detail > td,
+table.data tr.cicli-row--detail:hover > td {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-bottom: 2px solid rgba(var(--accent-rgb), 0.35);
+  vertical-align: top;
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
 /* Upload bolla */
 .bolla-layout {
   display: grid;
