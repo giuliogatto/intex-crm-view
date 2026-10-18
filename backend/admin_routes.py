@@ -1,4 +1,4 @@
-"""API amministrazione: sinonimi ricerca + storico OCR bolle."""
+"""API amministrazione: sinonimi ricerca, storico OCR bolle, logs di accesso."""
 
 from __future__ import annotations
 
@@ -376,3 +376,93 @@ def register_admin_routes(app, db_pool):
                 **_CORS,
             },
         )
+
+    # ------------------------------------------------------------------
+    # Logs di accesso (login + ricerche)
+    # ------------------------------------------------------------------
+
+    @app.route("/api/admin/logs", method="GET")
+    def list_logs():
+        denied = _require_admin()
+        if denied[0] is None:
+            raise denied[1]
+
+        page = _int_param(request.query.get("page"), 1, 1, 1_000_000)
+        limit = _int_param(request.query.get("limit"), 100, 1, 100)
+        offset = (page - 1) * limit
+        q = (request.query.get("q") or "").strip()
+        event_type = (request.query.get("event_type") or "").strip().lower()
+        if event_type and event_type not in ("login", "search"):
+            raise _json_error(400, "event_type deve essere login o search")
+
+        conn = db_pool.get_conn()
+        try:
+            cursor = conn.cursor()
+            if not _cicli_table_exists(cursor, "logs"):
+                cursor.close()
+                response.status = 503
+                return {"error": "Tabella logs non presente. Applicare la migration create-logs.sql."}
+
+            clauses = ["TRUE"]
+            params: Dict[str, Any] = {"limit": limit, "offset": offset}
+            if event_type:
+                clauses.append("event_type = %(event_type)s")
+                params["event_type"] = event_type
+            if q:
+                clauses.append(
+                    "("
+                    "username ILIKE %(q)s "
+                    "OR ip ILIKE %(q)s "
+                    "OR CAST(details AS TEXT) ILIKE %(q)s "
+                    "OR CAST(id AS TEXT) = %(qid)s"
+                    ")"
+                )
+                params["q"] = f"%{q}%"
+                params["qid"] = q
+
+            where = " AND ".join(clauses)
+
+            cursor.execute(f"SELECT COUNT(*) FROM logs WHERE {where}", params)
+            total = cursor.fetchone()[0]
+
+            cursor.execute(
+                f"""
+                SELECT id, event_type, user_id, username, details, ip, user_agent,
+                       TO_CHAR(created_at, 'DD/MM/YYYY HH24:MI:SS') AS created_at_fmt
+                FROM logs
+                WHERE {where}
+                ORDER BY created_at DESC, id DESC
+                LIMIT %(limit)s OFFSET %(offset)s
+                """,
+                params,
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+
+            data = [
+                {
+                    "id": r[0],
+                    "event_type": r[1],
+                    "user_id": r[2],
+                    "username": r[3],
+                    "details": _as_json_obj(r[4]) or {},
+                    "ip": r[5],
+                    "user_agent": r[6],
+                    "created_at": r[7],
+                }
+                for r in rows
+            ]
+
+            pages = max((total + limit - 1) // limit, 1) if total else 1
+            return {
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "pages": pages,
+                "data": data,
+            }
+        except Exception as e:
+            response.status = 500
+            return {"error": str(e)}
+        finally:
+            db_pool.release_conn(conn)

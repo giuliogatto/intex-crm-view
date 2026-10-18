@@ -2,6 +2,7 @@ const ADMIN_PAGES = [
   { href: '/chats', label: '💬 Chats' },
   { href: '/sinonimi', label: '🔤 Sinonimi' },
   { href: '/ocr-bolle', label: '📄 OCR bolle' },
+  { href: '/logs', label: '📋 Logs' },
   { href: '/users', label: '👤 Utenti' },
 ]
 

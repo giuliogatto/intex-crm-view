@@ -2020,6 +2020,49 @@ table.data tfoot .table-totals-row:hover td {
   line-height: 1.4;
 }
 
+.logs-page {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.logs-list-panel {
+  min-width: 0;
+}
+
+.logs-table__details {
+  max-width: 42rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.logs-table__nowrap {
+  white-space: nowrap;
+}
+
+.logs-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.logs-badge--login {
+  background: #e8f1ff;
+  color: #1d4f91;
+}
+
+.logs-badge--search {
+  background: #eaf7ef;
+  color: #1f6b3a;
+}
+
 .ocr-bolle-page {
   display: grid;
   grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.6fr);

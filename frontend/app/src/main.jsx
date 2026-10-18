@@ -6,6 +6,7 @@ import ChatsPage from './pages/ChatsPage.jsx'
 import UsersPage from './pages/UsersPage.jsx'
 import SinonimiPage from './pages/SinonimiPage.jsx'
 import OcrBollePage from './pages/OcrBollePage.jsx'
+import LogsPage from './pages/LogsPage.jsx'
 import AdminGuard from './components/AdminGuard.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
@@ -16,6 +17,7 @@ function getAdminPage() {
   if (pathname === '/users') return 'users'
   if (pathname === '/sinonimi') return 'sinonimi'
   if (pathname === '/ocr-bolle') return 'ocr-bolle'
+  if (pathname === '/logs') return 'logs'
   return null
 }
 
@@ -66,6 +68,14 @@ function AppRoot() {
     return (
       <AdminGuard>
         <OcrBollePage />
+      </AdminGuard>
+    )
+  }
+
+  if (adminPage === 'logs') {
+    return (
+      <AdminGuard>
+        <LogsPage />
       </AdminGuard>
     )
   }
