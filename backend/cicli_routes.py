@@ -678,7 +678,8 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
     def get_cicli_suggest(field):
         """Autocomplete case-insensitive con testo libero (valore = stringa digitata/selezionata).
 
-        Campi: codice_ciclo, articolo, colore, modello, tessuto, commessa.
+        Campi: codice_ciclo, articolo, colore, modello, tessuto, commessa,
+        articolo_fiscale, fasi.
         Ranking: prefisso prima di contains; per query codice-like priorità ai codici.
         """
         field = (field or "").strip().lower().replace("-", "_")
@@ -690,6 +691,7 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             "tessuto",
             "commessa",
             "articolo_fiscale",
+            "fasi",
         }
         if field not in allowed:
             response.status = 400
@@ -717,7 +719,42 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             cursor = conn.cursor()
             data: List[Dict[str, Any]] = []
 
-            if field == "codice_ciclo":
+            if field == "fasi":
+                # Dizionario sinonimi (piccolo): termine + gruppo, case-insensitive
+                sinonimi = _load_sinonimi(cursor)
+                q_upper = q.upper()
+                exclude = {
+                    x.strip().upper()
+                    for x in _query_getlist("exclude")
+                    if x and x.strip()
+                }
+                scored: List[Tuple[int, str, str, Optional[str]]] = []
+                seen = set()
+                for gruppo, termini in sinonimi.items():
+                    g = (gruppo or "").strip()
+                    if not g:
+                        continue
+                    candidates = [(g, None)] + [
+                        (t.strip(), g) for t in termini if t and t.strip()
+                    ]
+                    for value, secondary in candidates:
+                        key = value.upper()
+                        if key in seen or key in exclude:
+                            continue
+                        if q_upper not in key:
+                            continue
+                        seen.add(key)
+                        rank = 0 if key.startswith(q_upper) else 1
+                        # Se value == gruppo, niente secondary ridondante
+                        sec = None if not secondary or secondary.upper() == key else secondary
+                        scored.append((rank, value, value, sec))
+                scored.sort(key=lambda row: (row[0], row[1].upper()))
+                data = [
+                    {"value": v, "label": label, "secondary": sec}
+                    for _, v, label, sec in scored[:limit]
+                ]
+
+            elif field == "codice_ciclo":
                 if codice_cliente:
                     params["codice_cliente"] = codice_cliente
                 cli_filter = "AND t.codice_cliente = %(codice_cliente)s" if codice_cliente else ""

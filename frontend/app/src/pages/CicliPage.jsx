@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import CustomerAutocomplete from '../components/CustomerAutocomplete'
 import SeasonAutocomplete from '../components/SeasonAutocomplete'
 import FilterSuggest from '../components/FilterSuggest'
+import FasiChipInput from '../components/FasiChipInput'
 import Pagination from '../components/Pagination'
 import LoadingOverlay from '../components/LoadingOverlay'
 import BollaUploadPanel from '../components/BollaUploadPanel'
@@ -138,37 +139,16 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
     }))
   }
 
-  const addFaseChip = () => {
-    const value = faseInput.trim()
-    if (!value) return
-    setFilters((prev) => {
-      if (prev.fasi.includes(value)) return prev
-      return { ...prev, fasi: [...prev.fasi, value] }
-    })
-    setFaseInput('')
-  }
-
-  const removeFaseChip = (chip) => {
-    setFilters((prev) => ({
-      ...prev,
-      fasi: prev.fasi.filter((f) => f !== chip),
-    }))
-  }
-
-  const handleFaseKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      addFaseChip()
-    } else if (e.key === 'Backspace' && !faseInput && filters.fasi.length) {
-      removeFaseChip(filters.fasi[filters.fasi.length - 1])
-    }
+  const handleFasiChange = (fasi) => {
+    setFilters((prev) => ({ ...prev, fasi }))
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
     const next = { ...filters }
-    if (faseInput.trim() && !next.fasi.includes(faseInput.trim())) {
-      next.fasi = [...next.fasi, faseInput.trim()]
+    const pending = faseInput.trim()
+    if (pending && !next.fasi.some((f) => f.toLowerCase() === pending.toLowerCase())) {
+      next.fasi = [...next.fasi, pending]
       setFaseInput('')
       setFilters(next)
     }
@@ -389,29 +369,12 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
 
             <div className="field field--full" style={{ marginBottom: '1.25rem' }}>
               <label>Fasi / lavorazioni</label>
-              <div className="chip-input">
-                {(filters.fasi || []).map((chip) => (
-                  <span key={chip} className="chip">
-                    {chip}
-                    <button
-                      type="button"
-                      className="chip__remove"
-                      onClick={() => removeFaseChip(chip)}
-                      aria-label={`Rimuovi ${chip}`}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-                <input
-                  type="text"
-                  value={faseInput}
-                  onChange={(e) => setFaseInput(e.target.value)}
-                  onKeyDown={handleFaseKeyDown}
-                  onBlur={addFaseChip}
-                  placeholder="Parola chiave + Invio (es. mangiapelo, stone wash)..."
-                />
-              </div>
+              <FasiChipInput
+                chips={filters.fasi}
+                onChange={handleFasiChange}
+                draft={faseInput}
+                onDraftChange={setFaseInput}
+              />
               <div className="field-row-inline" style={{ marginTop: '0.5rem' }}>
                 <label className="checkbox-inline">
                   <input
