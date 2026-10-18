@@ -16,8 +16,14 @@ export default function LoginPage() {
 
     try {
       const user = await login(username.trim(), password)
-      if (user?.role === 'cicli' && window.location.pathname !== '/cicli') {
-        window.history.replaceState({}, document.title, '/cicli')
+      if (user?.role === 'cicli') {
+        const mode = new URLSearchParams(window.location.search).get('mode') === 'upload'
+          ? 'upload'
+          : 'ricerca'
+        const target = mode === 'upload' ? '/cicli?mode=upload' : '/cicli'
+        if (`${window.location.pathname}${window.location.search}` !== target) {
+          window.history.replaceState({}, document.title, target)
+        }
       }
       loginSuccess(user)
     } catch (err) {

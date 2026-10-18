@@ -81,8 +81,9 @@ function buildQueryParams(nextFilters, nextPage) {
   return params
 }
 
-export default function CicliPage() {
-  const [mode, setModeState] = useState(readModeFromUrl)
+export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
+  const [modeState, setModeState] = useState(readModeFromUrl)
+  const mode = modeProp ?? modeState
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS })
   const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_FILTERS })
   const [faseInput, setFaseInput] = useState('')
@@ -187,11 +188,15 @@ export default function CicliPage() {
   }
 
   const setMode = (next) => {
-    setModeState(next)
-    const url = new URL(window.location.href)
-    if (next === 'ricerca') url.searchParams.delete('mode')
-    else url.searchParams.set('mode', next)
-    window.history.replaceState(window.history.state, '', url)
+    if (onModeChange) {
+      onModeChange(next)
+    } else {
+      setModeState(next)
+      const url = new URL(window.location.href)
+      if (next === 'ricerca') url.searchParams.delete('mode')
+      else url.searchParams.set('mode', next)
+      window.history.replaceState(window.history.state, '', url)
+    }
   }
 
   const openInRicerca = (patch) => {

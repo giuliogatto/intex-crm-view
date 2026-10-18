@@ -36,13 +36,25 @@ const ANALISI_QUESTION_SHORTCUTS = [
   { num: 19, target_tab: 'produzione', target_section: 'volumi-settimanali', question: 'Come si confrontano i volumi settimanali con l\'anno scorso?' },
 ]
 
+function cicliUrl(mode = 'ricerca') {
+  return mode === 'upload' ? '/cicli?mode=upload' : '/cicli'
+}
+
+function readCicliModeFromUrl() {
+  return new URLSearchParams(window.location.search).get('mode') === 'upload'
+    ? 'upload'
+    : 'ricerca'
+}
+
 function App() {
   const { user } = useAuth()
   const isCicliOnly = user?.role === 'cicli'
+  const [cicliMode, setCicliMode] = useState(readCicliModeFromUrl)
   const [activeTab, setActiveTab] = useState(() => {
     if (user?.role === 'cicli') {
-      if (window.location.pathname !== '/cicli') {
-        window.history.replaceState({}, document.title, '/cicli')
+      const mode = readCicliModeFromUrl()
+      if (window.location.pathname !== '/cicli' || window.location.search !== (mode === 'upload' ? '?mode=upload' : '')) {
+        window.history.replaceState({}, document.title, cicliUrl(mode))
       }
       return 'cicli'
     }
@@ -131,7 +143,7 @@ function App() {
       })
   }
 
-  const handleTabChange = (tab) => {
+  const handleTabChange = (tab, nextCicliMode = null) => {
     window.scrollTo(0, 0)
     clearDocumentDetails()
 
@@ -144,7 +156,9 @@ function App() {
     }
 
     if (tab === 'cicli') {
-      window.history.replaceState({}, document.title, '/cicli')
+      const mode = nextCicliMode || (isCicliOnly ? cicliMode : 'ricerca')
+      setCicliMode(mode)
+      window.history.replaceState({}, document.title, cicliUrl(mode))
       setData([])
       setListPage(1)
       setListTotal(0)
@@ -180,17 +194,18 @@ function App() {
     setActiveTab(tab)
   }
 
-  // Operatore Cicli: forza sempre la sola pagina cicli
+  // Operatore Cicli: forza sempre la pagina cicli (ricerca o upload)
   useEffect(() => {
     if (!isCicliOnly) return
     if (activeTab !== 'cicli') {
-      handleTabChange('cicli')
+      handleTabChange('cicli', cicliMode)
       return
     }
-    if (window.location.pathname !== '/cicli') {
-      window.history.replaceState({}, document.title, '/cicli')
+    const expected = cicliUrl(cicliMode)
+    if (`${window.location.pathname}${window.location.search}` !== expected) {
+      window.history.replaceState({}, document.title, expected)
     }
-  }, [isCicliOnly, activeTab])
+  }, [isCicliOnly, activeTab, cicliMode])
 
   // Fetch list data when activeTab changes
   useEffect(() => {
@@ -655,7 +670,22 @@ function App() {
         </header>
 
         <nav className="nav-primary">
-        {!isCicliOnly && (
+        {isCicliOnly ? (
+          <>
+            <button
+              className={`nav-tab ${activeTab === 'cicli' && cicliMode === 'ricerca' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('cicli', 'ricerca')}
+            >
+              🧵 Cicli
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'cicli' && cicliMode === 'upload' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('cicli', 'upload')}
+            >
+              📄 Upload bolla
+            </button>
+          </>
+        ) : (
           <>
             <button
               className={`nav-tab ${activeTab === 'bolle' ? 'is-active' : ''}`}
@@ -687,21 +717,19 @@ function App() {
             >
               🤖 Assistente DDT
             </button>
+            <button
+              className={`nav-tab ${activeTab === 'cicli' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('cicli')}
+            >
+              🧵 Cicli
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'analisi' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('analisi')}
+            >
+              📊 Analisi
+            </button>
           </>
-        )}
-        <button
-          className={`nav-tab ${activeTab === 'cicli' ? 'is-active' : ''}`}
-          onClick={() => handleTabChange('cicli')}
-        >
-          🧵 Cicli
-        </button>
-        {!isCicliOnly && (
-          <button
-            className={`nav-tab ${activeTab === 'analisi' ? 'is-active' : ''}`}
-            onClick={() => handleTabChange('analisi')}
-          >
-            📊 Analisi
-          </button>
         )}
         </nav>
       </div>
@@ -720,7 +748,13 @@ function App() {
               scrollTargetOverride={analisiScrollTarget} 
             />
           ) : activeTab === 'cicli' ? (
-            <CicliPage />
+            <CicliPage
+              mode={cicliMode}
+              onModeChange={(mode) => {
+                setCicliMode(mode)
+                window.history.replaceState({}, document.title, cicliUrl(mode))
+              }}
+            />
           ) : activeTab === 'discrepanze' ? (
             <DiscrepancyPanel
               selectedCustomer={discrepancyCustomer}
