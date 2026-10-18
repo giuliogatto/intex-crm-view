@@ -30,6 +30,7 @@ DEFAULT_ORDER = [
     "cicli-storico-search.sql",
     "ocr-bolla.sql",
     "ocr-bolla-image-path.sql",
+    "create-logs.sql",
 ]
 
 

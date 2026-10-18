@@ -4,6 +4,7 @@ from datetime import datetime
 import json
 
 from auth import authenticate_user, create_token, get_current_user, hash_password
+from audit import log_login
 from prompts import genericPrompt, replace_oggi_placeholder
 from LLMservice import send_prompt, get_model_name
 from pdf_export import build_pdf
@@ -189,9 +190,17 @@ def auth_login():
 
         user = authenticate_user(db_pool, username, password)
         if not user:
+            log_login(db_pool, user_id=None, username=username, success=False)
             response.status = 401
             return {"error": "Invalid username or password"}
 
+        log_login(
+            db_pool,
+            user_id=user["id"],
+            username=user["username"],
+            success=True,
+            role=user["role"],
+        )
         token = create_token(user['id'], user['username'], user['role'])
         return {
             "token": token,

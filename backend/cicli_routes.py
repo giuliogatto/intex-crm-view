@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from bottle import request, response
 
+from audit import log_search
+
 # ---------------------------------------------------------------------------
 # Fallback sinonimi (usati se tabella ricerca_sinonimi assente / vuota)
 # ---------------------------------------------------------------------------
@@ -1112,6 +1114,16 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                     return result
                 result["fasi_espanse"] = fasi_espanse
                 result["storico_disponibile"] = storico_range
+                user = request.environ.get("intex.user") or {}
+                log_search(
+                    db_pool,
+                    user_id=user.get("id"),
+                    username=user.get("username"),
+                    filters=filters,
+                    page=page,
+                    limit=limit,
+                    result_total=result.get("total") if isinstance(result, dict) else None,
+                )
                 return result
 
             params: Dict[str, Any] = {}
@@ -1241,6 +1253,17 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
 
             cursor.close()
             db_pool.release_conn(conn)
+
+            user = request.environ.get("intex.user") or {}
+            log_search(
+                db_pool,
+                user_id=user.get("id"),
+                username=user.get("username"),
+                filters=filters,
+                page=page,
+                limit=limit,
+                result_total=total,
+            )
 
             return _paginated(
                 items,
