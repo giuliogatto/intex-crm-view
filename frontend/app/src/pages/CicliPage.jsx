@@ -15,6 +15,16 @@ const MODES = [
   { id: 'upload', label: 'Upload bolla' },
 ]
 
+/** Dizionario fisso reparti (valore inviato all'API; Tutti = nessun filtro). */
+const REPARTI_OPTIONS = [
+  { value: 'TUTTI', label: 'Tutti' },
+  { value: 'TINTO', label: 'TINTO' },
+  { value: 'DENIM', label: 'DENIM' },
+  { value: 'INTEX', label: 'INTEX' },
+  { value: 'PROTOTIPI', label: 'PROTOTIPI' },
+  { value: 'EFFETTI SPECIALI', label: 'EFFETTI SPECIALI' },
+]
+
 function readModeFromUrl() {
   const mode = new URLSearchParams(window.location.search).get('mode')
   return MODES.some((m) => m.id === mode) ? mode : 'ricerca'
@@ -27,6 +37,7 @@ const EMPTY_FILTERS = {
   articolo: '',
   composizione: '',
   descrizione: '',
+  reparto: 'TUTTI',
   fasi: [],
   fasi_mode: 'all',
   fasi_note_storico: false,
@@ -66,6 +77,9 @@ function buildQueryParams(nextFilters, nextPage) {
   if (nextFilters.articolo) params.append('articolo', nextFilters.articolo)
   if (nextFilters.composizione) params.append('composizione', nextFilters.composizione)
   if (nextFilters.descrizione) params.append('descrizione', nextFilters.descrizione)
+  if (nextFilters.reparto && nextFilters.reparto !== 'TUTTI') {
+    params.append('reparto', nextFilters.reparto)
+  }
   ;(nextFilters.fasi || []).forEach((f) => params.append('fasi', f))
   if (nextFilters.fasi_mode) params.append('fasi_mode', nextFilters.fasi_mode)
   if (nextFilters.fasi_note_storico) params.append('fasi_note_storico', '1')
@@ -364,6 +378,22 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                   onChange={handleChange}
                   placeholder="Match letterale su descrizione..."
                 />
+              </div>
+              <div className="field">
+                <label htmlFor="filtro-reparto">Reparto</label>
+                <select
+                  id="filtro-reparto"
+                  name="reparto"
+                  value={filters.reparto || 'TUTTI'}
+                  onChange={handleChange}
+                  required
+                >
+                  {REPARTI_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

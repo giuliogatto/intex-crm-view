@@ -123,9 +123,38 @@ def _query_getlist(name: str) -> List[str]:
     return out
 
 
+# Dizionario UI reparto → codice Z09_CD_REPARTO_STAT (cicli_testate.codice_reparto).
+# Accetta anche i codici grezzi. "TUTTI" / vuoto = nessun filtro.
+_REPARTO_TO_CODICE: Dict[str, str] = {
+    "TINTO": "TINTO",
+    "DENIM": "DENIM",
+    "INTEX": "INTEX",
+    "PROTOTIPI": "PROTOT",
+    "PROTOT": "PROTOT",
+    "EFFETTI SPECIALI": "EFFSPE",
+    "EFFETTI SP": "EFFSPE",
+    "EFFSPE": "EFFSPE",
+}
+
+
+def _normalize_reparto(raw: Optional[str]) -> Optional[str]:
+    """Ritorna il codice_reparto DB, o None se Tutti / non valido."""
+    if not raw:
+        return None
+    key = re.sub(r"\s+", " ", str(raw).strip().upper())
+    if not key or key in ("TUTTI", "ALL", "*"):
+        return None
+    return _REPARTO_TO_CODICE.get(key)
+
+
 def _cicli_filters() -> Dict[str, Any]:
     fasi = _query_getlist("fasi")
     descrizione = (request.query.get("descrizione") or "").strip() or None
+    reparto_raw = (
+        request.query.get("reparto")
+        or request.query.get("codice_reparto")
+        or ""
+    )
     # Se c'è descrizione letterale e non è già in fasi, resta filtro letterale
     return {
         "codice_cliente": (request.query.get("codice_cliente") or "").strip() or None,
@@ -134,6 +163,7 @@ def _cicli_filters() -> Dict[str, Any]:
         "composizione": (request.query.get("composizione") or "").strip() or None,
         "descrizione": descrizione,
         "codice_ciclo": (request.query.get("codice_ciclo") or "").strip() or None,
+        "reparto": _normalize_reparto(reparto_raw),
         "fasi": fasi,
         "fasi_mode": ((request.query.get("fasi_mode") or "all").strip().lower() or "all"),
         "fasi_note_storico": (request.query.get("fasi_note_storico") or "0").strip() in ("1", "true", "True"),
@@ -419,6 +449,10 @@ def _cicli_base_from(filters: Dict[str, Any], params: Dict[str, Any], join_searc
     if filters.get("stagione"):
         query += " AND t.codice_stagione = %(stagione)s"
         params["stagione"] = filters["stagione"]
+
+    if filters.get("reparto"):
+        query += " AND UPPER(TRIM(COALESCE(t.codice_reparto, ''))) = %(reparto)s"
+        params["reparto"] = filters["reparto"]
 
     codice_ciclo_pat = _broad_like_pattern(filters.get("codice_ciclo"))
     if codice_ciclo_pat:
