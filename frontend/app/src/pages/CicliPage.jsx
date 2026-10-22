@@ -486,13 +486,13 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                 />
               </div>
               <div className="field">
-                <label>Tessuto</label>
+                <label>Tessuto / Descrizione articolo</label>
                 <FilterSuggest
                   name="tessuto"
                   value={filters.tessuto}
                   onChange={handleChange}
                   endpoint="/api/cicli/suggest/tessuto"
-                  placeholder="Es. S3651..."
+                  placeholder="Testo in descrizione/articolo o codice qualità..."
                   minChars={2}
                   allowClear
                 />

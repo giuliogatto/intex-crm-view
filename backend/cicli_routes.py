@@ -366,14 +366,17 @@ def _storico_where(
 
     tessuto = filters.get("tessuto")
     if tessuto:
-        params["tessuto"] = tessuto.upper().strip()
+        # Operativamente il "tessuto" è in ew2_ds_articolo (descrizione/articolo);
+        # ew2_qualita + token restano per codici qualità (es. S3651).
+        params["tessuto"] = tessuto.strip()
+        params["tessuto_upper"] = tessuto.upper().strip()
         params["tessuto_like"] = f"%{_escape_like(tessuto)}%"
         clauses.append(
             "("
-            f"UPPER(%(tessuto)s) = ANY (COALESCE({r}.ew2_tessuto_tokens, ARRAY[]::text[]))"
+            f"COALESCE({r}.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+            f" OR word_similarity(%(tessuto)s, COALESCE({r}.ew2_ds_articolo, '')) > 0.5"
             f" OR COALESCE({r}.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-            f" OR COALESCE({r}.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-            f" OR COALESCE({r}.ew2_cd_colore, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+            f" OR UPPER(%(tessuto_upper)s) = ANY (COALESCE({r}.ew2_tessuto_tokens, ARRAY[]::text[]))"
             f" OR COALESCE({r}.ew2_note, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
             ")"
         )
@@ -986,46 +989,63 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                     ]
 
                 elif field == "tessuto":
+                    # Priorità: descrizione/articolo (uso operativo), poi qualità, poi token.
+                    token_union = ""
                     if _column_exists(cursor, "ew2_righe_disposizioni", "ew2_tessuto_tokens"):
-                        cursor.execute(
-                            """
-                            SELECT value, label, secondary FROM (
-                              SELECT DISTINCT
-                                tok AS value,
-                                tok AS label,
-                                NULL::text AS secondary,
-                                CASE WHEN tok ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
-                                tok AS sort_key
-                              FROM ew2_righe_disposizioni r
-                              CROSS JOIN LATERAL unnest(COALESCE(r.ew2_tessuto_tokens, ARRAY[]::text[])) AS tok
-                              WHERE NULLIF(btrim(tok), '') IS NOT NULL
-                                AND length(tok) >= 2
-                                AND tok ILIKE %(contains)s ESCAPE '\\'
-                            ) x
-                            ORDER BY rank_pref, sort_key
-                            LIMIT %(limit)s
-                            """,
-                            params,
-                        )
-                    else:
-                        cursor.execute(
-                            """
-                            SELECT value, label, secondary FROM (
-                              SELECT DISTINCT
-                                NULLIF(btrim(r.ew2_qualita), '') AS value,
-                                NULLIF(btrim(r.ew2_qualita), '') AS label,
-                                NULL::text AS secondary,
-                                CASE WHEN r.ew2_qualita ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
-                                r.ew2_qualita AS sort_key
-                              FROM ew2_righe_disposizioni r
-                              WHERE NULLIF(btrim(r.ew2_qualita), '') IS NOT NULL
-                                AND r.ew2_qualita ILIKE %(contains)s ESCAPE '\\'
-                            ) x
-                            ORDER BY rank_pref, sort_key
-                            LIMIT %(limit)s
-                            """,
-                            params,
-                        )
+                        token_union = """
+                          UNION ALL
+                          SELECT
+                            tok AS value,
+                            tok AS label,
+                            NULL::text AS secondary,
+                            2 AS rank_src,
+                            CASE WHEN tok ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                            tok AS sort_key
+                          FROM ew2_righe_disposizioni r
+                          CROSS JOIN LATERAL unnest(COALESCE(r.ew2_tessuto_tokens, ARRAY[]::text[])) AS tok
+                          WHERE NULLIF(btrim(tok), '') IS NOT NULL
+                            AND length(tok) >= 2
+                            AND tok ILIKE %(contains)s ESCAPE '\\'
+                        """
+                    cursor.execute(
+                        f"""
+                        SELECT value, label, secondary FROM (
+                          SELECT DISTINCT ON (upper(btrim(value)))
+                            value, label, secondary, rank_src, rank_pref, sort_key
+                          FROM (
+                            SELECT
+                              NULLIF(btrim(r.ew2_ds_articolo), '') AS value,
+                              NULLIF(btrim(r.ew2_ds_articolo), '') AS label,
+                              NULLIF(btrim(r.ew2_qualita), '') AS secondary,
+                              0 AS rank_src,
+                              CASE WHEN r.ew2_ds_articolo ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                              r.ew2_ds_articolo AS sort_key
+                            FROM ew2_righe_disposizioni r
+                            WHERE NULLIF(btrim(r.ew2_ds_articolo), '') IS NOT NULL
+                              AND r.ew2_ds_articolo ILIKE %(contains)s ESCAPE '\\'
+
+                            UNION ALL
+
+                            SELECT
+                              NULLIF(btrim(r.ew2_qualita), '') AS value,
+                              NULLIF(btrim(r.ew2_qualita), '') AS label,
+                              NULLIF(btrim(r.ew2_ds_articolo), '') AS secondary,
+                              1 AS rank_src,
+                              CASE WHEN r.ew2_qualita ILIKE %(prefix)s ESCAPE '\\' THEN 0 ELSE 1 END AS rank_pref,
+                              r.ew2_qualita AS sort_key
+                            FROM ew2_righe_disposizioni r
+                            WHERE NULLIF(btrim(r.ew2_qualita), '') IS NOT NULL
+                              AND r.ew2_qualita ILIKE %(contains)s ESCAPE '\\'
+                            {token_union}
+                          ) u
+                          WHERE value IS NOT NULL
+                          ORDER BY upper(btrim(value)), rank_src, rank_pref, sort_key
+                        ) x
+                        ORDER BY rank_src, rank_pref, sort_key
+                        LIMIT %(limit)s
+                        """,
+                        params,
+                    )
                     data = [
                         {"value": r[0], "label": r[1], "secondary": r[2]}
                         for r in cursor.fetchall()
@@ -1364,9 +1384,8 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             if filters.get("tessuto"):
                 params["tessuto_like"] = f"%{_escape_like(filters['tessuto'])}%"
                 clauses.append(
-                    "(COALESCE(ew2.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-                    " OR COALESCE(ew2.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
-                    " OR COALESCE(ew2.ew2_cd_colore, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+                    "(COALESCE(ew2.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
+                    " OR COALESCE(ew2.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'"
                     " OR COALESCE(ew2.ew2_note, '') ILIKE %(tessuto_like)s ESCAPE '\\')"
                 )
             if filters.get("articolo_fiscale"):
