@@ -150,6 +150,15 @@ In Fase 0 (§8): per ogni file annotare a mano (operativo Intex) il `codice_clie
 - almeno un `codice_ciclo_manoscritto` recuperato quando visibile;
 - ciclo atteso in top-5 dopo conferma cliente (dove annotato).
 
+### 2.1.6 Gap golden set: Jacob / Canali (senza «TINTO»)
+
+I 4 JPEG in `esempi-bolle/` sono layout con fasi/`T…` forti. Operativamente risultano deboli le bolle **Jacob / Canali** (e simili) dove:
+
+- manca `fasi_testo` / codice ciclo manoscritto;
+- il segnale utile è in `descrizione_articolo` e/o `tessuto` (allineato a `ew2_ds_articolo` / `ew2_qualita`).
+
+**Azione:** aggiungere almeno 2–3 DDT Jacob/Canali (foto o PDF) in `documentation/esempi-bolle/` (o sottocartella `jacob-canali/`), annotare cliente+ciclo atteso, rieseguire `scripts/ocr_bolle_golden.py` e verificare che il ranking esponga evidenze `tessuto` / `descrizione` (test offline di profilo: `tests/test_bolla_match_offline.py`).
+
 ---
 
 ## 3. Stato attuale (gap)
@@ -481,7 +490,8 @@ Per ogni riga OCR, costruire un «profilo ricerca» mappando campi OCR → filtr
 | `codice_articolo_cliente` / `modello` / `descrizione_articolo` | `articoli_cliente`, `cicli_testate.codice_articolo`, `ew2_modello`, `ew2_ds_articolo` |
 | `colore` / `variante` | `ew2_ds_colore`, `ew2_cd_colore` (+ `word_similarity` già usata) |
 | `commessa` | `ew2_rif_disp_cliente`, `ew1_rifer_cliente` |
-| `tessuto` | candidati storico (`ew2_qualita` / token rif) — punto aperto già in doc filtri |
+| `tessuto` | storico: `ew2_ds_articolo`, `ew2_qualita`, `ew2_tessuto_tokens`; anagrafica: `articoli_cliente.ds_articolo` (evidenza dedicata nel ranking) |
+| `descrizione_articolo` | `articoli_cliente.ds_articolo`, `ew2_ds_articolo` (peso/soglia rafforzati; non usato come `fasi` se non sembra lavorazione) |
 | `composizione_testo` | `composizioni.ds_composizione`, `cicli_testate.codice_composizione` |
 | `stagione` | token tipo `SS26`/`SS27` → `cicli_stagioni` / `ew2_cd_stagione` (con alias) |
 | `testo_grezzo` | fallback: tokenizzare e cercare in `search_doc` + note EW2 |

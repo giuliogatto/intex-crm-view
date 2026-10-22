@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from cicli_routes import (
     _cicli_search_ready,
     _cicli_table_exists,
+    _column_exists,
     _enrich_page,
     _escape_like,
     _load_sinonimi,
@@ -30,23 +31,32 @@ CLIENTE_SOGLIA_AUTO = 0.55
 CLIENTE_SOGLIA_MIN = 0.35
 
 # Peso massimo di ciascuna evidenza nel noisy-OR (score = 1 - Π(1 - peso·valore)).
+# Tessuto / descrizione alzati: bolle senza "TINTO" (Jacob/Canali) spesso
+# portano il segnale utile solo in descrizione_articolo / tessuto OCR.
 PESI_EVIDENZE = {
     "codice_ciclo_manoscritto": 0.9,
     "fasi": 0.6,
     "commessa": 0.6,
     "articolo": 0.45,
-    "descrizione": 0.3,
+    "tessuto": 0.4,
+    "descrizione": 0.4,
     "colore": 0.25,
     "composizione": 0.15,
 }
 
 SOGLIE_EVIDENZE = {
     "fasi": 0.5,
-    "descrizione": 0.45,
+    "descrizione": 0.35,
+    "tessuto": 0.35,
     "articolo": 0.5,
     "colore": 0.6,
     "composizione": 0.5,
 }
+
+_FASI_MARKERS = (
+    "TINT", "TINTO", "LAVAGG", "ENZIM", "SBIANC", "PURGA", "RIENTRO",
+    "AMMORB", "RASAPEL", "STONE", "MARMO", "CANDEGG", "STRIAT",
+)
 
 _FASI_STOPWORDS = {
     "DA", "DI", "DEL", "DELLA", "CON", "SU", "PER", "NO", "NON", "IL", "LA", "LE", "GLI",
@@ -192,15 +202,48 @@ def _commessa_tokens(commessa: Optional[str]) -> List[str]:
     return out
 
 
+def _looks_like_fasi(text: Optional[str]) -> bool:
+    """True se il testo sembra una lavorazione (non solo tessuto/composizione).
+
+    Evita falsi positivi tipo «CAPI/CAMICIA …» (slash in descrizione articolo).
+    """
+    raw = (text or "").strip()
+    if not raw:
+        return False
+    norm = _norm_text(raw)
+    if any(m in norm for m in _FASI_MARKERS):
+        return True
+    # Catene fasi tipiche: "A+B+C" o "A / B / C" con più segmenti lavorazione.
+    if "+" in raw:
+        return True
+    if raw.count("/") >= 2:
+        return True
+    return False
+
+
+def _fasi_source(riga: Dict[str, Any]) -> str:
+    """Usa fasi_testo; fallback a descrizione solo se sembra davvero una catena fasi."""
+    fasi = (riga.get("fasi_testo") or "").strip()
+    if fasi:
+        return fasi
+    desc = (riga.get("descrizione_articolo") or "").strip()
+    return desc if _looks_like_fasi(desc) else ""
+
+
 def _riga_signals(riga: Dict[str, Any], doc_codes: List[str]) -> Dict[str, Any]:
     codes = list(riga.get("codice_ciclo_manoscritto") or []) or list(doc_codes)
-    fasi_src = riga.get("fasi_testo") or riga.get("descrizione_articolo") or ""
+    desc = (riga.get("descrizione_articolo") or "").strip()
+    tessuto = (riga.get("tessuto") or "").strip()
+    modello = (riga.get("modello") or "").strip()
     return {
         "codes": [c.upper() for c in codes],
-        "fasi_text": fasi_src,
-        "desc": riga.get("descrizione_articolo") or riga.get("modello") or "",
+        "fasi_text": _fasi_source(riga),
+        # descrizione (+ modello) → ar.ds_articolo / ew2_ds_articolo
+        "desc": desc or modello,
+        # tessuto OCR dedicato → ew2_ds_articolo / ew2_qualita / token
+        "tessuto": tessuto,
         "art": (riga.get("codice_articolo_cliente") or "").upper(),
-        "modello": (riga.get("modello") or "").upper(),
+        "modello": modello.upper(),
         "colore": (riga.get("colore") or riga.get("variante") or "").upper(),
         "composizione": riga.get("composizione_testo") or "",
         "commessa_tokens": _commessa_tokens(riga.get("commessa")),
@@ -212,6 +255,7 @@ def _query_cicli(cursor, codice_cliente: str, sig: Dict[str, Any], sinonimi, sea
         "c": codice_cliente,
         "codes": sig["codes"],
         "desc": sig["desc"],
+        "tessuto": sig["tessuto"],
         "art": sig["art"],
         "comp": sig["composizione"],
     }
@@ -244,8 +288,13 @@ def _query_cicli(cursor, codice_cliente: str, sig: Dict[str, Any], sinonimi, sea
             {coverage} AS s_fasi,
             CASE WHEN %(desc)s = '' THEN 0 ELSE GREATEST(
               word_similarity(public.norm_search(%(desc)s), public.norm_search(COALESCE(ar.ds_articolo, ''))),
+              similarity(public.norm_search(%(desc)s), public.norm_search(COALESCE(ar.ds_articolo, ''))),
               word_similarity(public.norm_search(%(desc)s), {doc_expr})
             ) END AS s_desc,
+            CASE WHEN %(tessuto)s = '' THEN 0 ELSE GREATEST(
+              word_similarity(public.norm_search(%(tessuto)s), public.norm_search(COALESCE(ar.ds_articolo, ''))),
+              similarity(public.norm_search(%(tessuto)s), public.norm_search(COALESCE(ar.ds_articolo, '')))
+            ) END AS s_tessuto,
             CASE WHEN %(art)s = '' THEN 0 ELSE GREATEST(
               similarity(%(art)s, upper(t.codice_articolo)),
               word_similarity(upper(t.codice_articolo), %(art)s)
@@ -266,8 +315,11 @@ def _query_cicli(cursor, codice_cliente: str, sig: Dict[str, Any], sinonimi, sea
         WHERE hit_code
            OR s_fasi >= {SOGLIE_EVIDENZE['fasi']}
            OR s_desc >= {SOGLIE_EVIDENZE['descrizione']}
+           OR s_tessuto >= {SOGLIE_EVIDENZE['tessuto']}
            OR s_art >= {SOGLIE_EVIDENZE['articolo']}
-        ORDER BY hit_code DESC, (s_fasi + s_desc + s_art) DESC, data_ins DESC NULLS LAST
+        ORDER BY hit_code DESC,
+                 (s_fasi + s_desc + s_tessuto + s_art) DESC,
+                 data_ins DESC NULLS LAST
         LIMIT 60
     """
     cursor.execute(sql, params)
@@ -278,14 +330,22 @@ def _query_cicli(cursor, codice_cliente: str, sig: Dict[str, Any], sinonimi, sea
             "hit_code": bool(r[6]),
             "fasi": float(r[7] or 0),
             "descrizione": float(r[8] or 0),
-            "articolo": float(r[9] or 0),
-            "composizione": float(r[10] or 0),
+            "tessuto": float(r[9] or 0),
+            "articolo": float(r[10] or 0),
+            "composizione": float(r[11] or 0),
         })
     return out
 
 
 def _query_storico(cursor, codice_cliente: str, sig: Dict[str, Any]) -> List[Dict[str, Any]]:
-    if not (sig["commessa_tokens"] or sig["colore"] or sig["art"] or sig["modello"] or sig["desc"]):
+    if not (
+        sig["commessa_tokens"]
+        or sig["colore"]
+        or sig["art"]
+        or sig["modello"]
+        or sig["desc"]
+        or sig["tessuto"]
+    ):
         return []
     params = {
         "c": codice_cliente,
@@ -293,11 +353,24 @@ def _query_storico(cursor, codice_cliente: str, sig: Dict[str, Any]) -> List[Dic
         "col": sig["colore"],
         "art": sig["art"],
         "mod": sig["modello"] or sig["art"],
-        "desc": sig["desc"].upper(),
+        "desc": (sig["desc"] or "").upper(),
+        "tessuto": (sig["tessuto"] or "").upper(),
+        "tessuto_like": f"%{_escape_like(sig['tessuto'] or '')}%",
     }
+    # Token exact match solo se la colonna generata esiste.
+    if _column_exists(cursor, "ew2_righe_disposizioni", "ew2_tessuto_tokens"):
+        token_expr = (
+            "CASE WHEN %(tessuto)s <> '' "
+            "AND UPPER(%(tessuto)s) = ANY (COALESCE(r.ew2_tessuto_tokens, ARRAY[]::text[])) "
+            "THEN 1.0 ELSE 0 END"
+        )
+    else:
+        token_expr = "0"
+
     sql = f"""
         SELECT cd_cliente, cd_articolo, cd_ciclo, cd_linea, cd_stagione, cd_composizione,
-               BOOL_OR(hit_comm), MAX(s_col), MAX(s_art), COUNT(*), MAX(data_bolla)
+               BOOL_OR(hit_comm), MAX(s_col), MAX(s_art), MAX(s_desc), MAX(s_tessuto),
+               COUNT(*), MAX(data_bolla)
         FROM (
           SELECT
             r.ew2_cd_cliente AS cd_cliente,
@@ -320,10 +393,22 @@ def _query_storico(cursor, codice_cliente: str, sig: Dict[str, Any]) -> List[Dic
               CASE WHEN %(art)s = '' THEN 0
                    ELSE similarity(%(art)s, upper(COALESCE(r.ew2_cd_articolo_fattura, ''))) END,
               CASE WHEN %(mod)s = '' OR COALESCE(r.ew2_modello, '') = '' THEN 0
-                   ELSE word_similarity(upper(r.ew2_modello), %(mod)s) END,
-              CASE WHEN %(desc)s = '' THEN 0
-                   ELSE word_similarity(%(desc)s, upper(COALESCE(r.ew2_ds_articolo, ''))) END
-            ) AS s_art
+                   ELSE word_similarity(upper(r.ew2_modello), %(mod)s) END
+            ) AS s_art,
+            CASE WHEN %(desc)s = '' THEN 0 ELSE GREATEST(
+              word_similarity(%(desc)s, upper(COALESCE(r.ew2_ds_articolo, ''))),
+              similarity(%(desc)s, upper(COALESCE(r.ew2_ds_articolo, '')))
+            ) END AS s_desc,
+            CASE WHEN %(tessuto)s = '' THEN 0 ELSE GREATEST(
+              word_similarity(%(tessuto)s, upper(COALESCE(r.ew2_ds_articolo, ''))),
+              similarity(%(tessuto)s, upper(COALESCE(r.ew2_ds_articolo, ''))),
+              word_similarity(%(tessuto)s, upper(COALESCE(r.ew2_qualita, ''))),
+              CASE WHEN COALESCE(r.ew2_qualita, '') ILIKE %(tessuto_like)s ESCAPE '\\'
+                   THEN 1.0 ELSE 0 END,
+              CASE WHEN COALESCE(r.ew2_ds_articolo, '') ILIKE %(tessuto_like)s ESCAPE '\\'
+                   THEN 0.95 ELSE 0 END,
+              {token_expr}
+            ) END AS s_tessuto
           FROM ew2_righe_disposizioni r
           JOIN ew1_testata_disposizioni t
             ON t.ew1_anno_disposizione = r.ew2_anno_disposizione
@@ -333,8 +418,12 @@ def _query_storico(cursor, codice_cliente: str, sig: Dict[str, Any]) -> List[Dic
         WHERE hit_comm
            OR s_col >= {SOGLIE_EVIDENZE['colore']}
            OR s_art >= {SOGLIE_EVIDENZE['articolo']}
+           OR s_desc >= {SOGLIE_EVIDENZE['descrizione']}
+           OR s_tessuto >= {SOGLIE_EVIDENZE['tessuto']}
         GROUP BY 1, 2, 3, 4, 5, 6
-        ORDER BY BOOL_OR(hit_comm) DESC, MAX(s_art) + MAX(s_col) DESC, MAX(data_bolla) DESC NULLS LAST
+        ORDER BY BOOL_OR(hit_comm) DESC,
+                 MAX(s_tessuto) + MAX(s_desc) + MAX(s_art) + MAX(s_col) DESC,
+                 MAX(data_bolla) DESC NULLS LAST
         LIMIT 60
     """
     cursor.execute(sql, params)
@@ -345,6 +434,8 @@ def _query_storico(cursor, codice_cliente: str, sig: Dict[str, Any]) -> List[Dic
             "commessa": bool(r[6]),
             "colore": float(r[7] or 0),
             "articolo": float(r[8] or 0),
+            "descrizione": float(r[9] or 0),
+            "tessuto": float(r[10] or 0),
         })
     return out
 
@@ -360,7 +451,15 @@ def _evidenze_list(ev: Dict[str, float]) -> List[str]:
     out = []
     if ev.get("codice_ciclo_manoscritto"):
         out.append("codice_ciclo_manoscritto")
-    for name in ("fasi", "commessa", "articolo", "descrizione", "colore", "composizione"):
+    for name in (
+        "fasi",
+        "commessa",
+        "articolo",
+        "tessuto",
+        "descrizione",
+        "colore",
+        "composizione",
+    ):
         soglia = SOGLIE_EVIDENZE.get(name, 0.5)
         if ev.get(name, 0) >= soglia:
             out.append(name)
@@ -430,8 +529,8 @@ def match_righe(
             ev = merged.setdefault(hit["key"], {"fonti": set()})
             ev["fonti"].add("manoscritto" if hit["hit_code"] else "cicli")
             ev["codice_ciclo_manoscritto"] = 1.0 if hit["hit_code"] else 0.0
-            for name in ("fasi", "descrizione", "articolo", "composizione"):
-                ev[name] = max(ev.get(name, 0.0), hit[name])
+            for name in ("fasi", "descrizione", "tessuto", "articolo", "composizione"):
+                ev[name] = max(ev.get(name, 0.0), hit.get(name, 0.0))
 
         if storico_ok:
             for hit in _query_storico(cursor, codice_cliente, sig):
@@ -440,6 +539,8 @@ def match_righe(
                 ev["commessa"] = 1.0 if hit["commessa"] else ev.get("commessa", 0.0)
                 ev["colore"] = max(ev.get("colore", 0.0), hit["colore"])
                 ev["articolo"] = max(ev.get("articolo", 0.0), hit["articolo"])
+                ev["descrizione"] = max(ev.get("descrizione", 0.0), hit.get("descrizione", 0.0))
+                ev["tessuto"] = max(ev.get("tessuto", 0.0), hit.get("tessuto", 0.0))
             # Codice manoscritto vale anche per candidati emersi solo dallo storico
             for key, ev in merged.items():
                 if key[2].upper() in sig["codes"]:

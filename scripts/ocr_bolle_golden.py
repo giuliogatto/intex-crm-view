@@ -17,14 +17,19 @@ from bolla_ocr import extract_bolla, sniff_image_mime  # noqa: E402
 RIGA_KEYS = (
     "codice_articolo_cliente",
     "descrizione_articolo",
+    "tessuto",
+    "modello",
     "colore",
     "variante",
     "commessa",
+    "composizione_testo",
     "quantita_capi",
     "quantita_kg",
     "fasi_testo",
     "codice_ciclo_manoscritto",
 )
+
+_IMAGE_GLOBS = ("*.jp*g", "*.png", "*.webp", "*.pdf", "*.PDF")
 
 
 def main():
@@ -34,7 +39,10 @@ def main():
     if os.path.isfile(target):
         paths = [target]
     else:
-        paths = sorted(glob.glob(os.path.join(target, "*.jp*g")) + glob.glob(os.path.join(target, "*.png")))
+        paths = []
+        for pattern in _IMAGE_GLOBS:
+            paths.extend(glob.glob(os.path.join(target, pattern)))
+        paths = sorted(set(paths))
     for path in paths:
         data = open(path, "rb").read()
         started = time.time()
@@ -56,6 +64,13 @@ def main():
             print(f" avvisi: {o['warnings']}")
         for r in o["righe"]:
             print(f"  riga {r['riga']}", {k: r[k] for k in RIGA_KEYS if r.get(k)})
+            # Hint matching: bolle senza fasi/TINTO dipendono da tessuto+descrizione.
+            if not r.get("fasi_testo") and not r.get("codice_ciclo_manoscritto"):
+                if r.get("descrizione_articolo") or r.get("tessuto"):
+                    print(
+                        "    ↳ segnale soft (no fasi/T…): usare descrizione/tessuto "
+                        "verso ew2_ds_articolo / qualità"
+                    )
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ const EVIDENZA_LABELS = {
   fasi: 'Fasi',
   commessa: 'Commessa',
   articolo: 'Articolo',
+  tessuto: 'Tessuto',
   descrizione: 'Descrizione',
   colore: 'Colore',
   composizione: 'Composizione',
