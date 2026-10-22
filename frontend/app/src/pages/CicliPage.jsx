@@ -599,6 +599,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                       <th>Cliente</th>
                       <th>Commessa</th>
                       <th>Modello</th>
+                      <th>Descrizione / Articolo</th>
                       <th>Colore</th>
                       <th>Tessuto</th>
                       <th>Art. fiscale</th>
@@ -625,6 +626,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                         </td>
                         <td>{item.commessa || '—'}</td>
                         <td>{item.modello || '—'}</td>
+                        <td>{item.ds_articolo || '—'}</td>
                         <td>
                           {item.ds_colore || item.cd_colore || '—'}
                           {item.ds_colore && item.cd_colore ? (
@@ -787,6 +789,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                                         <th>Commessa</th>
                                         <th>Colore</th>
                                         <th>Modello</th>
+                                        <th>Descrizione / Articolo</th>
                                         <th>Tessuto</th>
                                         <th>Art. fiscale</th>
                                         <th>Capi</th>
@@ -804,6 +807,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                                           <td>{u.commessa || '—'}</td>
                                           <td>{u.ds_colore || u.cd_colore || '—'}</td>
                                           <td>{u.modello || '—'}</td>
+                                          <td>{u.ds_articolo || '—'}</td>
                                           <td>{u.tessuto || '—'}</td>
                                           <td>{u.articolo_fiscale || '—'}</td>
                                           <td>{u.capi_caricati ?? '—'}</td>
