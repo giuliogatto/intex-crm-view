@@ -2460,13 +2460,19 @@ table.data tr.cicli-row--detail:hover > td {
   top: var(--app-sticky-top-offset);
 }
 
-.bolla-preview img {
+.bolla-preview img,
+.bolla-preview__pdf {
   display: block;
   width: 100%;
   max-height: 75vh;
   object-fit: contain;
   border-radius: 8px;
   border: 1px solid var(--border-color);
+}
+
+.bolla-preview__pdf {
+  min-height: 60vh;
+  background: var(--bg-card);
 }
 
 .bolla-dropzone {

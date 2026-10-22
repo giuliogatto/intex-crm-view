@@ -5,27 +5,122 @@ Vedi documentation/ocr-analyses.md §2.1 / §6.
 
 from __future__ import annotations
 
+import io
 import json
 import re
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from LLMservice import call_openai_vision_json
 
 MAX_IMAGE_BYTES = 15 * 1024 * 1024
+MAX_PDF_PAGES = 5
+PDF_RENDER_SCALE = 2.0  # ~144 DPI: bilancia leggibilità OCR e payload
+PDF_JPEG_QUALITY = 85
+MIME_PDF = "application/pdf"
+MIME_JPEG = "image/jpeg"
 
 _INTEX_RE = re.compile(r"\bINTEX\b", re.IGNORECASE)
 _CICLO_CODE_RE = re.compile(r"\bT\s?(\d{3}[A-Z]?)\b")
 
 
 def sniff_image_mime(data: bytes) -> Optional[str]:
+    """Riconosce JPEG/PNG/WEBP/PDF dai magic bytes (None se sconosciuto)."""
     if data[:3] == b"\xff\xd8\xff":
-        return "image/jpeg"
+        return MIME_JPEG
     if data[:8] == b"\x89PNG\r\n\x1a\n":
         return "image/png"
     if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
         return "image/webp"
+    if data[:5] == b"%PDF-":
+        return MIME_PDF
     return None
+
+
+def is_pdf_mime(mime: Optional[str]) -> bool:
+    return (mime or "").lower() == MIME_PDF
+
+
+def pdf_to_jpeg_pages(
+    pdf_bytes: bytes,
+    max_pages: int = MAX_PDF_PAGES,
+    scale: float = PDF_RENDER_SCALE,
+    quality: int = PDF_JPEG_QUALITY,
+) -> Tuple[List[bytes], int]:
+    """Rasterizza le prime `max_pages` pagine del PDF in JPEG RGB.
+
+    Ritorna (lista_jpeg, totale_pagine_documento).
+    """
+    try:
+        import pypdfium2 as pdfium
+    except ImportError as e:
+        raise RuntimeError(
+            "Supporto PDF non disponibile: installare pypdfium2 (pip install pypdfium2)."
+        ) from e
+
+    try:
+        pdf = pdfium.PdfDocument(pdf_bytes)
+    except Exception as e:
+        raise ValueError(f"PDF non valido o corrotto: {e}") from e
+
+    try:
+        total = len(pdf)
+        if total <= 0:
+            raise ValueError("PDF senza pagine.")
+        n = min(total, max_pages)
+        pages: List[bytes] = []
+        for i in range(n):
+            page = pdf[i]
+            try:
+                bitmap = page.render(scale=scale)
+                pil = bitmap.to_pil()
+            finally:
+                page.close()
+            if pil.mode != "RGB":
+                pil = pil.convert("RGB")
+            buf = io.BytesIO()
+            pil.save(buf, format="JPEG", quality=quality, optimize=True)
+            pages.append(buf.getvalue())
+        return pages, total
+    finally:
+        pdf.close()
+
+
+def prepare_bolla_images(file_bytes: bytes, mime: str) -> Dict[str, Any]:
+    """Normalizza upload (immagine o PDF) in una o più JPEG per Vision + preview.
+
+    Ritorna dict con:
+      - ocr_images: list[(bytes, mime)] da inviare all'OCR
+      - persist_bytes / persist_mime: file da salvare per anteprima admin
+      - source_mime, pdf_pages_used, pdf_pages_total, warnings
+    """
+    warnings: List[str] = []
+    if is_pdf_mime(mime):
+        pages, total = pdf_to_jpeg_pages(file_bytes)
+        if total > len(pages):
+            warnings.append(
+                f"PDF con {total} pagine: analizzate solo le prime {len(pages)}."
+            )
+        ocr_images = [(p, MIME_JPEG) for p in pages]
+        return {
+            "ocr_images": ocr_images,
+            "persist_bytes": pages[0],
+            "persist_mime": MIME_JPEG,
+            "source_mime": MIME_PDF,
+            "pdf_pages_used": len(pages),
+            "pdf_pages_total": total,
+            "warnings": warnings,
+        }
+
+    return {
+        "ocr_images": [(file_bytes, mime)],
+        "persist_bytes": file_bytes,
+        "persist_mime": mime,
+        "source_mime": mime,
+        "pdf_pages_used": None,
+        "pdf_pages_total": None,
+        "warnings": warnings,
+    }
 
 
 def _nullable(type_name: str) -> Dict[str, Any]:
@@ -103,11 +198,18 @@ Regole fondamentali:
 9. raw_text: trascrizione completa del documento (stampato + manoscritto), righe separate da \\n.
 Rispondi solo con JSON conforme allo schema."""
 
-def _ocr_prompt() -> str:
-    return (
+def _ocr_prompt(n_images: int = 1) -> str:
+    base = (
         f"Data odierna: {date.today().isoformat()}. "
         "Estrai i dati di questa bolla (DDT) in JSON secondo lo schema."
     )
+    if n_images > 1:
+        return (
+            f"{base} Il documento è composto da {n_images} pagine "
+            "(immagini in ordine dalla prima all'ultima): unifica mittente, "
+            "metadati e TUTTE le righe articolo di tutte le pagine in un unico JSON."
+        )
+    return base
 
 
 def _clean_str(value: Any) -> Optional[str]:
@@ -216,12 +318,39 @@ def normalize_ocr(data: Dict[str, Any]) -> Dict[str, Any]:
     return doc
 
 
-def extract_bolla(image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
-    """Chiama OpenAI Vision e ritorna {ocr, response_id, model}."""
+def extract_bolla(
+    image_bytes: bytes,
+    mime_type: Optional[str] = None,
+    *,
+    extra_warnings: Optional[Sequence[str]] = None,
+) -> Dict[str, Any]:
+    """Chiama OpenAI Vision su immagine o PDF (rasterizzato automaticamente)."""
+    mime = mime_type or sniff_image_mime(image_bytes)
+    if not mime:
+        raise ValueError("Formato non supportato: caricare JPEG, PNG, WEBP o PDF.")
+    if is_pdf_mime(mime):
+        prepared = prepare_bolla_images(image_bytes, mime)
+        warnings = list(prepared.get("warnings") or [])
+        if extra_warnings:
+            warnings.extend(w for w in extra_warnings if w)
+        return extract_bolla_images(prepared["ocr_images"], extra_warnings=warnings)
+    return extract_bolla_images(
+        [(image_bytes, mime)],
+        extra_warnings=extra_warnings,
+    )
+
+
+def extract_bolla_images(
+    images: Sequence[Tuple[bytes, str]],
+    *,
+    extra_warnings: Optional[Sequence[str]] = None,
+) -> Dict[str, Any]:
+    """Chiama OpenAI Vision su una o più immagini e ritorna {ocr, response_id, model}."""
+    if not images:
+        raise ValueError("Nessuna immagine da analizzare.")
     result = call_openai_vision_json(
-        image_bytes,
-        mime_type,
-        prompt=_ocr_prompt(),
+        list(images),
+        prompt=_ocr_prompt(len(images)),
         instructions=OCR_INSTRUCTIONS,
         json_schema=BOLLA_JSON_SCHEMA,
         schema_name="bolla_ddt",
@@ -230,8 +359,13 @@ def extract_bolla(image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
         raw = json.loads(result["text"])
     except (TypeError, ValueError) as e:
         raise RuntimeError(f"Risposta OCR non è JSON valido: {e}") from e
+    ocr = normalize_ocr(raw)
+    if extra_warnings:
+        ocr["warnings"] = list(ocr.get("warnings") or []) + [
+            w for w in extra_warnings if w
+        ]
     return {
-        "ocr": normalize_ocr(raw),
+        "ocr": ocr,
         "response_id": result.get("response_id"),
         "model": result.get("model"),
     }

@@ -1,6 +1,19 @@
 """Offline checks: normalizzazione OCR bolle (regole da documentation/esempi-bolle, nessuna chiamata LLM/DB)."""
 
-from bolla_ocr import BOLLA_JSON_SCHEMA, normalize_ciclo_codes, normalize_ocr, sniff_image_mime
+import io
+
+from reportlab.pdfgen import canvas
+
+from bolla_ocr import (
+    BOLLA_JSON_SCHEMA,
+    MIME_JPEG,
+    MIME_PDF,
+    normalize_ciclo_codes,
+    normalize_ocr,
+    pdf_to_jpeg_pages,
+    prepare_bolla_images,
+    sniff_image_mime,
+)
 
 
 def _raw(**overrides):
@@ -81,7 +94,52 @@ def test_sniff_mime():
     assert sniff_image_mime(b"\xff\xd8\xff\xe0rest") == "image/jpeg"
     assert sniff_image_mime(b"\x89PNG\r\n\x1a\nrest") == "image/png"
     assert sniff_image_mime(b"RIFF\x00\x00\x00\x00WEBPVP8 ") == "image/webp"
-    assert sniff_image_mime(b"%PDF-1.7") is None
+    assert sniff_image_mime(b"%PDF-1.7") == MIME_PDF
+    assert sniff_image_mime(b"not-a-file") is None
+
+
+def _sample_pdf(pages: int = 1) -> bytes:
+    buf = io.BytesIO()
+    c = canvas.Canvas(buf, pagesize=(400, 600))
+    for i in range(pages):
+        c.drawString(40, 500, f"DDT test pagina {i + 1}")
+        c.showPage()
+    c.save()
+    return buf.getvalue()
+
+
+def test_pdf_to_jpeg_pages():
+    pdf = _sample_pdf(2)
+    pages, total = pdf_to_jpeg_pages(pdf, max_pages=5)
+    assert total == 2
+    assert len(pages) == 2
+    assert all(p.startswith(b"\xff\xd8\xff") for p in pages)
+
+
+def test_pdf_to_jpeg_pages_truncates():
+    pdf = _sample_pdf(3)
+    pages, total = pdf_to_jpeg_pages(pdf, max_pages=2)
+    assert total == 3
+    assert len(pages) == 2
+
+
+def test_prepare_bolla_images_pdf():
+    pdf = _sample_pdf(1)
+    prepared = prepare_bolla_images(pdf, MIME_PDF)
+    assert prepared["source_mime"] == MIME_PDF
+    assert prepared["persist_mime"] == MIME_JPEG
+    assert prepared["persist_bytes"].startswith(b"\xff\xd8\xff")
+    assert len(prepared["ocr_images"]) == 1
+    assert prepared["pdf_pages_used"] == 1
+    assert prepared["pdf_pages_total"] == 1
+
+
+def test_prepare_bolla_images_jpeg_passthrough():
+    jpeg = b"\xff\xd8\xff\xe0fakejpeg"
+    prepared = prepare_bolla_images(jpeg, MIME_JPEG)
+    assert prepared["ocr_images"] == [(jpeg, MIME_JPEG)]
+    assert prepared["persist_bytes"] is jpeg
+    assert prepared["pdf_pages_used"] is None
 
 
 def _assert_strict(schema):

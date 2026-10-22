@@ -3,14 +3,36 @@ import LoadingOverlay from './LoadingOverlay'
 import BollaAnalysisView from './BollaAnalysisView'
 import { authFetch } from '../utils/auth'
 
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+const ACCEPTED_ACCEPT = [...ACCEPTED_TYPES, '.pdf'].join(',')
 const MAX_BYTES = 15 * 1024 * 1024
 
 const STAGES = [
-  { after: 0, label: 'Invio immagine…' },
-  { after: 2000, label: 'Estrazione testo dalla bolla (OCR)…' },
-  { after: 25000, label: 'Ricerca cliente e cicli…' },
+  { after: 0, label: 'Invio file…' },
+  { after: 2000, label: 'Preparazione documento (PDF → immagine se serve)…' },
+  { after: 8000, label: 'Estrazione testo dalla bolla (OCR)…' },
+  { after: 28000, label: 'Ricerca cliente e cicli…' },
 ]
+
+function isAcceptedFile(f) {
+  if (!f) return false
+  if (ACCEPTED_TYPES.includes(f.type)) return true
+  // Alcuni browser lasciano type vuoto: fallback sull'estensione.
+  const name = (f.name || '').toLowerCase()
+  return (
+    name.endsWith('.jpg')
+    || name.endsWith('.jpeg')
+    || name.endsWith('.png')
+    || name.endsWith('.webp')
+    || name.endsWith('.pdf')
+  )
+}
+
+function isPdfFile(f) {
+  if (!f) return false
+  if (f.type === 'application/pdf') return true
+  return (f.name || '').toLowerCase().endsWith('.pdf')
+}
 
 export default function BollaUploadPanel({ onOpenInRicerca }) {
   const [file, setFile] = useState(null)
@@ -37,12 +59,12 @@ export default function BollaUploadPanel({ onOpenInRicerca }) {
 
   const selectFile = (f) => {
     if (!f) return
-    if (!ACCEPTED_TYPES.includes(f.type)) {
-      setError('Formato non supportato: caricare JPEG, PNG o WEBP.')
+    if (!isAcceptedFile(f)) {
+      setError('Formato non supportato: caricare JPEG, PNG, WEBP o PDF.')
       return
     }
     if (f.size > MAX_BYTES) {
-      setError('Immagine troppo grande (max 15 MB).')
+      setError('File troppo grande (max 15 MB).')
       return
     }
     setError(null)
@@ -172,15 +194,18 @@ export default function BollaUploadPanel({ onOpenInRicerca }) {
                   >
                     <div className="bolla-dropzone__icon">📄</div>
                     <div className="bolla-dropzone__title">
-                      {file ? file.name : 'Trascina qui la foto della bolla o clicca per selezionarla'}
+                      {file
+                        ? file.name
+                        : 'Trascina qui la bolla (foto o PDF) o clicca per selezionarla'}
                     </div>
                     <div className="text-secondary">
-                      JPEG, PNG o WEBP, max 15 MB. Inquadrare tutta la bolla, ben illuminata e a fuoco.
+                      JPEG, PNG, WEBP o PDF, max 15 MB. Per le foto: inquadrare tutta la bolla,
+                      ben illuminata e a fuoco.
                     </div>
                     <input
                       ref={inputRef}
                       type="file"
-                      accept={ACCEPTED_TYPES.join(',')}
+                      accept={ACCEPTED_ACCEPT}
                       style={{ display: 'none' }}
                       onChange={(e) => selectFile(e.target.files?.[0])}
                     />
@@ -216,11 +241,19 @@ export default function BollaUploadPanel({ onOpenInRicerca }) {
 
         {previewUrl && (
           <div className="bolla-preview panel">
-            <div className="panel__head">Immagine</div>
+            <div className="panel__head">{isPdfFile(file) ? 'Anteprima PDF' : 'Immagine'}</div>
             <div className="panel__body">
-              <a href={previewUrl} target="_blank" rel="noreferrer">
-                <img src={previewUrl} alt="Bolla caricata" />
-              </a>
+              {isPdfFile(file) ? (
+                <iframe
+                  className="bolla-preview__pdf"
+                  src={previewUrl}
+                  title={file?.name || 'Anteprima PDF bolla'}
+                />
+              ) : (
+                <a href={previewUrl} target="_blank" rel="noreferrer">
+                  <img src={previewUrl} alt="Bolla caricata" />
+                </a>
+              )}
             </div>
           </div>
         )}

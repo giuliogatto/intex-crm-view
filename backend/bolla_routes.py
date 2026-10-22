@@ -13,7 +13,13 @@ from typing import Any, Dict, Optional, Tuple
 from bottle import HTTPResponse, MultipartError, request, response
 
 from bolla_match import match_cliente, match_righe
-from bolla_ocr import MAX_IMAGE_BYTES, extract_bolla, sniff_image_mime
+from bolla_ocr import (
+    MAX_IMAGE_BYTES,
+    extract_bolla_images,
+    is_pdf_mime,
+    prepare_bolla_images,
+    sniff_image_mime,
+)
 from cicli_routes import _cicli_table_exists
 from LLMservice import get_ocr_model_name
 
@@ -28,7 +34,10 @@ _MIME_EXT = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
     "image/webp": ".webp",
+    "application/pdf": ".pdf",
 }
+
+_ACCEPTED_FORMAT_MSG = "Formato non supportato: caricare JPEG, PNG, WEBP o PDF."
 
 _CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -165,12 +174,19 @@ def register_bolla_routes(app, db_pool):
         import requests as req
 
         key = os.getenv("OPENAI_APIKEY") or ""
+        try:
+            import pypdfium2  # noqa: F401
+            pdf_ok = True
+        except ImportError:
+            pdf_ok = False
         out: Dict[str, Any] = {
             "openai_key_present": bool(key),
             "openai_key_prefix": (key[:7] + "…") if key else None,
             "ocr_model": get_ocr_model_name(),
             "ocr_detail": os.getenv("OPENAI_OCR_DETAIL") or "original",
             "memfile_max": int(__import__("bottle").BaseRequest.MEMFILE_MAX),
+            "pdf_support": pdf_ok,
+            "accepted_formats": ["image/jpeg", "image/png", "image/webp", "application/pdf"],
         }
         try:
             r = req.get(
@@ -196,18 +212,47 @@ def register_bolla_routes(app, db_pool):
 
         if len(image) > MAX_IMAGE_BYTES:
             response.status = 413
-            return {"error": f"Immagine troppo grande (max {MAX_IMAGE_BYTES // (1024 * 1024)} MB)."}
+            return {
+                "error": (
+                    f"File troppo grande (max {MAX_IMAGE_BYTES // (1024 * 1024)} MB)."
+                )
+            }
         mime = sniff_image_mime(image)
         if not mime:
             response.status = 415
-            return {"error": "Formato non supportato: caricare JPEG, PNG o WEBP."}
+            return {"error": _ACCEPTED_FORMAT_MSG}
+
+        try:
+            prepared = prepare_bolla_images(image, mime)
+        except ValueError as e:
+            _log(f"prepare ValueError: {e}")
+            response.status = 400
+            return {"error": str(e)}
+        except RuntimeError as e:
+            _log(f"prepare RuntimeError: {e}")
+            response.status = 503
+            return {"error": str(e)}
+
+        persist_bytes = prepared["persist_bytes"]
+        persist_mime = prepared["persist_mime"]
+        source_mime = prepared["source_mime"]
+        ocr_images = prepared["ocr_images"]
 
         codice_cliente = (request.forms.get("codice_cliente") or "").strip() or None
         force = (request.forms.get("force") or "").strip() in ("1", "true")
         max_cicli = _int_param(request.forms.get("max_cicli_per_riga"), 5, 1, 20)
+        # Cache sulla firma del file originale (PDF incluso), non sulla JPEG rasterizzata.
         sha = hashlib.sha256(image).hexdigest()
         model = get_ocr_model_name()
-        _log(f"file ok mime={mime} bytes={len(image)} sha={sha[:12]} model={model} force={force}")
+        pages_info = ""
+        if is_pdf_mime(source_mime):
+            pages_info = (
+                f" pdf_pages={prepared['pdf_pages_used']}/{prepared['pdf_pages_total']}"
+            )
+        _log(
+            f"file ok mime={source_mime} bytes={len(image)} sha={sha[:12]} "
+            f"model={model} force={force}{pages_info}"
+        )
 
         if not (os.getenv("OPENAI_APIKEY") or ""):
             _log("OPENAI_APIKEY mancante nell'ambiente del container")
@@ -231,9 +276,12 @@ def register_bolla_routes(app, db_pool):
             _log(f"cache hit session_id={cached['session_id']}")
             ocr, response_id = cached["ocr"], cached["response_id"]
         else:
-            _log("cache miss → chiamo OpenAI Vision")
+            _log(f"cache miss → chiamo OpenAI Vision ({len(ocr_images)} img)")
             try:
-                extracted = extract_bolla(image, mime)
+                extracted = extract_bolla_images(
+                    ocr_images,
+                    extra_warnings=prepared.get("warnings"),
+                )
             except ValueError as e:
                 _log(f"OCR ValueError: {e}")
                 response.status = 503
@@ -272,7 +320,8 @@ def register_bolla_routes(app, db_pool):
             session_id = cached["session_id"] if cached else None
             image_path = None
             try:
-                image_path = persist_bolla_image(sha, mime, image)
+                # Anteprima sempre come immagine (per PDF: prima pagina rasterizzata).
+                image_path = persist_bolla_image(sha, persist_mime, persist_bytes)
             except OSError as e:
                 _log(f"image persist failed: {e}")
             if sessions_ok:
@@ -310,7 +359,7 @@ def register_bolla_routes(app, db_pool):
                         {
                             "user": _username(),
                             "sha": sha,
-                            "mime": mime,
+                            "mime": persist_mime,
                             "size": len(image),
                             "path": image_path,
                             "model": model,
@@ -337,6 +386,9 @@ def register_bolla_routes(app, db_pool):
             "session_id": session_id,
             "cached": bool(cached),
             "model": model,
+            "source_mime": source_mime,
+            "pdf_pages_used": prepared.get("pdf_pages_used"),
+            "pdf_pages_total": prepared.get("pdf_pages_total"),
             "ocr": ocr,
             **result,
         }

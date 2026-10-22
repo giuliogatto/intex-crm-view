@@ -1,7 +1,7 @@
 import base64
 import os
 import sys
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Sequence, Tuple, Union
 
 import requests
 from dotenv import load_dotenv
@@ -84,35 +84,51 @@ def _call_openai(
 
 
 def call_openai_vision_json(
-    image_bytes: bytes,
-    mime_type: str,
-    prompt: str,
-    instructions: str,
-    json_schema: dict,
+    image_bytes: Union[bytes, Sequence[Tuple[bytes, str]]],
+    mime_type: Optional[str] = None,
+    prompt: str = "",
+    instructions: str = "",
+    json_schema: Optional[dict] = None,
     schema_name: str = "estrazione",
     timeout: Optional[OpenAITimeout] = None,
 ) -> dict:
     """
-    OCR / estrazione strutturata da immagine via Responses API.
+    OCR / estrazione strutturata da una o più immagini via Responses API.
+    `image_bytes` può essere bytes (+ mime_type) oppure una sequenza di (bytes, mime).
     Returns {"text": str (JSON conforme a json_schema), "response_id": str, "model": str}.
     """
     api_key = os.getenv("OPENAI_APIKEY")
     if not api_key:
         raise ValueError("OPENAI_APIKEY environment variable is not set")
+    if not prompt:
+        raise ValueError("prompt is required")
+    if not json_schema:
+        raise ValueError("json_schema is required")
+
+    if isinstance(image_bytes, (bytes, bytearray)):
+        if not mime_type:
+            raise ValueError("mime_type richiesto per una singola immagine")
+        images: List[Tuple[bytes, str]] = [(bytes(image_bytes), mime_type)]
+    else:
+        images = [(b, m) for b, m in image_bytes]
+        if not images:
+            raise ValueError("Nessuna immagine da inviare all'OCR")
 
     model = get_ocr_model_name()
     detail = os.getenv("OPENAI_OCR_DETAIL") or DEFAULT_OPENAI_OCR_DETAIL
-    data_url = f"data:{mime_type};base64,{base64.b64encode(image_bytes).decode('ascii')}"
+    content: List[dict] = [{"type": "input_text", "text": prompt}]
+    total_bytes = 0
+    for img, mime in images:
+        total_bytes += len(img)
+        data_url = f"data:{mime};base64,{base64.b64encode(img).decode('ascii')}"
+        content.append({"type": "input_image", "image_url": data_url, "detail": detail})
     payload = {
         "model": model,
         "instructions": instructions,
         "input": [
             {
                 "role": "user",
-                "content": [
-                    {"type": "input_text", "text": prompt},
-                    {"type": "input_image", "image_url": data_url, "detail": detail},
-                ],
+                "content": content,
             }
         ],
         "text": {
@@ -131,7 +147,7 @@ def call_openai_vision_json(
 
     print(
         f"[ocr] OpenAI POST model={model} detail={detail} "
-        f"image_bytes={len(image_bytes)} timeout={timeout}",
+        f"images={len(images)} image_bytes={total_bytes} timeout={timeout}",
         file=sys.stderr,
         flush=True,
     )
