@@ -35,6 +35,7 @@ const EMPTY_FILTERS = {
   codice_cliente: '',
   stagione: '',
   codice_ciclo: '',
+  codice_univoco: '',
   articolo: '',
   composizione: '',
   descrizione: '',
@@ -76,6 +77,7 @@ function buildQueryParams(nextFilters, nextPage) {
   if (nextFilters.codice_cliente) params.append('codice_cliente', nextFilters.codice_cliente)
   if (nextFilters.stagione) params.append('stagione', nextFilters.stagione)
   if (nextFilters.codice_ciclo) params.append('codice_ciclo', nextFilters.codice_ciclo)
+  if (nextFilters.codice_univoco) params.append('codice_univoco', nextFilters.codice_univoco)
   if (nextFilters.articolo) params.append('articolo', nextFilters.articolo)
   if (nextFilters.composizione) params.append('composizione', nextFilters.composizione)
   if (nextFilters.descrizione) params.append('descrizione', nextFilters.descrizione)
@@ -361,6 +363,19 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                   endpoint="/api/cicli/suggest/codice_ciclo"
                   placeholder="Es. T139..."
                   minChars={2}
+                  params={{ codice_cliente: filters.codice_cliente }}
+                  allowClear
+                />
+              </div>
+              <div className="field">
+                <label>Cod. Univoco</label>
+                <FilterSuggest
+                  name="codice_univoco"
+                  value={filters.codice_univoco}
+                  onChange={handleChange}
+                  endpoint="/api/cicli/suggest/codice_univoco"
+                  placeholder="Es. 41434..."
+                  minChars={1}
                   params={{ codice_cliente: filters.codice_cliente }}
                   allowClear
                 />

@@ -147,6 +147,38 @@ def _normalize_reparto(raw: Optional[str]) -> Optional[str]:
     return _REPARTO_TO_CODICE.get(key)
 
 
+def _normalize_codice_univoco(raw: Optional[str]) -> Optional[str]:
+    """Estrae le cifre del Cod. Univoco C37_PRG (es. '41434')."""
+    if raw is None:
+        return None
+    digits = "".join(c for c in str(raw).strip() if c.isdigit())
+    return digits or None
+
+
+def _codice_univoco_exists_sql(
+    filters: Dict[str, Any],
+    params: Dict[str, Any],
+    *,
+    alias: str = "t",
+) -> Optional[str]:
+    """EXISTS su c37_testata_listini per Cod. Univoco (prefisso su c37_prg)."""
+    code = filters.get("codice_univoco")
+    if not code:
+        return None
+    params["codice_univoco_prefix"] = f"{_escape_like(code)}%"
+    return f"""EXISTS (
+      SELECT 1 FROM c37_testata_listini c37
+      WHERE c37.c37_cd_cliente = {alias}.codice_cliente
+        AND c37.c37_cd_articolo = {alias}.codice_articolo
+        AND c37.c37_cd_ciclo = {alias}.codice_ciclo
+        AND c37.c37_cd_linea = {alias}.codice_linea
+        AND c37.c37_cd_stagione = {alias}.codice_stagione
+        AND c37.c37_cd_composizione = {alias}.codice_composizione
+        AND c37.c37_prg IS NOT NULL
+        AND CAST(c37.c37_prg AS TEXT) LIKE %(codice_univoco_prefix)s ESCAPE '\\'
+    )"""
+
+
 def _cicli_filters() -> Dict[str, Any]:
     fasi = _query_getlist("fasi")
     descrizione = (request.query.get("descrizione") or "").strip() or None
@@ -163,6 +195,9 @@ def _cicli_filters() -> Dict[str, Any]:
         "composizione": (request.query.get("composizione") or "").strip() or None,
         "descrizione": descrizione,
         "codice_ciclo": (request.query.get("codice_ciclo") or "").strip() or None,
+        "codice_univoco": _normalize_codice_univoco(
+            request.query.get("codice_univoco") or request.query.get("c37_prg")
+        ),
         "reparto": _normalize_reparto(reparto_raw),
         "fasi": fasi,
         "fasi_mode": ((request.query.get("fasi_mode") or "all").strip().lower() or "all"),
@@ -749,6 +784,10 @@ def _cicli_base_from(filters: Dict[str, Any], params: Dict[str, Any], join_searc
         """
         params["descrizione_pat"] = descrizione_pat
 
+    univoco_sql = _codice_univoco_exists_sql(filters, params, alias="t")
+    if univoco_sql:
+        query += f" AND ({univoco_sql})"
+
     return query
 
 
@@ -969,13 +1008,16 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
     def get_cicli_suggest(field):
         """Autocomplete case-insensitive con testo libero (valore = stringa digitata/selezionata).
 
-        Campi: codice_ciclo, articolo, colore, modello, tessuto, commessa,
-        articolo_fiscale, fasi.
+        Campi: codice_ciclo, codice_univoco, articolo, colore, modello, tessuto,
+        commessa, articolo_fiscale, fasi.
         Ranking: prefisso prima di contains; per query codice-like priorità ai codici.
         """
         field = (field or "").strip().lower().replace("-", "_")
+        if field in ("c37_prg", "cod_univoco"):
+            field = "codice_univoco"
         allowed = {
             "codice_ciclo",
+            "codice_univoco",
             "articolo",
             "colore",
             "modello",
@@ -989,7 +1031,11 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             return {"error": f"Campo suggest non supportato: {field}"}
 
         q = (request.query.get("q") or "").strip()
-        min_chars = 3 if field == "commessa" else (1 if field == "articolo_fiscale" else 2)
+        min_chars = (
+            3
+            if field == "commessa"
+            else (1 if field in ("articolo_fiscale", "codice_univoco") else 2)
+        )
         if len(q) < min_chars:
             return {"total": 0, "data": [], "min_chars": min_chars}
 
@@ -1071,6 +1117,46 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                       {cli_filter}
                     ) x
                     ORDER BY rank_pref, sort_key
+                    LIMIT %(limit)s
+                    """,
+                    params,
+                )
+                data = [
+                    {"value": r[0], "label": r[1], "secondary": r[2]}
+                    for r in cursor.fetchall()
+                    if r[0]
+                ]
+
+            elif field == "codice_univoco":
+                if not _cicli_table_exists(cursor, "c37_testata_listini"):
+                    return {"total": 0, "data": [], "min_chars": min_chars}
+                digits = _normalize_codice_univoco(q)
+                if not digits:
+                    return {"total": 0, "data": [], "min_chars": min_chars}
+                params["prefix"] = f"{_escape_like(digits)}%"
+                if codice_cliente:
+                    params["codice_cliente"] = codice_cliente
+                cli_filter = (
+                    "AND c37.c37_cd_cliente = %(codice_cliente)s" if codice_cliente else ""
+                )
+                cursor.execute(
+                    f"""
+                    SELECT value, label, secondary FROM (
+                      SELECT DISTINCT
+                        CAST(c37.c37_prg AS TEXT) AS value,
+                        CAST(c37.c37_prg AS TEXT) AS label,
+                        NULLIF(btrim(c37.c37_cd_ciclo), '') AS secondary,
+                        CASE
+                          WHEN CAST(c37.c37_prg AS TEXT) LIKE %(prefix)s ESCAPE '\\' THEN 0
+                          ELSE 1
+                        END AS rank_pref,
+                        c37.c37_prg AS sort_key
+                      FROM c37_testata_listini c37
+                      WHERE c37.c37_prg IS NOT NULL
+                        AND CAST(c37.c37_prg AS TEXT) LIKE %(prefix)s ESCAPE '\\'
+                        {cli_filter}
+                    ) x
+                    ORDER BY rank_pref, sort_key DESC
                     LIMIT %(limit)s
                     """,
                     params,
@@ -1847,6 +1933,10 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
               )
             """
             params["descrizione_pat"] = descrizione_pat
+
+        univoco_sql = _codice_univoco_exists_sql(filters, params, alias="ct")
+        if univoco_sql:
+            cicli_exists += f" AND ({univoco_sql})"
 
         if fasi_groups:
             # join a cicli_search via chiave
