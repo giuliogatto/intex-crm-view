@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Import giornaliero EW1/EW2 (+ opz. storico_disposizioni + opz. cicli) da CSV SFTP
+# Import giornaliero EW1/EW2 (+ opz. storico_disposizioni + opz. c37 + opz. cicli) da CSV SFTP
 # → TRUNCATE + \copy nel container Timescale.
 #
 # Atteso dopo l'export Windows (extract_upload_tables_storico*.py → SFTP):
 #   /var/data_imports/intex/{timestamp}_ew1_testata_disposizioni.csv
 #   /var/data_imports/intex/{timestamp}_ew2_righe_disposizioni.csv
 #   /var/data_imports/intex/{timestamp}_storico_disposizioni.csv   (opzionale)
+#   /var/data_imports/intex/{timestamp}_c37_testata_listini.csv   (opzionale, Cod. Univoco)
 #   /var/data_imports/intex/{timestamp}_z09_cicli_testate.csv     (opz. → set cicli)
 #   /var/data_imports/intex/{timestamp}_z08_cicli_fasi.csv
 #   /var/data_imports/intex/{timestamp}_z02_fasi.csv
@@ -59,6 +60,12 @@ if [[ -f "$STORICO" ]]; then
   LOAD_STORICO=1
 fi
 
+C37="$IMPORT_DIR/${TS}_c37_testata_listini.csv"
+LOAD_C37=0
+if [[ -f "$C37" ]]; then
+  LOAD_C37=1
+fi
+
 # Cicli: se c'è z09, richiedi l'intero set (stesso timestamp)
 CICLI_Z09="$IMPORT_DIR/${TS}_z09_cicli_testate.csv"
 CICLI_Z08="$IMPORT_DIR/${TS}_z08_cicli_fasi.csv"
@@ -94,6 +101,11 @@ if [[ "$LOAD_STORICO" -eq 1 ]]; then
 else
   log "  STORICO=assente (skip)"
 fi
+if [[ "$LOAD_C37" -eq 1 ]]; then
+  log "  C37=$C37"
+else
+  log "  C37=assente (skip)"
+fi
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
   log "  CICLI=z09+z08+z02+r07+z11+cw4+cwa+cw0"
 else
@@ -106,6 +118,9 @@ done
 if [[ "$LOAD_STORICO" -eq 1 ]]; then
   wait_stable "$STORICO" || die "file non stabile o vuoto: $STORICO"
 fi
+if [[ "$LOAD_C37" -eq 1 ]]; then
+  wait_stable "$C37" || die "file non stabile o vuoto: $C37"
+fi
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
   for f in "$CICLI_Z09" "$CICLI_Z08" "$CICLI_Z02" "$CICLI_R07" "$CICLI_Z11" "$CICLI_CW4" "$CICLI_CWA" "$CICLI_CW0"; do
     wait_stable "$f" || die "file non stabile o vuoto: $f"
@@ -115,6 +130,9 @@ fi
 # Header obbligatorio
 head -1 "$EW1" | grep -qi 'EW1_ANNO_DISPOSIZIONE' || die "header EW1 inatteso"
 head -1 "$EW2" | grep -qi 'EW2_ANNO_DISPOSIZIONE' || die "header EW2 inatteso"
+if [[ "$LOAD_C37" -eq 1 ]]; then
+  head -1 "$C37" | grep -qi 'c37_prg' || die "header c37 inatteso (manca c37_prg)"
+fi
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
   head -1 "$CICLI_Z09" | grep -qi 'codice_ciclo' || die "header z09 cicli inatteso"
   head -1 "$CICLI_Z08" | grep -qi 'sequenza' || die "header z08 cicli inatteso"
@@ -137,6 +155,12 @@ copy_csv ew1_testata_disposizioni "$EW1"
 copy_csv ew2_righe_disposizioni "$EW2"
 if [[ "$LOAD_STORICO" -eq 1 ]]; then
   copy_csv storico_disposizioni "$STORICO"
+fi
+
+if [[ "$LOAD_C37" -eq 1 ]]; then
+  log "TRUNCATE c37_testata_listini…"
+  "${PSQL[@]}" -c "TRUNCATE c37_testata_listini;"
+  copy_csv c37_testata_listini "$C37"
 fi
 
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
@@ -173,6 +197,7 @@ log "Conteggi post-import:"
 SELECT 'ew1_testata_disposizioni' AS tabella, COUNT(*) AS n FROM ew1_testata_disposizioni
 UNION ALL SELECT 'ew2_righe_disposizioni', COUNT(*) FROM ew2_righe_disposizioni
 UNION ALL SELECT 'storico_disposizioni', COUNT(*) FROM storico_disposizioni
+UNION ALL SELECT 'c37_testata_listini', COUNT(*) FROM c37_testata_listini
 UNION ALL SELECT 'cicli_testate', COUNT(*) FROM cicli_testate
 UNION ALL SELECT 'cicli_fasi', COUNT(*) FROM cicli_fasi
 UNION ALL SELECT 'fasi_lavoro', COUNT(*) FROM fasi_lavoro
@@ -185,4 +210,4 @@ UNION ALL SELECT 'cicli_search', COUNT(*) FROM cicli_search
 ORDER BY 1;
 "
 
-log "Import completato (timestamp=$TS, storico=$LOAD_STORICO, cicli=$LOAD_CICLI)"
+log "Import completato (timestamp=$TS, storico=$LOAD_STORICO, c37=$LOAD_C37, cicli=$LOAD_CICLI)"

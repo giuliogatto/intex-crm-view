@@ -28,6 +28,7 @@ DEFAULT_ORDER = [
     "create-cicli-tables.sql",
     "create-storico-disposizioni-tables.sql",
     "cicli-storico-search.sql",
+    "create-c37-testata-listini.sql",
     "ocr-bolla.sql",
     "ocr-bolla-image-path.sql",
     "create-logs.sql",

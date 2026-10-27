@@ -57,6 +57,8 @@ def _cell(value):
 # Nota: STORICO può restare indietro rispetto a EW1/EW2 (solo poche bolle recenti).
 # Per questo si filtra STORICO sulle *chiavi* EW1 in finestra, non solo sulla sua
 # EW1_DATA_BOLLA_CLI (spesso NULL o non allineata sulle disposizioni aperte).
+#
+# Offerte / Cod. Univoco (C37_PRG): full dump (~34k), indipendente dal lookback bolle.
 QUERIES = {
     "ew1_testata_disposizioni.csv": f"""
         SELECT t.*
@@ -84,6 +86,10 @@ QUERIES = {
               AND t.EW1_NR_DISPOSIZIONE   = s.EW2_NR_DISPOSIZIONE
               AND {_lookback_predicate("t")}
         )
+    """,
+    "c37_testata_listini.csv": """
+        SELECT t.*
+        FROM INTEX2.C37_TESTATA_LISTINI t
     """,
 }
 
@@ -277,7 +283,7 @@ def export_and_send():
     ssh.close()
     print(
         "Sincronizzazione completata "
-        f"(storico + {'cicli' if EXPORT_CICLI else 'senza cicli'}, timestamp={timestamp})"
+        f"(storico + c37 + {'cicli' if EXPORT_CICLI else 'senza cicli'}, timestamp={timestamp})"
     )
 
 
