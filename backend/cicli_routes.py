@@ -175,6 +175,7 @@ def _cicli_filters() -> Dict[str, Any]:
         "data_bolla_da": _parse_date(request.query.get("data_bolla_da")),
         "data_bolla_a": _parse_date(request.query.get("data_bolla_a")),
         "vista": ((request.query.get("vista") or "cicli").strip().lower() or "cicli"),
+        "q": _normalize_global_q(request.query.get("q")),
     }
 
 
@@ -273,6 +274,7 @@ def _fasi_match_sql(
     mode: str,
     params: Dict[str, Any],
     alias: str = "cs",
+    param_prefix: str = "fase",
 ) -> Optional[str]:
     """Costruisce condizione SQL su cicli_search.search_doc."""
     if not groups:
@@ -282,7 +284,7 @@ def _fasi_match_sql(
     for gi, group in enumerate(groups):
         variant_clauses = []
         for vi, variant in enumerate(group["variants"]):
-            key = f"fase_{gi}_{vi}"
+            key = f"{param_prefix}_{gi}_{vi}"
             v = variant.strip()
             if not v:
                 continue
@@ -309,6 +311,256 @@ def _fasi_match_sql(
         return None
     joiner = " OR " if mode == "any" else " AND "
     return joiner.join(group_clauses)
+
+
+# Ricerca globale jolly: minimo caratteri per evitare scansioni troppo ampie.
+_GLOBAL_Q_MIN_LEN = 2
+
+
+def _normalize_global_q(raw: Optional[str]) -> Optional[str]:
+    q = (raw or "").strip()
+    if len(q) < _GLOBAL_Q_MIN_LEN:
+        return None
+    return q
+
+
+def _prepare_global_params(q: str, params: Dict[str, Any], prefix: str = "gq") -> None:
+    params[f"{prefix}_raw"] = q
+    params[f"{prefix}_pat"] = _broad_like_pattern(q)
+    params[f"{prefix}_like"] = f"%{_escape_like(q)}%"
+    params[f"{prefix}_prefix"] = f"{_escape_like(q)}%"
+    params[f"{prefix}_upper"] = q.upper().strip()
+
+
+def _global_ciclo_or_parts(
+    *,
+    t_alias: str = "t",
+    ar_alias: str = "ar",
+    co_alias: str = "co",
+    cl_alias: str = "cl",
+    prefix: str = "gq",
+) -> List[str]:
+    """OR su anagrafica ciclo (broad ILIKE, senza sinonimi)."""
+    pat = f"{prefix}_pat"
+    return [
+        f"{t_alias}.codice_ciclo ILIKE %({pat})s ESCAPE '\\'",
+        f"COALESCE({t_alias}.codice_ciclo_cli, '') ILIKE %({pat})s ESCAPE '\\'",
+        f"{t_alias}.codice_articolo ILIKE %({pat})s ESCAPE '\\'",
+        f"COALESCE({ar_alias}.ds_articolo, '') ILIKE %({pat})s ESCAPE '\\'",
+        f"{t_alias}.codice_composizione ILIKE %({pat})s ESCAPE '\\'",
+        f"COALESCE({co_alias}.ds_composizione, '') ILIKE %({pat})s ESCAPE '\\'",
+        f"COALESCE({t_alias}.ds_ciclo, '') ILIKE %({pat})s ESCAPE '\\'",
+        f"COALESCE({t_alias}.ds_ciclo_bolle_fat, '') ILIKE %({pat})s ESCAPE '\\'",
+        f"COALESCE({cl_alias}.ragione_sociale, '') ILIKE %({pat})s ESCAPE '\\'",
+        f"COALESCE({t_alias}.note, '') ILIKE %({pat})s ESCAPE '\\'",
+    ]
+
+
+def _global_storico_or_parts(
+    *,
+    ew2_alias: str = "ew2",
+    ew1_alias: str = "ew1",
+    prefix: str = "gq",
+    simple: bool = False,
+) -> List[str]:
+    """OR su campi storico (commessa, colore, …) senza sinonimi."""
+    r = ew2_alias
+    t = ew1_alias
+    like = f"{prefix}_like"
+    pref = f"{prefix}_prefix"
+    raw = f"{prefix}_raw"
+    upper = f"{prefix}_upper"
+    parts = [
+        f"COALESCE({r}.ew2_cd_colore, '') ILIKE %({pref})s ESCAPE '\\'",
+        f"COALESCE({r}.ew2_ds_colore, '') ILIKE %({like})s ESCAPE '\\'",
+        f"COALESCE({r}.ew2_rif_disp_cliente, '') ILIKE %({like})s ESCAPE '\\'",
+        f"COALESCE({t}.ew1_rifer_cliente, '') ILIKE %({like})s ESCAPE '\\'",
+        f"COALESCE({r}.ew2_modello, '') ILIKE %({like})s ESCAPE '\\'",
+        f"COALESCE({r}.ew2_ds_articolo, '') ILIKE %({like})s ESCAPE '\\'",
+        f"COALESCE({r}.ew2_qualita, '') ILIKE %({like})s ESCAPE '\\'",
+        f"btrim(COALESCE({r}.ew2_cd_articolo_fiscale, '')) ILIKE %({like})s ESCAPE '\\'",
+        f"COALESCE({r}.ew2_note, '') ILIKE %({like})s ESCAPE '\\'",
+        f"COALESCE({r}.ew2_note_ricetta, '') ILIKE %({like})s ESCAPE '\\'",
+    ]
+    if not simple:
+        parts.extend(
+            [
+                f"word_similarity(%({raw})s, COALESCE({r}.ew2_ds_colore, '')) > 0.5",
+                f"word_similarity(%({raw})s, COALESCE({r}.ew2_modello, '')) > 0.5",
+                f"word_similarity(%({raw})s, COALESCE({r}.ew2_ds_articolo, '')) > 0.5",
+                f"UPPER(%({upper})s) = ANY (COALESCE({r}.ew2_rif_tokens, ARRAY[]::text[]))",
+                f"UPPER(%({upper})s) = ANY (COALESCE({r}.ew2_tessuto_tokens, ARRAY[]::text[]))",
+            ]
+        )
+    return parts
+
+
+def _global_search_doc_sql(
+    q: str,
+    params: Dict[str, Any],
+    sinonimi: Dict[str, List[str]],
+    *,
+    alias: str = "cs",
+    simple: bool = False,
+) -> Tuple[Optional[str], Dict[str, List[str]]]:
+    """Match su search_doc con sinonimi (unico ramo che li usa)."""
+    groups, espanse = _expand_fasi_keywords([q], sinonimi)
+    if not groups:
+        return None, espanse
+    if simple:
+        ors: List[str] = []
+        for vi, variant in enumerate(groups[0]["variants"]):
+            v = (variant or "").strip()
+            if len(v) < 2:
+                continue
+            key = f"gq_doc_{vi}"
+            params[key] = f"%{_escape_like(v)}%"
+            ors.append(f"{alias}.search_doc ILIKE %({key})s ESCAPE '\\'")
+        if not ors:
+            return None, espanse
+        return "(" + " OR ".join(ors) + ")", espanse
+    sql = _fasi_match_sql(groups, "any", params, alias=alias, param_prefix="gq_fase")
+    return (f"({sql})" if sql else None), espanse
+
+
+def _global_fasi_fallback_exists(params: Dict[str, Any], prefix: str = "gq") -> str:
+    """Fallback fasi senza cicli_search: ILIKE plain su q (niente sinonimi)."""
+    pat = f"{prefix}_pat"
+    return f"""EXISTS (
+      SELECT 1 FROM cicli_fasi f
+      LEFT JOIN fasi_lavoro z ON z.codice_fase = f.codice_fase
+      WHERE f.codice_cliente = t.codice_cliente
+        AND f.codice_articolo = t.codice_articolo
+        AND f.codice_ciclo = t.codice_ciclo
+        AND f.codice_linea = t.codice_linea
+        AND f.codice_stagione = t.codice_stagione
+        AND f.codice_composizione = t.codice_composizione
+        AND (
+          COALESCE(z.ds_fase, '') ILIKE %({pat})s ESCAPE '\\'
+          OR COALESCE(f.note, '') ILIKE %({pat})s ESCAPE '\\'
+        )
+    )"""
+
+
+def _global_match_sql_list(
+    q: str,
+    params: Dict[str, Any],
+    *,
+    sinonimi: Dict[str, List[str]],
+    search_ok: bool,
+    storico_ok: bool,
+    simple: bool = False,
+) -> Tuple[str, Dict[str, List[str]]]:
+    """Clausola OR globale per vista cicli. Ritorna (sql, q_espanse)."""
+    _prepare_global_params(q, params)
+    ors: List[str] = list(_global_ciclo_or_parts())
+    q_espanse: Dict[str, List[str]] = {}
+
+    if search_ok:
+        doc_sql, q_espanse = _global_search_doc_sql(
+            q, params, sinonimi, alias="cs", simple=simple
+        )
+        if doc_sql:
+            ors.append(doc_sql)
+    else:
+        ors.append(_global_fasi_fallback_exists(params))
+
+    if storico_ok:
+        storico_ors = _global_storico_or_parts(simple=simple)
+        ors.append(
+            f"""EXISTS (
+              SELECT 1
+              FROM ew2_righe_disposizioni ew2
+              JOIN ew1_testata_disposizioni ew1
+                ON ew1.ew1_anno_disposizione = ew2.ew2_anno_disposizione
+               AND ew1.ew1_nr_disposizione = ew2.ew2_nr_disposizione
+              WHERE ew2.ew2_cd_cliente = t.codice_cliente
+                AND ew2.ew2_cd_articolo_fattura = t.codice_articolo
+                AND ew2.ew2_cd_ciclo = t.codice_ciclo
+                AND ew2.ew2_cd_linea = t.codice_linea
+                AND ew2.ew2_cd_stagione = t.codice_stagione
+                AND ew2.ew2_cd_composizione = t.codice_composizione
+                AND ({' OR '.join(storico_ors)})
+            )"""
+        )
+
+    return "(" + " OR ".join(ors) + ")", q_espanse
+
+
+def _global_match_sql_utilizzi(
+    q: str,
+    params: Dict[str, Any],
+    *,
+    sinonimi: Dict[str, List[str]],
+    search_ok: bool,
+    simple: bool = False,
+) -> Tuple[str, Dict[str, List[str]]]:
+    """Clausola OR globale per vista utilizzi (outer = ew2 r / ew1 t)."""
+    _prepare_global_params(q, params)
+    ors: List[str] = list(
+        _global_storico_or_parts(ew2_alias="r", ew1_alias="t", simple=simple)
+    )
+    q_espanse: Dict[str, List[str]] = {}
+
+    ciclo_ors = _global_ciclo_or_parts(t_alias="ct")
+    doc_join = ""
+    doc_and = ""
+    if search_ok:
+        doc_sql, q_espanse = _global_search_doc_sql(
+            q, params, sinonimi, alias="cs", simple=simple
+        )
+        if doc_sql:
+            doc_join = """
+            LEFT JOIN cicli_search cs
+              ON cs.codice_cliente = ct.codice_cliente
+             AND cs.codice_articolo = ct.codice_articolo
+             AND cs.codice_ciclo = ct.codice_ciclo
+             AND cs.codice_linea = ct.codice_linea
+             AND cs.codice_stagione = ct.codice_stagione
+             AND cs.codice_composizione = ct.codice_composizione
+            """
+            doc_and = f" OR {doc_sql}"
+    else:
+        # fallback fasi plain (alias ct) senza sinonimi
+        ciclo_ors.append(
+            f"""EXISTS (
+              SELECT 1 FROM cicli_fasi f
+              LEFT JOIN fasi_lavoro z ON z.codice_fase = f.codice_fase
+              WHERE f.codice_cliente = ct.codice_cliente
+                AND f.codice_articolo = ct.codice_articolo
+                AND f.codice_ciclo = ct.codice_ciclo
+                AND f.codice_linea = ct.codice_linea
+                AND f.codice_stagione = ct.codice_stagione
+                AND f.codice_composizione = ct.codice_composizione
+                AND (
+                  COALESCE(z.ds_fase, '') ILIKE %(gq_pat)s ESCAPE '\\'
+                  OR COALESCE(f.note, '') ILIKE %(gq_pat)s ESCAPE '\\'
+                )
+            )"""
+        )
+
+    ors.append(
+        f"""EXISTS (
+          SELECT 1 FROM cicli_testate ct
+          LEFT JOIN articoli_cliente ar
+            ON ar.codice_cliente = ct.codice_cliente
+           AND ar.codice_articolo = ct.codice_articolo
+          LEFT JOIN composizioni co
+            ON co.codice_composizione = ct.codice_composizione
+          LEFT JOIN cicli_clienti cl
+            ON cl.codice_cliente = ct.codice_cliente
+          {doc_join}
+          WHERE ct.codice_cliente = r.ew2_cd_cliente
+            AND ct.codice_articolo = r.ew2_cd_articolo_fattura
+            AND ct.codice_ciclo = r.ew2_cd_ciclo
+            AND ct.codice_linea = r.ew2_cd_linea
+            AND ct.codice_stagione = r.ew2_cd_stagione
+            AND ct.codice_composizione = r.ew2_cd_composizione
+            AND ({' OR '.join(ciclo_ors)}{doc_and})
+        )"""
+    )
+
+    return "(" + " OR ".join(ors) + ")", q_espanse
 
 
 def _storico_where(
@@ -1157,9 +1409,20 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             for g in fasi_groups:
                 note_variants.extend(g["variants"])
 
+            q_espanse: Dict[str, List[str]] = {}
+
             if vista == "utilizzi":
                 result = _fetch_utilizzi_list(
-                    cursor, filters, fasi_groups, note_variants, page, limit, offset, storico_ok
+                    cursor,
+                    filters,
+                    fasi_groups,
+                    note_variants,
+                    page,
+                    limit,
+                    offset,
+                    storico_ok,
+                    search_ok=search_ok,
+                    sinonimi=sinonimi,
                 )
                 cursor.close()
                 db_pool.release_conn(conn)
@@ -1167,6 +1430,8 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                     response.status = 400
                     return result
                 result["fasi_espanse"] = fasi_espanse
+                if result.get("q_espanse") is None:
+                    result["q_espanse"] = {}
                 result["storico_disponibile"] = storico_range
                 user = request.environ.get("intex.user") or {}
                 log_search(
@@ -1181,12 +1446,12 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                 return result
 
             params: Dict[str, Any] = {}
-            need_search = bool(fasi_groups) and search_ok
+            need_search = (bool(fasi_groups) or bool(filters.get("q"))) and search_ok
             from_where = _cicli_base_from(filters, params, join_search=need_search)
 
             # Filtro fasi su cicli_search (con fallback EXISTS su fasi se search assente)
             if fasi_groups:
-                if need_search:
+                if search_ok:
                     fasi_sql = _fasi_match_sql(
                         fasi_groups, filters.get("fasi_mode") or "all", params, alias="cs"
                     )
@@ -1226,6 +1491,17 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                   )
                 """
 
+            # Ricerca globale jolly (AND con gli altri filtri; OR interno sui campi)
+            if filters.get("q"):
+                gsql, q_espanse = _global_match_sql_list(
+                    filters["q"],
+                    params,
+                    sinonimi=sinonimi,
+                    search_ok=search_ok,
+                    storico_ok=storico_ok,
+                )
+                from_where += f" AND {gsql}"
+
             # Count
             try:
                 cursor.execute(f"SELECT COUNT(*) {from_where}", params)
@@ -1235,7 +1511,9 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                 cursor.connection.rollback()
                 if "word_similarity" in str(e).lower() or "ew2_rif_tokens" in str(e).lower():
                     params2 = dict(params)
-                    from_where2 = _rebuild_without_advanced(filters, fasi_groups, search_ok, storico_ok, params2, note_variants)
+                    from_where2, q_espanse = _rebuild_without_advanced(
+                        filters, fasi_groups, search_ok, storico_ok, params2, note_variants, sinonimi
+                    )
                     cursor.execute(f"SELECT COUNT(*) {from_where2}", params2)
                     total = cursor.fetchone()[0]
                     from_where, params = from_where2, params2
@@ -1326,6 +1604,7 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                 limit,
                 extra={
                     "fasi_espanse": fasi_espanse,
+                    "q_espanse": q_espanse,
                     "storico_disponibile": storico_range,
                 },
             )
@@ -1333,12 +1612,19 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             response.status = 500
             return {"error": str(e)}
 
-    def _rebuild_without_advanced(filters, fasi_groups, search_ok, storico_ok, params, note_variants):
-        """Fallback senza word_similarity / colonne generate."""
-        need_search = bool(fasi_groups) and search_ok
+    def _rebuild_without_advanced(
+        filters, fasi_groups, search_ok, storico_ok, params, note_variants, sinonimi=None
+    ):
+        """Fallback senza word_similarity / colonne generate.
+
+        Ritorna (from_where, q_espanse).
+        """
+        sinonimi = sinonimi or {}
+        q_espanse: Dict[str, List[str]] = {}
+        need_search = (bool(fasi_groups) or bool(filters.get("q"))) and search_ok
         from_where = _cicli_base_from(filters, params, join_search=need_search)
         if fasi_groups:
-            if need_search:
+            if search_ok:
                 # solo ILIKE
                 group_clauses = []
                 for gi, group in enumerate(fasi_groups):
@@ -1419,7 +1705,19 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                   AND {storico_cond}
               )
             """
-        return from_where
+
+        if filters.get("q"):
+            gsql, q_espanse = _global_match_sql_list(
+                filters["q"],
+                params,
+                sinonimi=sinonimi,
+                search_ok=search_ok,
+                storico_ok=storico_ok,
+                simple=True,
+            )
+            from_where += f" AND {gsql}"
+
+        return from_where, q_espanse
 
     def _fasi_fallback_exists(groups, mode, params):
         group_clauses = []
@@ -1469,10 +1767,23 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                 hits.append(g["keyword"])
         return hits
 
-    def _fetch_utilizzi_list(cursor, filters, fasi_groups, note_variants, page, limit, offset, storico_ok):
+    def _fetch_utilizzi_list(
+        cursor,
+        filters,
+        fasi_groups,
+        note_variants,
+        page,
+        limit,
+        offset,
+        storico_ok,
+        search_ok=False,
+        sinonimi=None,
+    ):
         if not storico_ok:
             return {"error": "Tabelle storico non disponibili"}
 
+        sinonimi = sinonimi or {}
+        q_espanse: Dict[str, List[str]] = {}
         params: Dict[str, Any] = {}
         storico_cond = _storico_where(
             filters, params, note_variants if filters.get("fasi_note_storico") else None
@@ -1556,6 +1867,15 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
 
         cicli_exists += ")"
 
+        global_cond = "TRUE"
+        if filters.get("q"):
+            global_cond, q_espanse = _global_match_sql_utilizzi(
+                filters["q"],
+                params,
+                sinonimi=sinonimi,
+                search_ok=search_ok,
+            )
+
         from_where = f"""
             FROM ew2_righe_disposizioni r
             JOIN ew1_testata_disposizioni t
@@ -1564,15 +1884,43 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             LEFT JOIN cicli_clienti cl ON cl.codice_cliente = r.ew2_cd_cliente
             WHERE {storico_cond}
               AND {cicli_exists}
+              AND {global_cond}
         """
 
         try:
             cursor.execute(f"SELECT COUNT(*) {from_where}", params)
             total = cursor.fetchone()[0]
-        except Exception:
+        except Exception as e:
             cursor.connection.rollback()
-            # semplifica: senza fasi_search avanzata
-            return {"error": "Errore query utilizzi: verificare migration cicli-storico-search.sql"}
+            if filters.get("q") and (
+                "word_similarity" in str(e).lower() or "ew2_rif_tokens" in str(e).lower()
+            ):
+                # riprova globale senza similarity/token
+                global_cond, q_espanse = _global_match_sql_utilizzi(
+                    filters["q"],
+                    params,
+                    sinonimi=sinonimi,
+                    search_ok=search_ok,
+                    simple=True,
+                )
+                from_where = f"""
+                    FROM ew2_righe_disposizioni r
+                    JOIN ew1_testata_disposizioni t
+                      ON t.ew1_anno_disposizione = r.ew2_anno_disposizione
+                     AND t.ew1_nr_disposizione = r.ew2_nr_disposizione
+                    LEFT JOIN cicli_clienti cl ON cl.codice_cliente = r.ew2_cd_cliente
+                    WHERE {storico_cond}
+                      AND {cicli_exists}
+                      AND {global_cond}
+                """
+                try:
+                    cursor.execute(f"SELECT COUNT(*) {from_where}", params)
+                    total = cursor.fetchone()[0]
+                except Exception:
+                    cursor.connection.rollback()
+                    return {"error": "Errore query utilizzi: verificare migration cicli-storico-search.sql"}
+            else:
+                return {"error": "Errore query utilizzi: verificare migration cicli-storico-search.sql"}
 
         params_page = dict(params)
         params_page["limit"] = limit
@@ -1641,7 +1989,7 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                     "riga_disposizione": r[22],
                 }
             )
-        return _paginated(items, total, page, limit)
+        return _paginated(items, total, page, limit, extra={"q_espanse": q_espanse})
 
     @app.route("/api/cicli/fasi", method="GET")
     def get_cicli_fasi():

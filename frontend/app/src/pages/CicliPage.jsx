@@ -31,6 +31,7 @@ function readModeFromUrl() {
 }
 
 const EMPTY_FILTERS = {
+  q: '',
   codice_cliente: '',
   stagione: '',
   codice_ciclo: '',
@@ -71,6 +72,7 @@ function formatDateIso(iso) {
 
 function buildQueryParams(nextFilters, nextPage) {
   const params = new URLSearchParams()
+  if (nextFilters.q) params.append('q', nextFilters.q)
   if (nextFilters.codice_cliente) params.append('codice_cliente', nextFilters.codice_cliente)
   if (nextFilters.stagione) params.append('stagione', nextFilters.stagione)
   if (nextFilters.codice_ciclo) params.append('codice_ciclo', nextFilters.codice_ciclo)
@@ -310,6 +312,23 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
         <div className="panel__head">Ricerca cicli di lavorazione</div>
         <div className="panel__body">
           <form onSubmit={handleSubmit} className="filters-form">
+            <div className="filter-section-title">Ricerca globale</div>
+            <div className="field field--full" style={{ marginBottom: '1.25rem' }}>
+              <label htmlFor="filtro-q">Cerca ovunque</label>
+              <input
+                id="filtro-q"
+                type="text"
+                name="q"
+                value={filters.q}
+                onChange={handleChange}
+                placeholder="Testo libero su ciclo, fasi, commessa, colore, modello…"
+                autoComplete="off"
+              />
+              <div className="field-hint" style={{ marginTop: '0.35rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Cerca in tutti i campi insieme (min. 2 caratteri). I filtri sotto restano attivi e restringono ulteriormente.
+              </div>
+            </div>
+
             <div className="filter-section-title">Ciclo</div>
             <div className="filters-grid">
               <div className="field">
