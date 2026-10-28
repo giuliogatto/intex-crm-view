@@ -71,6 +71,14 @@ function formatDateIso(iso) {
   return `${m[3]}/${m[2]}/${m[1]}`
 }
 
+/** N. disposizione interno (carico): anno/nr, es. 2026/9142 */
+function formatNrDisposizione(item) {
+  if (item == null || item.nr_disposizione == null) return '—'
+  return item.anno_disposizione
+    ? `${item.anno_disposizione}/${item.nr_disposizione}`
+    : String(item.nr_disposizione)
+}
+
 function buildQueryParams(nextFilters, nextPage) {
   const params = new URLSearchParams()
   if (nextFilters.q) params.append('q', nextFilters.q)
@@ -628,6 +636,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                   <thead>
                     <tr>
                       <th>Data bolla</th>
+                      <th>N. disposizione</th>
                       <th>N. bolla</th>
                       <th>Ciclo</th>
                       <th>Cliente</th>
@@ -647,6 +656,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                         className={`cicli-row${idx % 2 === 1 ? ' cicli-row--alt' : ''}`}
                       >
                         <td>{item.data_bolla || '—'}</td>
+                        <td>{formatNrDisposizione(item)}</td>
                         <td>{item.nr_bolla || '—'}</td>
                         <td>
                           <strong>{item.codice_ciclo}</strong>
@@ -819,6 +829,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                                     <thead>
                                       <tr>
                                         <th>Data bolla</th>
+                                        <th>N. disposizione</th>
                                         <th>N. bolla</th>
                                         <th>Commessa</th>
                                         <th>Colore</th>
@@ -837,6 +848,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                                           key={`${key}-u-${u.anno_disposizione}-${u.nr_disposizione}-${u.riga_disposizione}-${i}`}
                                         >
                                           <td>{u.data_bolla || '—'}</td>
+                                          <td>{formatNrDisposizione(u)}</td>
                                           <td>{u.nr_bolla || '—'}</td>
                                           <td>{u.commessa || '—'}</td>
                                           <td>{u.ds_colore || u.cd_colore || '—'}</td>
