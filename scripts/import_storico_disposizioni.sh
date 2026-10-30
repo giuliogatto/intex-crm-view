@@ -238,12 +238,97 @@ if [[ "$LOAD_DDT" -eq 1 ]]; then
   if [[ "$LOAD_CLIENTI" -ne 1 ]]; then
     log "WARN: DDT senza clienti_anagrafica.csv — possibili errori FK su clienti mancanti"
   fi
-  log "TRUNCATE ddt (uscita)…"
-  # ddt_righe CASCADE da ddt_testate; tronchiamo entrambe esplicitamente
-  "${PSQL[@]}" -c "TRUNCATE ddt_righe, ddt_testate RESTART IDENTITY;"
-  copy_csv_nulls ddt_testate "$DDT_TESTATE"
-  # id SERIAL omesso: header export senza id → nextval automatico
-  copy_csv_nulls "ddt_righe(numero_bolla, riga_num, numero_disposizione, riga_disposizione, numero_offerta, codice_articolo, colore, kg_consegnati, capi_consegnati, importo_riga)" "$DDT_RIGHE"
+
+  # Staging senza FK: un COPY diretto su ddt_righe che fallisce (duplicati / NULL / FK)
+  # lasciava la tabella vuota dopo TRUNCATE. Qui carichiamo prima in staging, poi INSERT.
+  log "Staging DDT…"
+  "${PSQL[@]}" -c "
+    DROP TABLE IF EXISTS tmp_ddt_testate;
+    DROP TABLE IF EXISTS tmp_ddt_righe;
+    CREATE UNLOGGED TABLE tmp_ddt_testate (
+      numero_bolla VARCHAR(100),
+      data_bolla DATE,
+      codice_cliente VARCHAR(50),
+      codice_stagione VARCHAR(50)
+    );
+    CREATE UNLOGGED TABLE tmp_ddt_righe (
+      numero_bolla VARCHAR(100),
+      riga_num INTEGER,
+      numero_disposizione VARCHAR(100),
+      riga_disposizione INTEGER,
+      numero_offerta VARCHAR(100),
+      codice_articolo VARCHAR(100),
+      colore VARCHAR(100),
+      kg_consegnati NUMERIC(10,3),
+      capi_consegnati NUMERIC(10,0),
+      importo_riga NUMERIC(12,2)
+    );
+  "
+  copy_csv_nulls tmp_ddt_testate "$DDT_TESTATE"
+  copy_csv_nulls tmp_ddt_righe "$DDT_RIGHE"
+
+  STAGED_TESTATE=$("${PSQL[@]}" -Atqc "SELECT COUNT(*) FROM tmp_ddt_testate;")
+  STAGED_RIGHE=$("${PSQL[@]}" -Atqc "SELECT COUNT(*) FROM tmp_ddt_righe;")
+  log "Staging ok: testate=$STAGED_TESTATE righe=$STAGED_RIGHE"
+  [[ "${STAGED_TESTATE:-0}" -gt 0 ]] || die "tmp_ddt_testate vuota dopo COPY"
+  [[ "${STAGED_RIGHE:-0}" -gt 0 ]] || die "tmp_ddt_righe vuota dopo COPY (CSV assente/corrotto?)"
+
+  log "TRUNCATE + load ddt (uscita)…"
+  "${PSQL[@]}" -c "
+    -- Clienti citati nelle testate DDT ma assenti in anagrafica → stub per rispettare FK
+    INSERT INTO clienti (codice, ragione_sociale)
+    SELECT DISTINCT TRIM(t.codice_cliente), TRIM(t.codice_cliente)
+    FROM tmp_ddt_testate t
+    WHERE t.codice_cliente IS NOT NULL AND TRIM(t.codice_cliente) <> ''
+      AND NOT EXISTS (
+        SELECT 1 FROM clienti c WHERE c.codice = TRIM(t.codice_cliente)
+      )
+    ON CONFLICT (codice) DO NOTHING;
+
+    TRUNCATE ddt_righe, ddt_testate RESTART IDENTITY;
+
+    INSERT INTO ddt_testate (numero_bolla, data_bolla, codice_cliente, codice_stagione)
+    SELECT DISTINCT ON (TRIM(numero_bolla))
+      TRIM(numero_bolla),
+      data_bolla,
+      TRIM(codice_cliente),
+      NULLIF(TRIM(codice_stagione), '')
+    FROM tmp_ddt_testate
+    WHERE numero_bolla IS NOT NULL AND TRIM(numero_bolla) <> ''
+      AND data_bolla IS NOT NULL
+      AND codice_cliente IS NOT NULL AND TRIM(codice_cliente) <> ''
+    ORDER BY TRIM(numero_bolla);
+
+    INSERT INTO ddt_righe (
+      numero_bolla, riga_num, numero_disposizione, riga_disposizione,
+      numero_offerta, codice_articolo, colore, kg_consegnati, capi_consegnati, importo_riga
+    )
+    SELECT DISTINCT ON (TRIM(r.numero_bolla), r.riga_num)
+      TRIM(r.numero_bolla),
+      r.riga_num,
+      NULLIF(TRIM(r.numero_disposizione), ''),
+      r.riga_disposizione,
+      NULLIF(TRIM(r.numero_offerta), ''),
+      NULL,  -- evita FK articoli
+      NULLIF(TRIM(r.colore), ''),
+      COALESCE(r.kg_consegnati, 0),
+      COALESCE(r.capi_consegnati, 0),
+      COALESCE(r.importo_riga, 0)
+    FROM tmp_ddt_righe r
+    WHERE r.numero_bolla IS NOT NULL AND TRIM(r.numero_bolla) <> ''
+      AND r.riga_num IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM ddt_testate d WHERE d.numero_bolla = TRIM(r.numero_bolla)
+      )
+    ORDER BY TRIM(r.numero_bolla), r.riga_num;
+
+    DROP TABLE tmp_ddt_testate;
+    DROP TABLE tmp_ddt_righe;
+  "
+
+  LOADED_RIGHE=$("${PSQL[@]}" -Atqc "SELECT COUNT(*) FROM ddt_righe;")
+  log "ddt_righe caricate: $LOADED_RIGHE (staging era $STAGED_RIGHE)"
+  [[ "${LOADED_RIGHE:-0}" -gt 0 ]] || die "ddt_righe ancora vuota dopo INSERT (FK/chiavi non allineate a ddt_testate?)"
 fi
 
 if [[ "$LOAD_CICLI" -eq 1 ]]; then

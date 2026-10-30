@@ -108,10 +108,21 @@ QUERIES = {
 }
 
 # Header = nomi colonna Postgres (ddt_testate / ddt_righe / clienti).
+# FM* su TO_CHAR: evita spazi di padding Oracle che spezzano il JOIN/FK.
+_FMT_INT = "FM999999999999"
+
+
+def _anno_nr(anno_expr: str, nr_expr: str) -> str:
+    return (
+        f"TRIM(TO_CHAR({anno_expr}, '{_FMT_INT}')) || '/' || "
+        f"TRIM(TO_CHAR({nr_expr}, '{_FMT_INT}'))"
+    )
+
+
 DDT_QUERIES = {
     "ddt_testate.csv": f"""
         SELECT
-          TO_CHAR(t.D02_ANNO_BOLLA) || '/' || TO_CHAR(t.D02_NR_BOLLA) AS numero_bolla,
+          {_anno_nr('t.D02_ANNO_BOLLA', 't.D02_NR_BOLLA')} AS numero_bolla,
           TRUNC(t.D02_DT_BOLLA) AS data_bolla,
           TRIM(t.D02_CD_CLIENTE) AS codice_cliente,
           CAST(NULL AS VARCHAR2(50)) AS codice_stagione
@@ -121,36 +132,56 @@ DDT_QUERIES = {
           AND t.D02_ANNO_BOLLA IS NOT NULL
           AND t.D02_CD_CLIENTE IS NOT NULL
     """,
+    # Dedup su (bolla, riga): UNIQUE Postgres; senza, tutto il COPY fallisce → tabella vuota.
     "ddt_righe.csv": f"""
         SELECT
-          TO_CHAR(h.D02_ANNO_BOLLA) || '/' || TO_CHAR(h.D02_NR_BOLLA) AS numero_bolla,
-          r.D03_RIGA AS riga_num,
-          CASE
-            WHEN r.D03_ANNO_DISP_CLI IS NOT NULL AND r.D03_NR_DISP_CLI IS NOT NULL
-            THEN TO_CHAR(r.D03_ANNO_DISP_CLI) || '/' || TO_CHAR(r.D03_NR_DISP_CLI)
-            ELSE NULL
-          END AS numero_disposizione,
-          r.D03_RIGA_DISP_CLI AS riga_disposizione,
-          CASE
-            WHEN r.D03_ANNO_CARTELLINO IS NOT NULL
-             AND r.D03_NR_CARTELLINO IS NOT NULL
-             AND r.D03_NR_CARTELLINO > 0
-            THEN TO_CHAR(r.D03_ANNO_CARTELLINO) || '-' || TO_CHAR(r.D03_NR_CARTELLINO)
-            ELSE NULL
-          END AS numero_offerta,
-          CAST(NULL AS VARCHAR2(100)) AS codice_articolo,
-          CAST(NULL AS VARCHAR2(100)) AS colore,
-          NVL(r.D03_KG_IN_USCITA, 0) AS kg_consegnati,
-          NVL(r.D03_CAPI_IN_USCITA, 0) AS capi_consegnati,
-          NVL(NVL(r.D03_PREZZO_UNI_EURO, r.D03_PREZZO_UNI), 0)
-            * NVL(NVL(r.D03_CAPI_IN_USCITA, r.D03_KG_IN_USCITA), 0) AS importo_riga
-        FROM INTEX2.D03_DDT_RIGHE_ART r
-        JOIN INTEX2.D02_DDT_TESTATA h
-          ON h.D02_KEY = r.D03_KEY_D02
-        WHERE {_ddt_lookback_predicate("h")}
-          AND h.D02_NR_BOLLA IS NOT NULL
-          AND h.D02_ANNO_BOLLA IS NOT NULL
-          AND r.D03_RIGA IS NOT NULL
+          numero_bolla,
+          riga_num,
+          numero_disposizione,
+          riga_disposizione,
+          numero_offerta,
+          codice_articolo,
+          colore,
+          kg_consegnati,
+          capi_consegnati,
+          importo_riga
+        FROM (
+          SELECT
+            {_anno_nr('h.D02_ANNO_BOLLA', 'h.D02_NR_BOLLA')} AS numero_bolla,
+            r.D03_RIGA AS riga_num,
+            CASE
+              WHEN r.D03_ANNO_DISP_CLI IS NOT NULL AND r.D03_NR_DISP_CLI IS NOT NULL
+              THEN {_anno_nr('r.D03_ANNO_DISP_CLI', 'r.D03_NR_DISP_CLI')}
+              ELSE NULL
+            END AS numero_disposizione,
+            r.D03_RIGA_DISP_CLI AS riga_disposizione,
+            CASE
+              WHEN r.D03_ANNO_CARTELLINO IS NOT NULL
+               AND r.D03_NR_CARTELLINO IS NOT NULL
+               AND r.D03_NR_CARTELLINO > 0
+              THEN TRIM(TO_CHAR(r.D03_ANNO_CARTELLINO, '{_FMT_INT}'))
+                   || '-' || TRIM(TO_CHAR(r.D03_NR_CARTELLINO, '{_FMT_INT}'))
+              ELSE NULL
+            END AS numero_offerta,
+            CAST(NULL AS VARCHAR2(100)) AS codice_articolo,
+            CAST(NULL AS VARCHAR2(100)) AS colore,
+            NVL(r.D03_KG_IN_USCITA, 0) AS kg_consegnati,
+            NVL(r.D03_CAPI_IN_USCITA, 0) AS capi_consegnati,
+            NVL(NVL(r.D03_PREZZO_UNI_EURO, r.D03_PREZZO_UNI), 0)
+              * NVL(NVL(r.D03_CAPI_IN_USCITA, r.D03_KG_IN_USCITA), 0) AS importo_riga,
+            ROW_NUMBER() OVER (
+              PARTITION BY h.D02_ANNO_BOLLA, h.D02_NR_BOLLA, r.D03_RIGA
+              ORDER BY r.D03_KEY_D02
+            ) AS rn
+          FROM INTEX2.D03_DDT_RIGHE_ART r
+          JOIN INTEX2.D02_DDT_TESTATA h
+            ON h.D02_KEY = r.D03_KEY_D02
+          WHERE {_ddt_lookback_predicate("h")}
+            AND h.D02_NR_BOLLA IS NOT NULL
+            AND h.D02_ANNO_BOLLA IS NOT NULL
+            AND r.D03_RIGA IS NOT NULL
+        )
+        WHERE rn = 1
     """,
     # Upsert in public.clienti (FK di ddt_testate + ragione sociale report).
     "clienti_anagrafica.csv": f"""
