@@ -22,7 +22,7 @@ DEBIAN_REMOTE_DIR = "/intex/"
 LOCAL_DIR = r"C:\Automazioni\export_temp"
 os.makedirs(LOCAL_DIR, exist_ok=True)
 
-# Finestra su data bolla cliente (filtro UI "Da/A Data Bolla").
+# Finestra su data bolla cliente (filtro UI "Da/A Data Bolla") e su data DDT uscita.
 # 14 giorni ≈ sync incrementale (come le offerte) → poche centinaia di testate.
 # Per ricostruire lo storico UI alzare (es. 365) o None = export full (EW1 ~200k,
 # STORICO ~670k: file grandi, upload lento).
@@ -32,11 +32,22 @@ LOOKBACK_DAYS = 365  # None = nessun filtro data (full dump)
 # Non filtrare su data_ins: altrimenti i cicli "vecchi" spariscono dal DB.
 EXPORT_CICLI = True
 
+# DDT in uscita (D02/D03) + clienti: servono al report "listino prezzi mancanti"
+# (join disposizioni senza prezzo ↔ bolle di spedizione).
+EXPORT_DDT = True
+
 
 def _lookback_predicate(alias: str = "t") -> str:
     if LOOKBACK_DAYS is None:
         return "1=1"
     return f"{alias}.EW1_DATA_BOLLA_CLI >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}"
+
+
+def _ddt_lookback_predicate(alias: str = "t") -> str:
+    """Finestra sulle bolle di *uscita* Intex (D02_DT_BOLLA), non sulla bolla cliente."""
+    if LOOKBACK_DAYS is None:
+        return "1=1"
+    return f"{alias}.D02_DT_BOLLA >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}"
 
 
 def _cell(value):
@@ -59,6 +70,9 @@ def _cell(value):
 # EW1_DATA_BOLLA_CLI (spesso NULL o non allineata sulle disposizioni aperte).
 #
 # Offerte / Cod. Univoco (C37_PRG): full dump (~34k), indipendente dal lookback bolle.
+#
+# DDT uscita: chiavi numero_bolla / numero_disposizione in formato anno/numero
+# (come Wash "Ns. DDT" / join disposizioni), diverso da oracle-sync che usa solo il numero.
 QUERIES = {
     "ew1_testata_disposizioni.csv": f"""
         SELECT t.*
@@ -90,6 +104,75 @@ QUERIES = {
     "c37_testata_listini.csv": """
         SELECT t.*
         FROM INTEX2.C37_TESTATA_LISTINI t
+    """,
+}
+
+# Header = nomi colonna Postgres (ddt_testate / ddt_righe / clienti).
+DDT_QUERIES = {
+    "ddt_testate.csv": f"""
+        SELECT
+          TO_CHAR(t.D02_ANNO_BOLLA) || '/' || TO_CHAR(t.D02_NR_BOLLA) AS numero_bolla,
+          TRUNC(t.D02_DT_BOLLA) AS data_bolla,
+          TRIM(t.D02_CD_CLIENTE) AS codice_cliente,
+          CAST(NULL AS VARCHAR2(50)) AS codice_stagione
+        FROM INTEX2.D02_DDT_TESTATA t
+        WHERE {_ddt_lookback_predicate("t")}
+          AND t.D02_NR_BOLLA IS NOT NULL
+          AND t.D02_ANNO_BOLLA IS NOT NULL
+          AND t.D02_CD_CLIENTE IS NOT NULL
+    """,
+    "ddt_righe.csv": f"""
+        SELECT
+          TO_CHAR(h.D02_ANNO_BOLLA) || '/' || TO_CHAR(h.D02_NR_BOLLA) AS numero_bolla,
+          r.D03_RIGA AS riga_num,
+          CASE
+            WHEN r.D03_ANNO_DISP_CLI IS NOT NULL AND r.D03_NR_DISP_CLI IS NOT NULL
+            THEN TO_CHAR(r.D03_ANNO_DISP_CLI) || '/' || TO_CHAR(r.D03_NR_DISP_CLI)
+            ELSE NULL
+          END AS numero_disposizione,
+          r.D03_RIGA_DISP_CLI AS riga_disposizione,
+          CASE
+            WHEN r.D03_ANNO_CARTELLINO IS NOT NULL
+             AND r.D03_NR_CARTELLINO IS NOT NULL
+             AND r.D03_NR_CARTELLINO > 0
+            THEN TO_CHAR(r.D03_ANNO_CARTELLINO) || '-' || TO_CHAR(r.D03_NR_CARTELLINO)
+            ELSE NULL
+          END AS numero_offerta,
+          CAST(NULL AS VARCHAR2(100)) AS codice_articolo,
+          CAST(NULL AS VARCHAR2(100)) AS colore,
+          NVL(r.D03_KG_IN_USCITA, 0) AS kg_consegnati,
+          NVL(r.D03_CAPI_IN_USCITA, 0) AS capi_consegnati,
+          NVL(NVL(r.D03_PREZZO_UNI_EURO, r.D03_PREZZO_UNI), 0)
+            * NVL(NVL(r.D03_CAPI_IN_USCITA, r.D03_KG_IN_USCITA), 0) AS importo_riga
+        FROM INTEX2.D03_DDT_RIGHE_ART r
+        JOIN INTEX2.D02_DDT_TESTATA h
+          ON h.D02_KEY = r.D03_KEY_D02
+        WHERE {_ddt_lookback_predicate("h")}
+          AND h.D02_NR_BOLLA IS NOT NULL
+          AND h.D02_ANNO_BOLLA IS NOT NULL
+          AND r.D03_RIGA IS NOT NULL
+    """,
+    # Upsert in public.clienti (FK di ddt_testate + ragione sociale report).
+    "clienti_anagrafica.csv": f"""
+        SELECT
+          TRIM(r.R07_CD_CLIENTE) AS codice,
+          TRIM(r.R07_RAGIONE_SOC) AS ragione_sociale
+        FROM INTEX2.R07_CLIENTI r
+        WHERE r.R07_CD_CLIENTE IS NOT NULL
+          AND (
+            EXISTS (
+              SELECT 1
+              FROM INTEX2.D02_DDT_TESTATA d
+              WHERE TRIM(d.D02_CD_CLIENTE) = TRIM(r.R07_CD_CLIENTE)
+                AND {_ddt_lookback_predicate("d")}
+            )
+            OR EXISTS (
+              SELECT 1
+              FROM INTEX2.EW1_TESTATA_DISPOSIZIONI t
+              WHERE TRIM(t.EW1_CD_CLIENTE) = TRIM(r.R07_CD_CLIENTE)
+                AND {_lookback_predicate("t")}
+            )
+          )
     """,
 }
 
@@ -237,6 +320,8 @@ def export_and_send():
     files_to_upload = []
 
     queries = dict(QUERIES)
+    if EXPORT_DDT:
+        queries.update(DDT_QUERIES)
     if EXPORT_CICLI:
         queries.update(CICLI_QUERIES)
 
@@ -281,10 +366,11 @@ def export_and_send():
 
     sftp.close()
     ssh.close()
-    print(
-        "Sincronizzazione completata "
-        f"(storico + c37 + {'cicli' if EXPORT_CICLI else 'senza cicli'}, timestamp={timestamp})"
-    )
+    parts = ["storico", "c37"]
+    if EXPORT_DDT:
+        parts.append("ddt")
+    parts.append("cicli" if EXPORT_CICLI else "senza cicli")
+    print(f"Sincronizzazione completata ({' + '.join(parts)}, timestamp={timestamp})")
 
 
 if __name__ == "__main__":
