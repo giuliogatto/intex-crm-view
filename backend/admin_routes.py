@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional, Tuple
 from bottle import HTTPResponse, request, response
 
 from bolla_routes import resolve_bolla_image
+from cicli_compatibili import KEY_FIELDS, LIVELLI_SOGLIA, trova_cicli_compatibili_batch
 from cicli_routes import _cicli_table_exists
 
 
@@ -617,7 +618,18 @@ def register_admin_routes(app, db_pool):
                   TRIM(COALESCE(p.ew2_cd_ciclo, '')) AS ciclo,
                   TRIM(COALESCE(p.z09_ds_ciclo, '')) AS ciclo_lavoro,
                   COALESCE(p.d03_capi_in_uscita, 0) AS capi_sped,
-                  COALESCE(p.d03_kg_in_uscita, 0) AS kg_sped
+                  COALESCE(p.d03_kg_in_uscita, 0) AS kg_sped,
+                  TRIM(
+                    COALESCE(
+                      NULLIF(p.ew2_cd_cliente, ''),
+                      NULLIF(p.d02_cd_cliente_fatt, ''),
+                      ''
+                    )
+                  ) AS codice_cliente_ciclo,
+                  TRIM(COALESCE(p.ew2_cd_articolo_fattura, '')) AS codice_articolo,
+                  TRIM(COALESCE(p.ew2_cd_linea, '')) AS codice_linea,
+                  TRIM(COALESCE(p.ew2_cd_stagione, '')) AS codice_stagione,
+                  TRIM(COALESCE(p.ew2_cd_composizione, '')) AS codice_composizione
                 FROM ddt_prezzi_003w p
                 WHERE {where_sql}
                 ORDER BY
@@ -641,6 +653,7 @@ def register_admin_routes(app, db_pool):
 
             data = []
             for r in rows:
+                codice_ciclo = r[11] or ""
                 data.append(
                     {
                         "cliente_codice": r[0] or "",
@@ -655,10 +668,16 @@ def register_admin_routes(app, db_pool):
                         "stagione_produzione": r[8] or "",
                         "composizione": r[9] or "",
                         "ns_disposiz": r[10] or "",
-                        "ciclo": r[11] or "",
+                        "ciclo": codice_ciclo,
                         "ciclo_lavoro": r[12] or "",
                         "capi_sped": _num(r[13]),
                         "kg_sped": _num(r[14]),
+                        "codice_cliente": r[15] or "",
+                        "codice_articolo": r[16] or "",
+                        "codice_ciclo": codice_ciclo,
+                        "codice_linea": r[17] or "",
+                        "codice_stagione": r[18] or "",
+                        "codice_composizione": r[19] or "",
                     }
                 )
 
@@ -671,6 +690,94 @@ def register_admin_routes(app, db_pool):
                 "limit": limit,
                 "pages": pages,
                 "data": data,
+            }
+        except HTTPResponse:
+            raise
+        except Exception as e:
+            response.status = 500
+            return {"error": str(e)}
+        finally:
+            db_pool.release_conn(conn)
+
+    @app.route("/api/admin/prezzi-mancanti/cicli-compatibili", method="POST")
+    def prezzi_mancanti_cicli_compatibili():
+        """Ricerca cicli compatibili per una o più righe prezzi-mancanti.
+
+        Body JSON::
+
+            {
+              "livello": 4,          # 1..5, default 4
+              "limite": 30,          # max risultati per riga
+              "righe": [
+                {
+                  "id": "row-0",
+                  "codice_cliente": "...",
+                  "codice_articolo": "...",
+                  "codice_ciclo": "...",
+                  "codice_linea": "...",
+                  "codice_stagione": "...",
+                  "codice_composizione": "..."
+                }
+              ]
+            }
+
+        Con una sola riga (slider) la chiamata è leggera; con tutte le righe
+        della pagina (caricamento report) riusa i candidati per cliente.
+        """
+        denied = _require_admin()
+        if denied[0] is None:
+            raise denied[1]
+
+        body = request.json or {}
+        livello = _int_param(body.get("livello"), 4, 1, 5)
+        limite = _int_param(body.get("limite"), 30, 1, 100)
+        righe_raw = body.get("righe")
+        if not isinstance(righe_raw, list) or not righe_raw:
+            raise _json_error(400, "Parametro righe obbligatorio (lista non vuota)")
+        if len(righe_raw) > 500:
+            raise _json_error(400, "Massimo 500 righe per richiesta")
+
+        cicli_input = []
+        row_ids = []
+        for idx, item in enumerate(righe_raw):
+            if not isinstance(item, dict):
+                raise _json_error(400, f"Riga {idx} non valida")
+            row_id = str(item.get("id") if item.get("id") is not None else idx)
+            ciclo = {f: str(item.get(f) or "").strip() for f in KEY_FIELDS}
+            cicli_input.append(ciclo)
+            row_ids.append(row_id)
+
+        conn = db_pool.get_conn()
+        try:
+            cursor = conn.cursor()
+            if not _cicli_table_exists(cursor, "cicli_testate"):
+                cursor.close()
+                response.status = 503
+                return {"error": "Tabella cicli_testate non presente."}
+
+            batch = trova_cicli_compatibili_batch(
+                cursor,
+                cicli_input,
+                livello=livello,
+                limite=limite,
+            )
+            cursor.close()
+
+            results = {}
+            for row_id, esito in zip(row_ids, batch):
+                results[row_id] = {
+                    "ok": bool(esito.get("ok")),
+                    "error": esito.get("error"),
+                    "compatibili": esito.get("compatibili") or [],
+                    "livello": livello,
+                    "soglia": LIVELLI_SOGLIA.get(livello),
+                }
+
+            return {
+                "livello": livello,
+                "soglia": LIVELLI_SOGLIA.get(livello),
+                "livelli": {str(k): v for k, v in LIVELLI_SOGLIA.items()},
+                "results": results,
             }
         except HTTPResponse:
             raise

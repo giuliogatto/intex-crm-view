@@ -1,10 +1,41 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { authFetch } from '../utils/auth'
 import UserMenu from '../components/UserMenu'
 import DateInput from '../components/DateInput'
 import Pagination from '../components/Pagination'
 
 const PAGE_SIZE = 100
+const DEFAULT_LIVELLO = 4
+const COL_COUNT = 14
+
+const LIVELLO_HINT = {
+  1: 'ampio (≥30%)',
+  2: 'medio (≥50%)',
+  3: 'alto (≥70%)',
+  4: 'molto alto (≥90%)',
+  5: 'equivalenti (100%)',
+}
+
+const CAMPO_LABELS = {
+  codice_articolo: 'Articolo',
+  codice_stagione: 'Stagione',
+  codice_ciclo: 'Cod. ciclo',
+  codice_ciclo_cli: 'Ciclo cliente',
+  codice_composizione: 'Composizione',
+  codice_linea: 'Linea',
+  ds_ciclo: 'Descrizione ciclo',
+  ds_ciclo_bolle_fat: 'Desc. bolle/fatt.',
+  note: 'Note',
+  ds_applicazione: 'Applicazione',
+  ds_ricamo: 'Ricamo',
+  ds_stampa: 'Stampa',
+  codice_reparto: 'Reparto',
+  codice_gruppo: 'Gruppo',
+  fase: 'Fase',
+  nota_fase: 'Nota fase',
+  unita_misura_fase: 'U.M. fase',
+  macrofase: 'Macrofase',
+}
 
 function todayISO() {
   const d = new Date()
@@ -36,6 +67,192 @@ function formatQty(n) {
   })
 }
 
+function campoLabel(campo) {
+  return CAMPO_LABELS[campo] || campo
+}
+
+function formatVal(v) {
+  if (v == null || v === '') return '—'
+  if (Array.isArray(v)) return v.filter(Boolean).join(' → ') || '—'
+  return String(v)
+}
+
+function rowKey(row, idx) {
+  return [
+    row.ns_ddt,
+    row.ns_disposiz,
+    row.codice_cliente,
+    row.codice_articolo,
+    row.codice_ciclo,
+    row.codice_linea,
+    row.codice_stagione,
+    row.codice_composizione,
+    idx,
+  ].join('|')
+}
+
+function cicloPayload(row, id) {
+  return {
+    id,
+    codice_cliente: row.codice_cliente || '',
+    codice_articolo: row.codice_articolo || '',
+    codice_ciclo: row.codice_ciclo || row.ciclo || '',
+    codice_linea: row.codice_linea || '',
+    codice_stagione: row.codice_stagione || '',
+    codice_composizione: row.codice_composizione || '',
+  }
+}
+
+function CompatPct({ value }) {
+  const v = Number(value) || 0
+  let tone = 'low'
+  if (v >= 90) tone = 'high'
+  else if (v >= 70) tone = 'mid'
+  return (
+    <span className={`pm-compat-pct pm-compat-pct--${tone}`} title={`${v}%`}>
+      {v.toLocaleString('it-IT', { maximumFractionDigits: 1 })}%
+    </span>
+  )
+}
+
+function DiffList({ items }) {
+  if (!items?.length) return <span className="pm-compat-empty">nessuna</span>
+  return (
+    <ul className="pm-compat-chips pm-compat-chips--diff">
+      {items.map((d, i) => (
+        <li key={`${d.campo}-${i}`}>
+          <span className="pm-compat-chip__field">{campoLabel(d.campo)}</span>
+          {d.tipo ? <span className="pm-compat-chip__tipo">{d.tipo}</span> : null}
+          <span className="pm-compat-chip__vals">
+            {formatVal(d.input)}
+            <span aria-hidden="true"> → </span>
+            {formatVal(d.candidato)}
+          </span>
+          {d.penalita != null && Number(d.penalita) > 0 ? (
+            <span className="pm-compat-chip__pen">−{d.penalita}</span>
+          ) : null}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function SimiliList({ items }) {
+  if (!items?.length) return <span className="pm-compat-empty">nessuna</span>
+  return (
+    <ul className="pm-compat-chips pm-compat-chips--simili">
+      {items.map((s, i) => (
+        <li key={`${s.campo}-${i}`}>
+          <span className="pm-compat-chip__field">{campoLabel(s.campo)}</span>
+          <span className="pm-compat-chip__vals">{formatVal(s.valore)}</span>
+          {s.dettaglio ? <span className="pm-compat-chip__note">{s.dettaglio}</span> : null}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function CicliCompatibiliPanel({
+  rowId,
+  stato,
+  livello,
+  onLivelloChange,
+}) {
+  const loading = !stato || stato.loading
+  const error = stato?.error
+  const compatibili = stato?.compatibili || []
+  const soglia = stato?.soglia
+
+  return (
+    <div className="pm-compat">
+      <div className="pm-compat__head">
+        <div className="pm-compat__title">
+          <span className="pm-compat__badge">Cicli compatibili</span>
+          <span className="pm-compat__meta">
+            livello {livello} · {LIVELLO_HINT[livello] || ''}
+            {soglia != null ? ` · soglia ${soglia}%` : ''}
+          </span>
+        </div>
+        <label className="pm-compat__slider">
+          <span>Livello ricerca</span>
+          <input
+            type="range"
+            min={1}
+            max={5}
+            step={1}
+            value={livello}
+            disabled={loading}
+            onChange={(e) => onLivelloChange(rowId, Number(e.target.value))}
+            aria-label={`Livello compatibilità riga ${rowId}`}
+          />
+          <span className="pm-compat__slider-value">{livello}</span>
+        </label>
+      </div>
+
+      {loading ? (
+        <div className="pm-compat__loading">
+          <div className="spinner spinner--sm" />
+          <span>Aggiornamento cicli compatibili…</span>
+        </div>
+      ) : error ? (
+        <p className="pm-compat__error">{error}</p>
+      ) : compatibili.length === 0 ? (
+        <p className="pm-compat__empty-msg">
+          Nessun ciclo compatibile a questo livello. Abbassa lo slider per ampliare la ricerca.
+        </p>
+      ) : (
+        <div className="pm-compat__list">
+          {compatibili.map((item, i) => {
+            const c = item.ciclo || {}
+            const label = [
+              c.codice_ciclo,
+              c.ds_ciclo || c.ds_articolo,
+              c.codice_stagione || c.ds_stagione,
+            ]
+              .filter(Boolean)
+              .join(' · ')
+            return (
+              <details key={`${c.codice_ciclo}-${c.codice_articolo}-${i}`} className="pm-compat-card">
+                <summary>
+                  <CompatPct value={item.compatibilita} />
+                  <span className="pm-compat-card__label" title={label}>
+                    {label || 'Ciclo'}
+                  </span>
+                  <span className="pm-compat-card__keys">
+                    {[c.codice_articolo, c.codice_linea, c.codice_composizione]
+                      .filter(Boolean)
+                      .join(' / ')}
+                  </span>
+                </summary>
+                <div className="pm-compat-card__body">
+                  <div className="pm-compat-card__block">
+                    <h4>Differenze</h4>
+                    <DiffList items={item.differenze} />
+                  </div>
+                  <div className="pm-compat-card__block">
+                    <h4>Similarità</h4>
+                    <SimiliList items={item.simili} />
+                  </div>
+                  {c.fasi?.length ? (
+                    <div className="pm-compat-card__block">
+                      <h4>Fasi candidato</h4>
+                      <ol className="pm-compat-fasi">
+                        {c.fasi.map((f, fi) => (
+                          <li key={fi}>{f}</li>
+                        ))}
+                      </ol>
+                    </div>
+                  ) : null}
+                </div>
+              </details>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PrezziMancantiPage() {
   const [dataDaFilter, setDataDaFilter] = useState(monthStartISO())
   const [dataAFilter, setDataAFilter] = useState(todayISO())
@@ -50,10 +267,83 @@ export default function PrezziMancantiPage() {
   const [error, setError] = useState('')
   const [searched, setSearched] = useState(false)
 
+  /** @type {[Record<string, {loading:boolean, error?:string, compatibili:any[], livello:number, soglia?:number}>, Function]} */
+  const [compatByRow, setCompatByRow] = useState({})
+  const [livelloByRow, setLivelloByRow] = useState({})
+  /** Contatore per-riga: evita che una risposta stale sovrascriva uno slider più recente. */
+  const rowReqRef = useRef({})
+
+  const fetchCompatibili = useCallback(async (righe, livello) => {
+    const ids = righe.map((r) => r.id)
+    const tokens = {}
+    for (const id of ids) {
+      tokens[id] = (rowReqRef.current[id] || 0) + 1
+      rowReqRef.current[id] = tokens[id]
+    }
+
+    setCompatByRow((prev) => {
+      const next = { ...prev }
+      for (const id of ids) {
+        next[id] = {
+          ...(next[id] || {}),
+          loading: true,
+          error: undefined,
+          livello,
+        }
+      }
+      return next
+    })
+
+    try {
+      const res = await authFetch('/api/admin/prezzi-mancanti/cicli-compatibili', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ livello, righe }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Errore cicli compatibili')
+
+      setCompatByRow((prev) => {
+        const next = { ...prev }
+        for (const id of ids) {
+          if (rowReqRef.current[id] !== tokens[id]) continue
+          const item = data.results?.[id]
+          next[id] = {
+            loading: false,
+            ok: item?.ok !== false,
+            error: item?.error || undefined,
+            compatibili: item?.compatibili || [],
+            livello: item?.livello ?? livello,
+            soglia: item?.soglia ?? data.soglia,
+          }
+        }
+        return next
+      })
+    } catch (err) {
+      console.error(err)
+      setCompatByRow((prev) => {
+        const next = { ...prev }
+        for (const id of ids) {
+          if (rowReqRef.current[id] !== tokens[id]) continue
+          next[id] = {
+            ...(next[id] || {}),
+            loading: false,
+            error: err.message || 'Errore cicli compatibili',
+            compatibili: next[id]?.compatibili || [],
+            livello,
+          }
+        }
+        return next
+      })
+    }
+  }, [])
+
   const loadList = useCallback(() => {
     if (!dataDaApplied || !dataAApplied) return
     setLoading(true)
     setError('')
+    setCompatByRow({})
+    setLivelloByRow({})
     const params = new URLSearchParams({
       data_da: dataDaApplied,
       data_a: dataAApplied,
@@ -64,10 +354,22 @@ export default function PrezziMancantiPage() {
       .then(async (res) => {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || 'Errore nel caricamento')
-        setRows(data.data || [])
+        const nextRows = data.data || []
+        setRows(nextRows)
         setPages(data.pages || 1)
         setTotal(data.total || 0)
         setRange({ da: data.data_da || '', a: data.data_a || '' })
+
+        const livelli = {}
+        const payload = nextRows.map((row, idx) => {
+          const id = rowKey(row, idx)
+          livelli[id] = DEFAULT_LIVELLO
+          return cicloPayload(row, id)
+        })
+        setLivelloByRow(livelli)
+        if (payload.length) {
+          fetchCompatibili(payload, DEFAULT_LIVELLO)
+        }
       })
       .catch((err) => {
         console.error(err)
@@ -77,11 +379,18 @@ export default function PrezziMancantiPage() {
         setPages(1)
       })
       .finally(() => setLoading(false))
-  }, [dataDaApplied, dataAApplied, page])
+  }, [dataDaApplied, dataAApplied, page, fetchCompatibili])
 
   useEffect(() => {
     loadList()
   }, [loadList])
+
+  const handleLivelloChange = (id, livello) => {
+    setLivelloByRow((prev) => ({ ...prev, [id]: livello }))
+    const idx = rows.findIndex((row, i) => rowKey(row, i) === id)
+    if (idx < 0) return
+    fetchCompatibili([cicloPayload(rows[idx], id)], livello)
+  }
 
   const handleSearch = (e) => {
     e.preventDefault()
@@ -111,6 +420,8 @@ export default function PrezziMancantiPage() {
     setPage(1)
     setError('')
     setRange({ da: '', a: '' })
+    setCompatByRow({})
+    setLivelloByRow({})
   }
 
   return (
@@ -181,6 +492,8 @@ export default function PrezziMancantiPage() {
             <p className="sinonimi-hint">
               Mostra le spedizioni (DDT di uscita) nel periodo selezionato
               con ciclo senza prezzo associato in disposizione (come il report Wash).
+              Sotto ogni riga compaiono i cicli compatibili (livello {DEFAULT_LIVELLO} di default);
+              lo slider aggiorna solo quella riga.
               {range.da && range.a ? (
                 <>
                   {' '}
@@ -223,27 +536,40 @@ export default function PrezziMancantiPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((row, idx) => (
-                        <tr
-                          key={`${row.ns_ddt}-${row.ns_disposiz}-${idx}`}
-                          className="chats-table__row"
-                        >
-                          <td title={row.cliente}>{row.cliente}</td>
-                          <td className="logs-table__nowrap">{row.ns_ddt}</td>
-                          <td className="logs-table__nowrap">{row.data_ddt}</td>
-                          <td>{row.tipo}</td>
-                          <td title={row.articolo}>{row.articolo}</td>
-                          <td title={row.linea}>{row.linea || '—'}</td>
-                          <td>{row.stagione_listino || '—'}</td>
-                          <td>{row.stagione_produzione || '—'}</td>
-                          <td title={row.composizione}>{row.composizione || '—'}</td>
-                          <td className="logs-table__nowrap">{row.ns_disposiz}</td>
-                          <td className="logs-table__nowrap">{row.ciclo}</td>
-                          <td title={row.ciclo_lavoro}>{row.ciclo_lavoro || '—'}</td>
-                          <td className="prezzi-mancanti-table__num">{formatQty(row.capi_sped)}</td>
-                          <td className="prezzi-mancanti-table__num">{formatQty(row.kg_sped)}</td>
-                        </tr>
-                      ))}
+                      {rows.map((row, idx) => {
+                        const id = rowKey(row, idx)
+                        const livello = livelloByRow[id] ?? DEFAULT_LIVELLO
+                        return (
+                          <React.Fragment key={id}>
+                            <tr className="chats-table__row prezzi-mancanti-table__main">
+                              <td title={row.cliente}>{row.cliente}</td>
+                              <td className="logs-table__nowrap">{row.ns_ddt}</td>
+                              <td className="logs-table__nowrap">{row.data_ddt}</td>
+                              <td>{row.tipo}</td>
+                              <td title={row.articolo}>{row.articolo}</td>
+                              <td title={row.linea}>{row.linea || '—'}</td>
+                              <td>{row.stagione_listino || '—'}</td>
+                              <td>{row.stagione_produzione || '—'}</td>
+                              <td title={row.composizione}>{row.composizione || '—'}</td>
+                              <td className="logs-table__nowrap">{row.ns_disposiz}</td>
+                              <td className="logs-table__nowrap">{row.ciclo}</td>
+                              <td title={row.ciclo_lavoro}>{row.ciclo_lavoro || '—'}</td>
+                              <td className="prezzi-mancanti-table__num">{formatQty(row.capi_sped)}</td>
+                              <td className="prezzi-mancanti-table__num">{formatQty(row.kg_sped)}</td>
+                            </tr>
+                            <tr className="prezzi-mancanti-table__compat-row">
+                              <td colSpan={COL_COUNT}>
+                                <CicliCompatibiliPanel
+                                  rowId={id}
+                                  stato={compatByRow[id]}
+                                  livello={livello}
+                                  onLivelloChange={handleLivelloChange}
+                                />
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>

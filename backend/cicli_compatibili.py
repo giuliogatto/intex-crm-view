@@ -420,6 +420,29 @@ def _ciclo_summary(ciclo: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def _filtra_compatibili(
+    ciclo_in: Dict[str, Any],
+    candidati: Sequence[Dict[str, Any]],
+    soglia: float,
+    limite: Optional[int],
+) -> List[Dict[str, Any]]:
+    key_in = _key_of(ciclo_in)
+    risultati: List[Dict[str, Any]] = []
+    for cand in candidati:
+        if _key_of(cand) == key_in:
+            continue
+        esito = confronta_cicli(ciclo_in, cand)
+        if esito["compatibilita"] < soglia:
+            continue
+        risultati.append({"ciclo": _ciclo_summary(cand), **esito})
+
+    risultati.sort(
+        key=lambda r: (r["compatibilita"], r["ciclo"].get("data_ins") or ""),
+        reverse=True,
+    )
+    return risultati[:limite] if limite else risultati
+
+
 def trova_cicli_compatibili(
     cursor,
     ciclo: CicloInput,
@@ -443,19 +466,75 @@ def trova_cicli_compatibili(
     if not codice_cliente:
         raise ValueError("Cliente non specificato")
     soglia = float(soglia_minima) if soglia_minima is not None else _livello_soglia(livello)
-    key_in = _key_of(ciclo_in)
-
-    risultati: List[Dict[str, Any]] = []
-    for cand in _carica_cicli(cursor, codice_cliente):
-        if _key_of(cand) == key_in:
-            continue
-        esito = confronta_cicli(ciclo_in, cand)
-        if esito["compatibilita"] < soglia:
-            continue
-        risultati.append({"ciclo": _ciclo_summary(cand), **esito})
-
-    risultati.sort(
-        key=lambda r: (r["compatibilita"], r["ciclo"].get("data_ins") or ""),
-        reverse=True,
+    return _filtra_compatibili(
+        ciclo_in,
+        _carica_cicli(cursor, codice_cliente),
+        soglia,
+        limite,
     )
-    return risultati[:limite] if limite else risultati
+
+
+def trova_cicli_compatibili_batch(
+    cursor,
+    cicli: Sequence[CicloInput],
+    livello: int = 4,
+    *,
+    limite: Optional[int] = 50,
+    soglia_minima: Optional[float] = None,
+) -> List[Dict[str, Any]]:
+    """Come ``trova_cicli_compatibili`` per N cicli, riusando i candidati per cliente.
+
+    Ritorna una lista parallela a ``cicli``. Ogni elemento:
+
+        {"ok": True, "compatibili": [...]}
+        oppure
+        {"ok": False, "error": "...", "compatibili": []}
+    """
+    soglia = float(soglia_minima) if soglia_minima is not None else _livello_soglia(livello)
+    cache_cliente: Dict[str, List[Dict[str, Any]]] = {}
+    out: List[Dict[str, Any]] = []
+
+    for raw in cicli:
+        try:
+            if isinstance(raw, dict) and "fasi" in raw:
+                ciclo_in = raw
+                codice_cliente = str(ciclo_in.get("codice_cliente") or "")
+            else:
+                if not isinstance(raw, dict):
+                    raw = dict(zip(KEY_FIELDS, raw))
+                codice_cliente = str(raw.get("codice_cliente") or "")
+                if not codice_cliente:
+                    raise ValueError("Ciclo di input senza codice_cliente")
+                chiave = _key_of({**raw, "codice_cliente": codice_cliente})
+                mancanti = [f for f, v in zip(KEY_FIELDS, chiave) if not v]
+                if mancanti:
+                    raise ValueError(f"Chiave ciclo incompleta: {', '.join(mancanti)}")
+                if codice_cliente not in cache_cliente:
+                    cache_cliente[codice_cliente] = _carica_cicli(cursor, codice_cliente)
+                trovati = [
+                    c for c in cache_cliente[codice_cliente] if _key_of(c) == chiave
+                ]
+                if not trovati:
+                    raise LookupError(f"Ciclo non trovato: {chiave}")
+                ciclo_in = trovati[0]
+
+            if not codice_cliente:
+                codice_cliente = str(ciclo_in.get("codice_cliente") or "")
+            if not codice_cliente:
+                raise ValueError("Cliente non specificato")
+            if codice_cliente not in cache_cliente:
+                cache_cliente[codice_cliente] = _carica_cicli(cursor, codice_cliente)
+
+            compatibili = _filtra_compatibili(
+                ciclo_in,
+                cache_cliente[codice_cliente],
+                soglia,
+                limite,
+            )
+            out.append({"ok": True, "compatibili": compatibili})
+        except (ValueError, LookupError) as exc:
+            out.append({"ok": False, "error": str(exc), "compatibili": []})
+        except Exception as exc:  # noqa: BLE001 — una riga non deve far fallire il batch
+            out.append({"ok": False, "error": str(exc), "compatibili": []})
+
+    return out

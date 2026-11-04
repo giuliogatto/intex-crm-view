@@ -2085,6 +2085,262 @@ table.data tfoot .table-totals-row:hover td {
   font-variant-numeric: tabular-nums;
 }
 
+.prezzi-mancanti-table__main td {
+  border-bottom: none;
+}
+
+.prezzi-mancanti-table__compat-row > td {
+  white-space: normal;
+  max-width: none;
+  overflow: visible;
+  text-overflow: unset;
+  padding: 0 0.75rem 0.85rem;
+  background: linear-gradient(180deg, #f4f7f5 0%, #eef2f0 100%);
+  border-top: none;
+  border-bottom: 2px solid #c5d0c8;
+  vertical-align: top;
+}
+
+.pm-compat {
+  border: 1px solid #c8d4cc;
+  border-left: 4px solid #2f6b4f;
+  border-radius: 0 6px 6px 0;
+  background: #fbfcfb;
+  padding: 0.65rem 0.85rem 0.75rem;
+}
+
+.pm-compat__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1.25rem;
+  margin-bottom: 0.55rem;
+}
+
+.pm-compat__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.75rem;
+}
+
+.pm-compat__badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1f4f3a;
+  background: #d8ebe0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
+}
+
+.pm-compat__meta {
+  font-size: 0.75rem;
+  color: #5a6a60;
+}
+
+.pm-compat__slider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  color: #334038;
+  min-width: 220px;
+}
+
+.pm-compat__slider input[type='range'] {
+  flex: 1;
+  accent-color: #2f6b4f;
+  cursor: pointer;
+}
+
+.pm-compat__slider-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  min-width: 1.1rem;
+  text-align: center;
+}
+
+.pm-compat__loading,
+.pm-compat__error,
+.pm-compat__empty-msg {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #4a5a50;
+  margin: 0.25rem 0 0;
+}
+
+.pm-compat__error {
+  color: #8a2f2f;
+}
+
+.pm-compat__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pm-compat-card {
+  border: 1px solid #d5ddd7;
+  border-radius: 5px;
+  background: #fff;
+}
+
+.pm-compat-card > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.75rem;
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pm-compat-card > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pm-compat-card__label {
+  font-weight: 600;
+  color: #1e2a22;
+  min-width: 0;
+  flex: 1 1 12rem;
+}
+
+.pm-compat-card__keys {
+  font-size: 0.74rem;
+  color: #66756b;
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-compat-card__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.65rem 1rem;
+  padding: 0 0.65rem 0.65rem;
+  border-top: 1px solid #e6ebe7;
+}
+
+.pm-compat-card__block h4 {
+  margin: 0.55rem 0 0.3rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #5a6a60;
+}
+
+.pm-compat-pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.4rem;
+  padding: 0.12rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+}
+
+.pm-compat-pct--high {
+  background: #d8f0e0;
+  color: #17633a;
+}
+
+.pm-compat-pct--mid {
+  background: #eef3d8;
+  color: #6a6b1f;
+}
+
+.pm-compat-pct--low {
+  background: #f5e6d8;
+  color: #8a4b1f;
+}
+
+.pm-compat-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+}
+
+.pm-compat-chips li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.45rem;
+  font-size: 0.76rem;
+  line-height: 1.35;
+  padding: 0.2rem 0.35rem;
+  border-radius: 3px;
+}
+
+.pm-compat-chips--diff li {
+  background: #f8eee8;
+}
+
+.pm-compat-chips--simili li {
+  background: #eaf4ee;
+}
+
+.pm-compat-chip__field {
+  font-weight: 600;
+  color: #2a3830;
+}
+
+.pm-compat-chip__tipo {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  color: #7a5a3a;
+  background: #f0dfd0;
+  padding: 0 0.28rem;
+  border-radius: 2px;
+}
+
+.pm-compat-chip__vals {
+  color: #3a4740;
+  word-break: break-word;
+}
+
+.pm-compat-chip__pen {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: #9a3a2a;
+  font-weight: 600;
+}
+
+.pm-compat-chip__note {
+  color: #66756b;
+  font-style: italic;
+}
+
+.pm-compat-empty {
+  font-size: 0.76rem;
+  color: #809086;
+}
+
+.pm-compat-fasi {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.76rem;
+  color: #3a4740;
+}
+
+.pm-compat-fasi li {
+  margin-bottom: 0.15rem;
+}
+
+.spinner--sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 2px;
+}
+
 .ocr-bolle-page {
   display: grid;
   grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.6fr);
