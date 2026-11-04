@@ -2063,6 +2063,28 @@ table.data tfoot .table-totals-row:hover td {
   color: #1f6b3a;
 }
 
+.prezzi-mancanti-table-wrap {
+  overflow-x: auto;
+}
+
+.prezzi-mancanti-table {
+  font-size: 0.82rem;
+  min-width: 1100px;
+}
+
+.prezzi-mancanti-table th,
+.prezzi-mancanti-table td {
+  white-space: nowrap;
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.prezzi-mancanti-table__num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .ocr-bolle-page {
   display: grid;
   grid-template-columns: minmax(280px, 0.85fr) minmax(0, 1.6fr);

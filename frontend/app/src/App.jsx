@@ -729,6 +729,11 @@ function App() {
             >
               📊 Analisi
             </button>
+            {user?.role === 'admin' && (
+              <a href="/prezzi-mancanti" className="nav-tab">
+                💶 Prezzi mancanti
+              </a>
+            )}
           </>
         )}
         </nav>

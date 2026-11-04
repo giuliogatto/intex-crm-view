@@ -1,14 +1,29 @@
-"""API amministrazione: sinonimi ricerca, storico OCR bolle, logs di accesso."""
+"""API amministrazione: sinonimi ricerca, storico OCR bolle, logs, prezzi mancanti."""
 
 from __future__ import annotations
 
 import json
+import re
+from datetime import date, datetime
 from typing import Any, Dict, Optional, Tuple
 
 from bottle import HTTPResponse, request, response
 
 from bolla_routes import resolve_bolla_image
 from cicli_routes import _cicli_table_exists
+
+
+_ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _parse_iso_date(value: Any) -> Optional[date]:
+    raw = (str(value or "")).strip()
+    if not _ISO_DATE_RE.match(raw):
+        return None
+    try:
+        return datetime.strptime(raw, "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 
 _CORS = {
@@ -461,6 +476,204 @@ def register_admin_routes(app, db_pool):
                 "pages": pages,
                 "data": data,
             }
+        except Exception as e:
+            response.status = 500
+            return {"error": str(e)}
+        finally:
+            db_pool.release_conn(conn)
+
+    # ------------------------------------------------------------------
+    # Prezzi mancanti (controllo listino vs DDT uscita) — solo admin
+    # ------------------------------------------------------------------
+
+    @app.route("/api/admin/prezzi-mancanti", method="GET")
+    def list_prezzi_mancanti():
+        """Lista DDT senza prezzo, allineata al report Wash.
+
+        Legge lo snapshot full ``ddt_prezzi_003w`` (view Oracle
+        ``DDT_PREZZI_003W``) e filtra capo/kg/forfait = 0. Filtri
+        ``data_da`` / ``data_a`` (ISO YYYY-MM-DD) sul range di
+        ``d02_dt_bolla`` (inclusivo).
+        """
+        denied = _require_admin()
+        if denied[0] is None:
+            raise denied[1]
+
+        data_da = _parse_iso_date(request.query.get("data_da"))
+        data_a = _parse_iso_date(request.query.get("data_a"))
+        if data_da is None or data_a is None:
+            raise _json_error(
+                400,
+                "Parametri data_da e data_a obbligatori (formato YYYY-MM-DD)",
+            )
+        if data_da > data_a:
+            raise _json_error(400, "data_da non può essere successiva a data_a")
+
+        page = _int_param(request.query.get("page"), 1, 1, 1_000_000)
+        limit = _int_param(request.query.get("limit"), 100, 1, 500)
+        offset = (page - 1) * limit
+
+        conn = db_pool.get_conn()
+        try:
+            cursor = conn.cursor()
+            if not _cicli_table_exists(cursor, "ddt_prezzi_003w"):
+                cursor.close()
+                response.status = 503
+                return {
+                    "error": (
+                        "Tabella ddt_prezzi_003w non presente. "
+                        "Applicare create-ddt-prezzi-003w.sql e "
+                        "completare extract/import giornaliero."
+                    )
+                }
+
+            params: Dict[str, Any] = {
+                "data_da": data_da,
+                "data_a": data_a,
+                "limit": limit,
+                "offset": offset,
+            }
+
+            # Stesso criterio usato nel confronto OCR ↔ Oracle (prezzi_mancanti_*.txt).
+            where_sql = """
+                p.d02_dt_bolla >= %(data_da)s
+                AND p.d02_dt_bolla <= %(data_a)s
+                AND COALESCE(p.d03_prezzo_capo, 0) = 0
+                AND COALESCE(p.d03_prezzo_kg, 0) = 0
+                AND COALESCE(p.d03_prezzo_forfait, 0) = 0
+                AND COALESCE(p.d02_anno_bolla, 0) > 0
+                AND COALESCE(p.d02_nr_bolla, 0) > 0
+                AND (
+                    COALESCE(p.d03_capi_in_uscita, 0) > 0
+                    OR COALESCE(p.d03_kg_in_uscita, 0) > 0
+                )
+            """
+
+            cursor.execute(
+                f"SELECT COUNT(*) FROM ddt_prezzi_003w p WHERE {where_sql}",
+                params,
+            )
+            total = int(cursor.fetchone()[0] or 0)
+
+            cursor.execute(
+                f"""
+                SELECT
+                  TRIM(COALESCE(p.d02_cd_cliente_fatt, '')) AS cliente_codice,
+                  COALESCE(p.r07_ragione_soc, '') AS cliente_nome,
+                  TRIM(COALESCE(p.d02_anno_bolla::text, ''))
+                    || '/' || TRIM(COALESCE(p.d02_nr_bolla::text, '')) AS ns_ddt,
+                  TO_CHAR(p.d02_dt_bolla, 'DD/MM/YYYY') AS data_ddt,
+                  CASE TRIM(COALESCE(p.ew2_flag_tp_prod, ''))
+                    WHEN 'P' THEN 'Produzione'
+                    WHEN 'C' THEN 'Campionario'
+                    WHEN 'T' THEN 'Prototipo'
+                    WHEN 'V' THEN 'Visione'
+                    WHEN 'L' THEN 'Lab'
+                    ELSE TRIM(COALESCE(p.ew2_flag_tp_prod, ''))
+                  END AS tipo,
+                  TRIM(
+                    COALESCE(
+                      NULLIF(p.ew2_ds_articolo, ''),
+                      NULLIF(p.cwa_ds_articolo_cliente, ''),
+                      NULLIF(p.d03_ds_articolo, ''),
+                      ''
+                    )
+                  ) AS articolo,
+                  TRIM(
+                    CONCAT_WS(
+                      ' ',
+                      NULLIF(TRIM(COALESCE(p.ew2_cd_linea, '')), ''),
+                      NULLIF(TRIM(COALESCE(p.cw0_ds_linea, '')), '')
+                    )
+                  ) AS linea,
+                  TRIM(
+                    COALESCE(
+                      NULLIF(p.z11_ds_stagione, ''),
+                      NULLIF(p.ew2_cd_stagione, ''),
+                      ''
+                    )
+                  ) AS stagione_listino,
+                  TRIM(
+                    COALESCE(
+                      NULLIF(p.ds_stagione_prod, ''),
+                      NULLIF(p.ew2_cd_stagione_prod, ''),
+                      ''
+                    )
+                  ) AS stagione_produzione,
+                  TRIM(
+                    CONCAT_WS(
+                      ' ',
+                      NULLIF(TRIM(COALESCE(p.ew2_cd_composizione, '')), ''),
+                      NULLIF(TRIM(COALESCE(p.cw4_ds_composizione, '')), '')
+                    )
+                  ) AS composizione,
+                  CASE
+                    WHEN p.d03_anno_disp_cli IS NOT NULL
+                     AND p.d03_nr_disp_cli IS NOT NULL
+                    THEN TRIM(p.d03_anno_disp_cli::text)
+                         || '/' || TRIM(p.d03_nr_disp_cli::text)
+                    ELSE ''
+                  END AS ns_disposiz,
+                  TRIM(COALESCE(p.ew2_cd_ciclo, '')) AS ciclo,
+                  TRIM(COALESCE(p.z09_ds_ciclo, '')) AS ciclo_lavoro,
+                  COALESCE(p.d03_capi_in_uscita, 0) AS capi_sped,
+                  COALESCE(p.d03_kg_in_uscita, 0) AS kg_sped
+                FROM ddt_prezzi_003w p
+                WHERE {where_sql}
+                ORDER BY
+                  p.d02_dt_bolla,
+                  TRIM(COALESCE(p.d02_cd_cliente_fatt, '')),
+                  p.d02_nr_bolla,
+                  p.d03_nr_disp_cli NULLS LAST,
+                  p.d03_riga NULLS LAST
+                LIMIT %(limit)s OFFSET %(offset)s
+                """,
+                params,
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+
+            def _num(v: Any) -> float:
+                try:
+                    return float(v or 0)
+                except (TypeError, ValueError):
+                    return 0.0
+
+            data = []
+            for r in rows:
+                data.append(
+                    {
+                        "cliente_codice": r[0] or "",
+                        "cliente_nome": r[1] or "",
+                        "cliente": f"{r[0] or ''} - {r[1] or ''}".strip(" -"),
+                        "ns_ddt": r[2] or "",
+                        "data_ddt": r[3] or "",
+                        "tipo": r[4] or "",
+                        "articolo": r[5] or "",
+                        "linea": r[6] or "",
+                        "stagione_listino": r[7] or "",
+                        "stagione_produzione": r[8] or "",
+                        "composizione": r[9] or "",
+                        "ns_disposiz": r[10] or "",
+                        "ciclo": r[11] or "",
+                        "ciclo_lavoro": r[12] or "",
+                        "capi_sped": _num(r[13]),
+                        "kg_sped": _num(r[14]),
+                    }
+                )
+
+            pages = max((total + limit - 1) // limit, 1) if total else 1
+            return {
+                "data_da": data_da.isoformat(),
+                "data_a": data_a.isoformat(),
+                "total": total,
+                "page": page,
+                "limit": limit,
+                "pages": pages,
+                "data": data,
+            }
+        except HTTPResponse:
+            raise
         except Exception as e:
             response.status = 500
             return {"error": str(e)}

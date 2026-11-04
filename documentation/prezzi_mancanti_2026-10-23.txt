@@ -1,0 +1,42 @@
+SQL> 
+SQL> SELECT
+  2    d02_cd_cliente_fatt,
+  3    r07_ragione_soc,
+  4    d02_anno_bolla || '/' || TO_CHAR(d02_nr_bolla) AS ns_ddt,
+  5    TO_CHAR(d02_dt_bolla, 'DD/MM/YYYY') AS d02_dt_bolla,
+  6    ew2_flag_tp_prod,
+  7    NVL(ew2_ds_articolo, NVL(cwa_ds_articolo_cliente, d03_ds_articolo)) AS articolo,
+  8    NVL(cw0_ds_linea, ew2_cd_linea) AS linea,
+  9    NVL(z11_ds_stagione, ew2_cd_stagione) AS stagione_listino,
+ 10    NVL(ds_stagione_prod, ew2_cd_stagione_prod) AS stagione_prod,
+ 11    NVL(cw4_ds_composizione, ew2_cd_composizione) AS composizione,
+ 12    d03_anno_disp_cli || '/' || TO_CHAR(d03_nr_disp_cli) AS ns_disposiz,
+ 13    ew2_cd_ciclo AS ciclo,
+ 14    z09_ds_ciclo AS lavoro,
+ 15    d03_capi_in_uscita,
+ 16    d03_kg_in_uscita,
+ 17    d03_prezzo_capo,
+ 18    d03_prezzo_kg
+ 19  FROM   ddt_prezzi_003w
+ 20  WHERE  TRUNC(d02_dt_bolla) = DATE '2026-10-23'
+ 21    AND  NVL(d03_prezzo_capo, 0) = 0
+ 22    AND  NVL(d03_prezzo_kg, 0) = 0
+ 23    AND  NVL(d03_prezzo_forfait, 0) = 0
+ 24  ORDER  BY d02_cd_cliente_fatt, d02_nr_bolla, d03_nr_disp_cli;
+
+D02_CD|R07_RAGIONE_SOC                    |NS_DDT      |D02_DT_BOL|EW2_FLAG_TP_|ARTICOLO                                |LINEA               |STAGIONE_LIS|STAGIONE_PRO|COMPOSIZIONE          |NS_DISPOSIZ   |CICLO         |LAVORO                        |D03_CAPI_IN_USCITA|D03_KG_IN_USCITA|D03_PREZZO_CAPO|D03_PREZZO_KG
+------|-----------------------------------|------------|----------|------------|----------------------------------------|--------------------|------------|------------|----------------------|--------------|--------------|------------------------------|------------------|----------------|---------------|-------------
+2115  |ARCADIA S.R.L.                     |0/0         |23/10/2026|C           |GIACCHE C-JU008                         |DONDUP              |AI 27/28    |AI 27/28    |DENIM 100%            |2026/9079     |046           |LAV.046                       |             11.00|            0.00|           0.00|         0.00
+2591  |NEXSTYLE S.R.L.                    |2026/7861   |23/10/2026|C           |PANT.SANTANA 96%CO2%EA+2 GAMBETTE+1 TELO|.                   |AI 27/28    |AI 27/28    |COTONE ELAST.         |2026/8917     |T400          |TINTO OLD                     |             21.00|           12.20|           0.00|         0.00
+2591  |NEXSTYLE S.R.L.                    |2026/7861   |23/10/2026|C           |PANT.SANTANA 96%CO2%EA                  |.                   |AI 27/28    |AI 27/28    |COTONE ELAST.         |2026/8917     |T400          |TINTO OLD                     |             21.00|            9.16|           0.00|         0.00
+2659  |TEXSERVICE EOOD                    |0/0         |23/10/2026|C           |CAPI MBE181                             |AI 27 28            |AI 27/28    |AI 27/28    |98%CO 02%EA           |2026/9091     |INWASHL       |INWASHL:PREP+RES+TI.COL.DEGRAD|             18.00|           14.00|           0.00|         0.00
+2659  |TEXSERVICE EOOD                    |0/0         |23/10/2026|C           |CAPI MBE181                             |AI 27 28            |AI 27/28    |AI 27/28    |98%CO 02%EA           |2026/9091     |INWASHL       |INWASHL:PREP+RES+TI.COL.DEGRAD|             12.00|            9.80|           0.00|         0.00
+2659  |TEXSERVICE EOOD                    |0/0         |23/10/2026|C           |CAPI MBE181                             |AI 27 28            |AI 27/28    |AI 27/28    |98%CO 02%EA           |2026/9091     |INWASHL       |INWASHL:PREP+RES+TI.COL.DEGRAD|              7.00|            5.50|           0.00|         0.00
+2659  |TEXSERVICE EOOD                    |0/0         |23/10/2026|C           |CAPI MBE181                             |AI 27 28            |AI 27/28    |AI 27/28    |98%CO 02%EA           |2026/9091     |INWASHL       |INWASHL:PREP+RES+TI.COL.DEGRAD|             18.00|           14.00|           0.00|         0.00
+2659  |TEXSERVICE EOOD                    |0/0         |23/10/2026|C           |CAPI MBE181 98%CO2%EA                   |AI 27 28            |AI 27/28    |AI 27/28    |COTONE ELAST.         |2026/9154     |INWASHL       |INWASHL:PREP+RES+TI.COL.DEGRAD|             25.00|            2.00|           0.00|         0.00
+2659  |TEXSERVICE EOOD                    |0/0         |23/10/2026|C           |CAPI MB373                              |AI 27 28            |AI 27/28    |AI 27/28    |COTONE/TENCEL/lana    |2026/9309     |INT373        |INT373 OLD                    |             16.00|            1.60|           0.00|         0.00
+
+9 rows selected.
+
+SQL> 
+SQL> SPOOL OFF

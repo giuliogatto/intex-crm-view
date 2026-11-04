@@ -7,6 +7,7 @@ import UsersPage from './pages/UsersPage.jsx'
 import SinonimiPage from './pages/SinonimiPage.jsx'
 import OcrBollePage from './pages/OcrBollePage.jsx'
 import LogsPage from './pages/LogsPage.jsx'
+import PrezziMancantiPage from './pages/PrezziMancantiPage.jsx'
 import AdminGuard from './components/AdminGuard.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
@@ -17,6 +18,7 @@ function getAdminPage() {
   if (pathname === '/users') return 'users'
   if (pathname === '/sinonimi') return 'sinonimi'
   if (pathname === '/ocr-bolle') return 'ocr-bolle'
+  if (pathname === '/prezzi-mancanti') return 'prezzi-mancanti'
   if (pathname === '/logs') return 'logs'
   return null
 }
@@ -68,6 +70,14 @@ function AppRoot() {
     return (
       <AdminGuard>
         <OcrBollePage />
+      </AdminGuard>
+    )
+  }
+
+  if (adminPage === 'prezzi-mancanti') {
+    return (
+      <AdminGuard>
+        <PrezziMancantiPage />
       </AdminGuard>
     )
   }

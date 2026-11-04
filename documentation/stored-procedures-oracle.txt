@@ -1,0 +1,1029 @@
+Connected to:                                                         
+Oracle Database 19c Standard Edition 2 Release 19.0.0.0.0 - Production
+Version 19.22.0.0.0                                                   
+
+SQL> SELECT object_name, object_type, status, last_ddl_time
+  2  FROM   user_objects                                                       
+  3  WHERE  object_type IN ('PROCEDURE', 'FUNCTION', 'PACKAGE', 'PACKAGE BODY')
+  4  ORDER  BY object_type, object_name;                                       
+
+OBJECT_NAME                                                                     
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_                                       
+----------------------- ------- ---------                                       
+ALTRASPCONFERMATA                                                               
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+BI_MAXDATAESEC_CART_REPARTO                                                     
+FUNCTION                INVALID 16-SEP-25                                       
+                                                                                
+BOLLEAGGANCIATE                                                                 
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+                                                                                
+OBJECT_NAME                                                                     
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_                                       
+----------------------- ------- ---------                                       
+BOLLEAGGANCIATEDATE                                                             
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+BTR_TRADUCI_BREVE                                                               
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+BTR_TRADUCI_ESTESO                                                              
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+                                                                                
+OBJECT_NAME                                                                     
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_                                       
+----------------------- ------- ---------                                       
+C37_COSTO_CAPO                                                                  
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+C37_COSTO_KG                                                                    
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+C37_PZ_CAPO                                                                     
+FUNCTION                VALID   16-SEP-25                                       
+                                                                                
+                                                                                
+OBJECT_NAME                                                                     
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+C37_PZ_KG
+FUNCTION                VALID   16-SEP-25
+
+C45LISTINOCAPO
+FUNCTION                VALID   16-SEP-25
+
+C45LISTINOKG
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+C46LISTINOCAPO
+FUNCTION                VALID   16-SEP-25
+
+C46LISTINOKG
+FUNCTION                VALID   16-SEP-25
+
+CALCOLAPREZZONETTO
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CALCOLAPREZZONETTOCONPAG
+FUNCTION                VALID   16-SEP-25
+
+CALC_PREZZO
+FUNCTION                VALID   16-SEP-25
+
+CAPICARTAGGANCDISP
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CAPICARTSPEDITI
+FUNCTION                VALID   16-SEP-25
+
+CAPICONTROLLATI_EW2
+FUNCTION                INVALID 16-SEP-25
+
+CAPIDIFETTOSI_EW2
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CAPIEVASI_EW2
+FUNCTION                VALID   16-SEP-25
+
+CAPIEVASI_EW2_DATA
+FUNCTION                VALID   16-SEP-25
+
+CAPIEVASI_EW2_DDT
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CAPILAVORATI_EW2
+FUNCTION                VALID   16-SEP-25
+
+CAPINONLAVORATI_EW2
+FUNCTION                VALID   16-SEP-25
+
+CAPINONLAVORATI_EW2_2
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CAPIPROGRDISP
+FUNCTION                VALID   16-SEP-25
+
+CAPIPROGRDISP2
+FUNCTION                INVALID 16-SEP-25
+
+CAPIPROGRRIGADISP
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CAPISPEDCONSENZADDT
+FUNCTION                VALID   16-SEP-25
+
+CAPISPEDSENZADDT
+FUNCTION                VALID   16-SEP-25
+
+CAPI_FASCIA
+FUNCTION                VALID   11-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CARTELLINIAGGANCIATI
+FUNCTION                VALID   31-MAR-26
+
+CD_VASCA_MAX
+FUNCTION                VALID   16-SEP-25
+
+CERCACONTOCONTABILE
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CERCACONTOCONTABILEFORN
+FUNCTION                VALID   16-SEP-25
+
+CODICEPERRAGGRBOLLEFATTURE
+FUNCTION                INVALID 16-SEP-25
+
+CODICEPERRAGGRBOLLEFATTURE2
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CODICEPERRAGGRBOLLEFATTUREF
+FUNCTION                VALID   16-SEP-25
+
+CODIVA
+FUNCTION                VALID   16-SEP-25
+
+COLORICARTSPEDITI
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+COLORIEVASI_EW2
+FUNCTION                VALID   16-SEP-25
+
+COMPOS_OFFERTA
+FUNCTION                VALID   01-SEP-26
+
+COUNT_LISTA_BAGNI
+FUNCTION                VALID   13-FEB-26
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+DAFATTURARE
+FUNCTION                INVALID 16-SEP-25
+
+DDTFATTURATI
+FUNCTION                VALID   16-SEP-25
+
+DISPOSENZADDT
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+DISPO_PROGR
+FUNCTION                VALID   16-SEP-25
+
+DUPLICALISTINICLIFASSTA
+FUNCTION                INVALID 16-SEP-25
+
+DUPLICALISTINIFASISTAGIONI
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+DUPLICALISTINIMATERSTAGIONI
+FUNCTION                VALID   16-SEP-25
+
+DUPLICALISTINISTAGFASIARTF
+FUNCTION                VALID   16-SEP-25
+
+DUPLICALISTINISTAGFASICLIART
+FUNCTION                VALID   12-JUN-26
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+DUPLICALISTINIVENDITA
+FUNCTION                INVALID 16-SEP-25
+
+ESISTEALMENOUNRIPRESO
+FUNCTION                VALID   16-SEP-25
+
+ESISTECOLORE
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+ESISTETABELLAORACLE
+FUNCTION                VALID   16-SEP-25
+
+ESTRAIUNRECORD_STAGIONE
+FUNCTION                VALID   16-SEP-25
+
+FASIEXTRA
+FUNCTION                VALID   27-JAN-26
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+FAT_GETCAPIDAUSARE
+FUNCTION                VALID   16-SEP-25
+
+FAT_GETCAPISTRANI
+FUNCTION                INVALID 16-SEP-25
+
+FAT_GETCOLORIDAUSARE
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+FAT_GETKGDAUSARE
+FUNCTION                VALID   16-SEP-25
+
+FAT_GETKGSTRANI
+FUNCTION                VALID   31-MAR-26
+
+FLAG_FORFAIT_DISPO
+FUNCTION                VALID   30-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+FORFAIT_DISPO
+FUNCTION                VALID   30-SEP-25
+
+G15_GETCOSTOPRODOTTO
+FUNCTION                VALID   04-DEC-25
+
+GETC20NOTA
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETCAMBIOFATTURE
+FUNCTION                VALID   16-SEP-25
+
+GETCAPIDAUSARE
+FUNCTION                INVALID 16-SEP-25
+
+GETCAPISTRANI
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETCDARTICOLO
+FUNCTION                INVALID 16-SEP-25
+
+GETCDCICLO
+FUNCTION                INVALID 16-SEP-25
+
+GETCDCOMPOSIZIONE
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETCDFASEEST
+FUNCTION                VALID   16-SEP-25
+
+GETCDLINEA
+FUNCTION                VALID   16-SEP-25
+
+GETCDSTAGIONE
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETCENTROCOSTO
+FUNCTION                INVALID 16-SEP-25
+
+GETCICLOCLIENTE
+FUNCTION                INVALID 16-SEP-25
+
+GETCOMMESSA
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETCOSTOST_C36
+FUNCTION                VALID   16-SEP-25
+
+GETDSCICLO
+FUNCTION                INVALID 11-NOV-25
+
+GETDSFASEEST
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETELCOMPOSIZIONI
+FUNCTION                VALID   01-SEP-26
+
+GETFASEAGGP10
+FUNCTION                VALID   16-SEP-25
+
+GETFASEREPARTO
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETFLAGPREZZOFORFAIT
+FUNCTION                VALID   10-NOV-25
+
+GETFORNITORERIENTROFROMDISPO
+FUNCTION                VALID   16-SEP-25
+
+GETGRCOMPOSIZIONE
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETIDFATTURAP09
+FUNCTION                VALID   16-SEP-25
+
+GETIMPORTO
+FUNCTION                VALID   16-SEP-25
+
+GETIMPORTOEURO
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETINDIRIZZOEMAILFATT
+FUNCTION                VALID   16-SEP-25
+
+GETINDIRIZZOMAILBOLLE
+FUNCTION                VALID   16-SEP-25
+
+GETINDIRIZZOMAILCONFORD
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETKGDAUSARE
+FUNCTION                INVALID 16-SEP-25
+
+GETKGDAUSAREP07
+FUNCTION                INVALID 16-SEP-25
+
+GETKGSTRANI
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETNOTEZ08
+FUNCTION                VALID   11-NOV-25
+
+GETNRDATADDT
+FUNCTION                VALID   16-SEP-25
+
+GETNUMEROFASCIA
+FUNCTION                VALID   11-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETP09_NOTE
+FUNCTION                VALID   16-SEP-25
+
+GETP09_NOTE2
+FUNCTION                VALID   16-SEP-25
+
+GETPREZZOCAPO
+FUNCTION                VALID   10-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETPREZZOCOLORE
+FUNCTION                VALID   10-NOV-25
+
+GETPREZZOFORFAIT
+FUNCTION                VALID   10-NOV-25
+
+GETPREZZOFORFAITSPECIFICO
+FUNCTION                VALID   10-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETPREZZOKG
+FUNCTION                VALID   10-NOV-25
+
+GETPREZZOLISTFORNITOREC37
+FUNCTION                VALID   16-SEP-25
+
+GETPROGRESSIVO
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETPRZLISTINOCAPO
+FUNCTION                VALID   16-SEP-25
+
+GETPRZLISTINOKG
+FUNCTION                VALID   16-SEP-25
+
+GETTIPOCOSTOST_C36
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETTIPOPROD
+FUNCTION                VALID   16-SEP-25
+
+GETTRATTSPEC
+FUNCTION                VALID   11-NOV-25
+
+GETVASCHESERIEBAGNOFROMCART
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GETVASCHESERIEBAGNOFROMDISPO
+FUNCTION                VALID   16-SEP-25
+
+GET_COMP_PER_CICLO
+FUNCTION                VALID   24-MAR-26
+
+GET_CS_CHI_A_DATA
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GET_FASE_ASC
+FUNCTION                VALID   16-SEP-25
+
+GET_FINE_M13
+FUNCTION                VALID   27-JAN-26
+
+GET_GRUPPO_ART_SP
+FUNCTION                VALID   11-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GET_INIZIO_M13
+FUNCTION                VALID   27-JAN-26
+
+GET_KG_BAGNO_GR_ART
+FUNCTION                VALID   31-MAR-26
+
+GET_LISTA_BAGNI
+FUNCTION                VALID   13-FEB-26
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+GET_LOTTO_CHI
+FUNCTION                VALID   17-DEC-25
+
+GET_SCADENZA_M13
+FUNCTION                VALID   12-DEC-25
+
+INFORMAZIONISUDDTCONTOLAVORO
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+INVIA_EMAIL
+FUNCTION                VALID   16-SEP-25
+
+INVIA_EMAIL_ATTACH
+FUNCTION                VALID   16-SEP-25
+
+IS_LAB
+FUNCTION                VALID   27-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+KGCARTAGGANCDISP
+FUNCTION                VALID   16-SEP-25
+
+KGCARTSPEDITI
+FUNCTION                VALID   16-SEP-25
+
+KGEVASI_EW2
+FUNCTION                VALID   22-APR-26
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+KGEVASI_EW2_DATA
+FUNCTION                VALID   16-SEP-25
+
+KGEVASI_EW2_DDT
+FUNCTION                VALID   16-SEP-25
+
+KGLAVORATI_EW2
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+KGNONLAVORATI_EW2
+FUNCTION                VALID   16-SEP-25
+
+KGNONLAVORATI_EW2_2
+FUNCTION                VALID   16-SEP-25
+
+KGPROGRDISP
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+KGPROGRDISP2
+FUNCTION                INVALID 16-SEP-25
+
+KGPROGRRIGADISP
+FUNCTION                INVALID 16-SEP-25
+
+KGSPEDCONSENZADDT
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+KGSPEDSENZADDT
+FUNCTION                VALID   16-SEP-25
+
+KG_FASCIA
+FUNCTION                VALID   11-NOV-25
+
+LISTINOUSATO
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+LISTINO_GRUPPO_COMP
+FUNCTION                VALID   16-SEP-25
+
+NOTA_O03_GEN
+FUNCTION                VALID   16-SEP-25
+
+NRCOLORICARTAGGANCDISP
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+ORDINI_SENZA_CONFERMA
+FUNCTION                VALID   16-SEP-25
+
+P06_CS_GETNUMERORELATIVO
+FUNCTION                VALID   31-MAR-26
+
+P06_CS_GETNUMEROTOTALE
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+P06_GETNUMEROFIGLI
+FUNCTION                VALID   31-MAR-26
+
+P06_GETSOMMACAPISPEZDDT
+FUNCTION                INVALID 16-SEP-25
+
+P06_GETSOMMAKGSPEZDDT
+FUNCTION                VALID   31-MAR-26
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+P07_DATARIPRESO
+FUNCTION                VALID   16-SEP-25
+
+P07_ELAPRIMADAFARE
+FUNCTION                VALID   16-SEP-25
+
+P07_EPRATICAMENTERIPRESA
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+P07_FASIRAGGRUPPATEZ02_CL
+FUNCTION                INVALID 16-SEP-25
+
+P07_FASIRAGGRUPPATE_CL
+FUNCTION                INVALID 16-SEP-25
+
+P07_GETLASTSERIE
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+P07_GETLASTVASCA
+FUNCTION                VALID   16-SEP-25
+
+P07_GETPRONTOPERREPARTO
+FUNCTION                VALID   16-SEP-25
+
+P07_GETPRONTOPERTINTURA
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+P09CONFERMATO
+FUNCTION                VALID   16-SEP-25
+
+P09_GETULTIMOBAGNO
+FUNCTION                VALID   16-SEP-25
+
+P09_GETULTIMOBAGNO_OLD20120222
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+PRETRATTAMENTI
+FUNCTION                VALID   16-SEP-25
+
+PREZMANC_TIPOERRORE
+FUNCTION                VALID   16-SEP-25
+
+PRINT_FX_MOV_RAGGRUPPA
+FUNCTION                INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+PRZC38TERZ
+FUNCTION                VALID   16-SEP-25
+
+PRZLISTINOTERZ
+FUNCTION                VALID   16-SEP-25
+
+QTAEVASA_EW2
+FUNCTION                VALID   22-APR-26
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+RICARICO
+FUNCTION                VALID   16-SEP-25
+
+RICMODIFICATA
+FUNCTION                VALID   16-SEP-25
+
+RIC_DESCRIZIONEINSERIMENTO
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+RIC_DESCRIZIONETIPORICETTA
+FUNCTION                VALID   16-SEP-25
+
+RIGADAFATTURARE
+FUNCTION                VALID   16-SEP-25
+
+SERIE_MAX
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+STATFATT_PREZZOPROPORZIONALE
+FUNCTION                VALID   16-SEP-25
+
+STATO_DISP
+FUNCTION                VALID   16-SEP-25
+
+SUMCAPI
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+SUMCOTTELAV
+FUNCTION                VALID   16-SEP-25
+
+SUMCOTTERIPRESE
+FUNCTION                VALID   16-SEP-25
+
+SUMKG
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+TOTCAPI_EW1
+FUNCTION                VALID   16-SEP-25
+
+TOTKG_EW1
+FUNCTION                VALID   16-SEP-25
+
+VASCASERIEPROGR
+FUNCTION                VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+VASCHEABBINATEALLARTICOLO
+FUNCTION                VALID   16-SEP-25
+
+Z09_DS_CICLO
+FUNCTION                VALID   11-NOV-25
+
+APEX_MAIL_P
+PACKAGE                 VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+APEX_MAIL_P
+PACKAGE BODY            VALID   16-SEP-25
+
+AGGIORNAP09FLAGPESATOSTAMPATO
+PROCEDURE               VALID   16-SEP-25
+
+ASSEGNA_C37_PRG
+PROCEDURE               INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+ATTIVATUTTIITRIGGERS
+PROCEDURE               VALID   16-SEP-25
+
+BHP_SCRIVILOGESTESO1
+PROCEDURE               VALID   16-SEP-25
+
+BHP_SCRIVILOGSEMPLICE
+PROCEDURE               VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+CHIUDI_LOTTI_SCADUTI
+PROCEDURE               VALID   14-MAY-26
+
+COMPILATUTTELEFUNZIONI
+PROCEDURE               VALID   16-SEP-25
+
+COMPILATUTTELEPROCEDURE
+PROCEDURE               VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+COMPILATUTTELEVISTE
+PROCEDURE               VALID   16-SEP-25
+
+COMPILATUTTIITRIGGERS
+PROCEDURE               VALID   16-SEP-25
+
+CREAVOCABOLARIO
+PROCEDURE               VALID   16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+ESISTECLIFORPLURIMA
+PROCEDURE               VALID   16-SEP-25
+
+ESISTECODIVAPLURIMA
+PROCEDURE               VALID   16-SEP-25
+
+ESISTEFASECICLO
+PROCEDURE               VALID   11-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+M11_RICALCOLAGIACENZAECOSTOMP
+PROCEDURE               VALID   14-MAY-26
+
+P06_GETPADREINIZIALE
+PROCEDURE               VALID   16-SEP-25
+
+QTAAGGANCDISP
+PROCEDURE               INVALID 16-SEP-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+QTARESCART
+PROCEDURE               INVALID 16-SEP-25
+
+QTARESDISP
+PROCEDURE               INVALID 16-SEP-25
+
+RICREA_Z08_CON_DATI_AGGIUNTIVI
+PROCEDURE               INVALID 27-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+RICREA_Z08_CON_DATI_AGGIUNTIVI_DISPO
+PROCEDURE               INVALID 27-NOV-25
+
+RICREA_Z09_CON_DATI_AGGIUNTIVI
+PROCEDURE               VALID   27-NOV-25
+
+RICREA_Z09_CON_DATI_AGGIUNTIVI_DISPO
+PROCEDURE               INVALID 27-NOV-25
+
+
+OBJECT_NAME
+--------------------------------------------------------------------------------
+OBJECT_TYPE             STATUS  LAST_DDL_
+----------------------- ------- ---------
+RIC_COSTI_RIC_SZ_COSTO_A_DATA
+PROCEDURE               INVALID 16-SEP-25
+
+TOGLI_DOPPIONI_PROG_C37
+PROCEDURE               VALID   16-SEP-25
+
+
+218 rows selected.
