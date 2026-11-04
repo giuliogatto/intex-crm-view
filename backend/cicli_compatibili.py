@@ -31,7 +31,7 @@ from __future__ import annotations
 import re
 import unicodedata
 from difflib import SequenceMatcher
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 KEY_FIELDS = (
     "codice_cliente",
@@ -314,6 +314,28 @@ def _key_of(ciclo: Dict[str, Any]) -> Tuple[str, ...]:
     return tuple(str(ciclo.get(f) or "") for f in KEY_FIELDS)
 
 
+_C37_PREZZI_COLS = (
+    "c37_pz_tot_capo", "c37_pz_tot_kg",
+    *(f"c37_pz_fascia_{n}" for n in range(1, 10)),
+    "c37_pz_fascia_c", "c37_pz_fascia_p",
+)
+
+
+def _chiavi_con_prezzi(cursor, codice_cliente: str) -> Set[Tuple[str, ...]]:
+    """Chiavi a 6 campi del cliente con un'offerta C37 che ha almeno un prezzo > 0."""
+    prezzi = " OR ".join(f"COALESCE({col}, 0) > 0" for col in _C37_PREZZI_COLS)
+    cursor.execute(
+        f"""
+        SELECT DISTINCT c37_cd_cliente, c37_cd_articolo, c37_cd_ciclo, c37_cd_linea,
+               c37_cd_stagione, c37_cd_composizione
+        FROM c37_testata_listini
+        WHERE c37_cd_cliente = %(c)s AND ({prezzi})
+        """,
+        {"c": codice_cliente},
+    )
+    return {tuple(str(v or "") for v in row) for row in cursor.fetchall()}
+
+
 def _carica_cicli(
     cursor, codice_cliente: str, chiave: Optional[Tuple[str, ...]] = None
 ) -> List[Dict[str, Any]]:
@@ -425,11 +447,13 @@ def _filtra_compatibili(
     candidati: Sequence[Dict[str, Any]],
     soglia: float,
     limite: Optional[int],
+    chiavi_ammesse: Optional[Set[Tuple[str, ...]]] = None,
 ) -> List[Dict[str, Any]]:
     key_in = _key_of(ciclo_in)
     risultati: List[Dict[str, Any]] = []
     for cand in candidati:
-        if _key_of(cand) == key_in:
+        key = _key_of(cand)
+        if key == key_in or (chiavi_ammesse is not None and key not in chiavi_ammesse):
             continue
         esito = confronta_cicli(ciclo_in, cand)
         if esito["compatibilita"] < soglia:
@@ -451,6 +475,7 @@ def trova_cicli_compatibili(
     *,
     limite: Optional[int] = 100,
     soglia_minima: Optional[float] = None,
+    prezzi_presenti: bool = True,
 ) -> List[Dict[str, Any]]:
     """Cicli del `cliente` compatibili con `ciclo`, ordinati per compatibilità decrescente.
 
@@ -460,6 +485,8 @@ def trova_cicli_compatibili(
     cliente: codice cliente su cui cercare; default = cliente del ciclo di input.
     livello: 1 (molto ampio) .. 5 (solo cicli equivalenti), vedi LIVELLI_SOGLIA.
     soglia_minima: sovrascrive la soglia del livello (0..100).
+    prezzi_presenti: se True, solo candidati con un'offerta C37 (stessa chiave a 6 campi)
+                     che ha almeno un prezzo > 0 (totale capo/kg o fasce).
     """
     ciclo_in = _risolvi_input(cursor, ciclo, cliente)
     codice_cliente = cliente or ciclo_in.get("codice_cliente")
@@ -471,6 +498,7 @@ def trova_cicli_compatibili(
         _carica_cicli(cursor, codice_cliente),
         soglia,
         limite,
+        _chiavi_con_prezzi(cursor, codice_cliente) if prezzi_presenti else None,
     )
 
 
@@ -481,6 +509,7 @@ def trova_cicli_compatibili_batch(
     *,
     limite: Optional[int] = 50,
     soglia_minima: Optional[float] = None,
+    prezzi_presenti: bool = True,
 ) -> List[Dict[str, Any]]:
     """Come ``trova_cicli_compatibili`` per N cicli, riusando i candidati per cliente.
 
@@ -492,6 +521,7 @@ def trova_cicli_compatibili_batch(
     """
     soglia = float(soglia_minima) if soglia_minima is not None else _livello_soglia(livello)
     cache_cliente: Dict[str, List[Dict[str, Any]]] = {}
+    cache_prezzi: Dict[str, Set[Tuple[str, ...]]] = {}
     out: List[Dict[str, Any]] = []
 
     for raw in cicli:
@@ -524,12 +554,15 @@ def trova_cicli_compatibili_batch(
                 raise ValueError("Cliente non specificato")
             if codice_cliente not in cache_cliente:
                 cache_cliente[codice_cliente] = _carica_cicli(cursor, codice_cliente)
+            if prezzi_presenti and codice_cliente not in cache_prezzi:
+                cache_prezzi[codice_cliente] = _chiavi_con_prezzi(cursor, codice_cliente)
 
             compatibili = _filtra_compatibili(
                 ciclo_in,
                 cache_cliente[codice_cliente],
                 soglia,
                 limite,
+                cache_prezzi.get(codice_cliente) if prezzi_presenti else None,
             )
             out.append({"ok": True, "compatibili": compatibili})
         except (ValueError, LookupError) as exc:
