@@ -2240,6 +2240,66 @@ table.data tfoot .table-totals-row:hover td {
   font-variant-numeric: tabular-nums;
 }
 
+.pm-compat-card__prezzi {
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #1f4f3a;
+  background: #e7f3ec;
+  padding: 0.12rem 0.45rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.pm-prezzi-detail__main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  color: #334038;
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-prezzi-detail__main em {
+  font-style: normal;
+  color: #66756b;
+  margin-right: 0.25rem;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.pm-prezzi-flag {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.pm-prezzi-flag--accettata {
+  background: #d8f0e0;
+  color: #17633a;
+}
+
+.pm-prezzi-flag--prototipo {
+  background: #eef3d8;
+  color: #6a6b1f;
+}
+
+.pm-prezzi-fasce {
+  margin: 0.4rem 0 0;
+  padding-left: 1.1rem;
+  font-size: 0.78rem;
+  color: #334038;
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-prezzi-fasce li {
+  margin: 0.1rem 0;
+}
+
 .pm-compat-card__body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

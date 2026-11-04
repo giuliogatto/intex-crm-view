@@ -15,7 +15,8 @@ Uso:
 Ogni risultato è un dict JSON-serializzabile:
 
     {
-      "ciclo": {...chiave a 6 campi + descrizioni...},
+      "ciclo": {...chiave a 6 campi + descrizioni..., "prezzi": {...}},
+      "prezzi": {"codice_univoco", "valuta", "prezzo_capo", "prezzo_kg", "fasce", ...},
       "compatibilita": 90.0,
       "simili": [{"campo": ..., "valore": ...}, ...],
       "differenze": [{"campo": ..., "input": ..., "candidato": ..., "penalita": ...}, ...]
@@ -321,19 +322,107 @@ _C37_PREZZI_COLS = (
 )
 
 
-def _chiavi_con_prezzi(cursor, codice_cliente: str) -> Set[Tuple[str, ...]]:
-    """Chiavi a 6 campi del cliente con un'offerta C37 che ha almeno un prezzo > 0."""
-    prezzi = " OR ".join(f"COALESCE({col}, 0) > 0" for col in _C37_PREZZI_COLS)
+def _as_float(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _ha_prezzo_positivo(prezzi: Optional[Dict[str, Any]]) -> bool:
+    if not prezzi:
+        return False
+    for key in ("prezzo_capo", "prezzo_kg"):
+        v = prezzi.get(key)
+        if v is not None and v > 0:
+            return True
+    for fascia in prezzi.get("fasce") or []:
+        v = fascia.get("prezzo")
+        if v is not None and v > 0:
+            return True
+    return False
+
+
+def _carica_prezzi_cliente(
+    cursor, codice_cliente: str
+) -> Dict[Tuple[str, ...], Dict[str, Any]]:
+    """Offerte C37 del cliente, indexed per chiave a 6 campi.
+
+    Se esistono più valute per la stessa chiave, preferisce EURO ``01`` e
+    altrimenti il ``c37_prg`` più alto.
+    """
     cursor.execute(
-        f"""
-        SELECT DISTINCT c37_cd_cliente, c37_cd_articolo, c37_cd_ciclo, c37_cd_linea,
-               c37_cd_stagione, c37_cd_composizione
+        """
+        SELECT c37_cd_cliente, c37_cd_articolo, c37_cd_ciclo, c37_cd_linea,
+               c37_cd_stagione, c37_cd_composizione,
+               c37_cd_valuta, c37_prg, c37_pz_tot_capo, c37_pz_tot_kg,
+               c37_flag_visibile, c37_flag_prototipo,
+               c37_qt_fascia_1, c37_tq_fascia_1, c37_pz_fascia_1, c37_tp_fascia_1,
+               c37_qt_fascia_2, c37_tq_fascia_2, c37_pz_fascia_2, c37_tp_fascia_2,
+               c37_qt_fascia_3, c37_tq_fascia_3, c37_pz_fascia_3, c37_tp_fascia_3,
+               c37_qt_fascia_4, c37_tq_fascia_4, c37_pz_fascia_4, c37_tp_fascia_4,
+               c37_qt_fascia_5, c37_tq_fascia_5, c37_pz_fascia_5, c37_tp_fascia_5,
+               c37_qt_fascia_6, c37_tq_fascia_6, c37_pz_fascia_6, c37_tp_fascia_6,
+               c37_qt_fascia_7, c37_tq_fascia_7, c37_pz_fascia_7, c37_tp_fascia_7,
+               c37_qt_fascia_8, c37_tq_fascia_8, c37_pz_fascia_8, c37_tp_fascia_8,
+               c37_qt_fascia_9, c37_tq_fascia_9, c37_pz_fascia_9, c37_tp_fascia_9,
+               c37_pz_fascia_c, c37_tp_fascia_c, c37_pz_fascia_p, c37_tp_fascia_p
         FROM c37_testata_listini
-        WHERE c37_cd_cliente = %(c)s AND ({prezzi})
+        WHERE c37_cd_cliente = %(c)s
+        ORDER BY
+          CASE WHEN c37_cd_valuta = '01' THEN 0 ELSE 1 END,
+          c37_prg DESC NULLS LAST
         """,
         {"c": codice_cliente},
     )
-    return {tuple(str(v or "") for v in row) for row in cursor.fetchall()}
+    out: Dict[Tuple[str, ...], Dict[str, Any]] = {}
+    for row in cursor.fetchall():
+        key = tuple(str(v or "") for v in row[0:6])
+        if key in out:
+            continue
+        fasce: List[Dict[str, Any]] = []
+        base = 12
+        for n in range(1, 10):
+            off = base + (n - 1) * 4
+            qta, tq, pz, tp = row[off], row[off + 1], row[off + 2], row[off + 3]
+            pz_f, qta_f = _as_float(pz), _as_float(qta)
+            if (pz_f is None or pz_f == 0) and (qta_f is None or qta_f == 0):
+                continue
+            fasce.append({
+                "n": n,
+                "qta": qta_f,
+                "tq": tq,
+                "prezzo": pz_f,
+                "tp": tp,
+            })
+        for label, pz, tp in (
+            ("C", row[48], row[49]),
+            ("P", row[50], row[51]),
+        ):
+            pz_f = _as_float(pz)
+            if pz_f is None or pz_f == 0:
+                continue
+            fasce.append({"n": label, "qta": None, "tq": None, "prezzo": pz_f, "tp": tp})
+
+        out[key] = {
+            "codice_univoco": int(row[7]) if row[7] is not None else None,
+            "valuta": row[6],
+            "prezzo_capo": _as_float(row[8]),
+            "prezzo_kg": _as_float(row[9]),
+            "flag_visibile": row[10],
+            "flag_prototipo": row[11],
+            "fasce": fasce,
+        }
+    return out
+
+
+def _chiavi_con_prezzi(
+    prezzi_by_key: Dict[Tuple[str, ...], Dict[str, Any]],
+) -> Set[Tuple[str, ...]]:
+    """Sottoinsieme di chiavi con almeno un prezzo > 0."""
+    return {k for k, p in prezzi_by_key.items() if _ha_prezzo_positivo(p)}
 
 
 def _carica_cicli(
@@ -431,7 +520,10 @@ def _livello_soglia(livello: int) -> float:
     return LIVELLI_SOGLIA[lv]
 
 
-def _ciclo_summary(ciclo: Dict[str, Any]) -> Dict[str, Any]:
+def _ciclo_summary(
+    ciclo: Dict[str, Any],
+    prezzi: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     out = {f: ciclo.get(f) for f in KEY_FIELDS}
     for f in (
         "codice_ciclo_cli", "ds_ciclo", "ds_ciclo_bolle_fat", "ragione_sociale", "ds_articolo",
@@ -439,6 +531,7 @@ def _ciclo_summary(ciclo: Dict[str, Any]) -> Dict[str, Any]:
     ):
         out[f] = ciclo.get(f)
     out["fasi"] = [_fase_label(f) for f in ciclo.get("fasi") or []]
+    out["prezzi"] = prezzi
     return out
 
 
@@ -448,8 +541,10 @@ def _filtra_compatibili(
     soglia: float,
     limite: Optional[int],
     chiavi_ammesse: Optional[Set[Tuple[str, ...]]] = None,
+    prezzi_by_key: Optional[Dict[Tuple[str, ...], Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     key_in = _key_of(ciclo_in)
+    prezzi_by_key = prezzi_by_key or {}
     risultati: List[Dict[str, Any]] = []
     for cand in candidati:
         key = _key_of(cand)
@@ -458,7 +553,12 @@ def _filtra_compatibili(
         esito = confronta_cicli(ciclo_in, cand)
         if esito["compatibilita"] < soglia:
             continue
-        risultati.append({"ciclo": _ciclo_summary(cand), **esito})
+        prezzi = prezzi_by_key.get(key)
+        risultati.append({
+            "ciclo": _ciclo_summary(cand, prezzi),
+            "prezzi": prezzi,
+            **esito,
+        })
 
     risultati.sort(
         key=lambda r: (r["compatibilita"], r["ciclo"].get("data_ins") or ""),
@@ -493,12 +593,14 @@ def trova_cicli_compatibili(
     if not codice_cliente:
         raise ValueError("Cliente non specificato")
     soglia = float(soglia_minima) if soglia_minima is not None else _livello_soglia(livello)
+    prezzi_by_key = _carica_prezzi_cliente(cursor, codice_cliente)
     return _filtra_compatibili(
         ciclo_in,
         _carica_cicli(cursor, codice_cliente),
         soglia,
         limite,
-        _chiavi_con_prezzi(cursor, codice_cliente) if prezzi_presenti else None,
+        _chiavi_con_prezzi(prezzi_by_key) if prezzi_presenti else None,
+        prezzi_by_key,
     )
 
 
@@ -521,8 +623,14 @@ def trova_cicli_compatibili_batch(
     """
     soglia = float(soglia_minima) if soglia_minima is not None else _livello_soglia(livello)
     cache_cliente: Dict[str, List[Dict[str, Any]]] = {}
-    cache_prezzi: Dict[str, Set[Tuple[str, ...]]] = {}
+    cache_prezzi: Dict[str, Dict[Tuple[str, ...], Dict[str, Any]]] = {}
     out: List[Dict[str, Any]] = []
+
+    def _ensure_caches(codice_cliente: str) -> None:
+        if codice_cliente not in cache_cliente:
+            cache_cliente[codice_cliente] = _carica_cicli(cursor, codice_cliente)
+        if codice_cliente not in cache_prezzi:
+            cache_prezzi[codice_cliente] = _carica_prezzi_cliente(cursor, codice_cliente)
 
     for raw in cicli:
         try:
@@ -539,8 +647,7 @@ def trova_cicli_compatibili_batch(
                 mancanti = [f for f, v in zip(KEY_FIELDS, chiave) if not v]
                 if mancanti:
                     raise ValueError(f"Chiave ciclo incompleta: {', '.join(mancanti)}")
-                if codice_cliente not in cache_cliente:
-                    cache_cliente[codice_cliente] = _carica_cicli(cursor, codice_cliente)
+                _ensure_caches(codice_cliente)
                 trovati = [
                     c for c in cache_cliente[codice_cliente] if _key_of(c) == chiave
                 ]
@@ -552,17 +659,16 @@ def trova_cicli_compatibili_batch(
                 codice_cliente = str(ciclo_in.get("codice_cliente") or "")
             if not codice_cliente:
                 raise ValueError("Cliente non specificato")
-            if codice_cliente not in cache_cliente:
-                cache_cliente[codice_cliente] = _carica_cicli(cursor, codice_cliente)
-            if prezzi_presenti and codice_cliente not in cache_prezzi:
-                cache_prezzi[codice_cliente] = _chiavi_con_prezzi(cursor, codice_cliente)
+            _ensure_caches(codice_cliente)
 
+            prezzi_by_key = cache_prezzi[codice_cliente]
             compatibili = _filtra_compatibili(
                 ciclo_in,
                 cache_cliente[codice_cliente],
                 soglia,
                 limite,
-                cache_prezzi.get(codice_cliente) if prezzi_presenti else None,
+                _chiavi_con_prezzi(prezzi_by_key) if prezzi_presenti else None,
+                prezzi_by_key,
             )
             out.append({"ok": True, "compatibili": compatibili})
         except (ValueError, LookupError) as exc:

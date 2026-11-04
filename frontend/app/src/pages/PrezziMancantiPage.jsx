@@ -115,6 +115,105 @@ function CompatPct({ value }) {
   )
 }
 
+function formatPrezzo(n) {
+  if (n == null || n === '') return null
+  const v = Number(n)
+  if (!Number.isFinite(v)) return null
+  return v.toLocaleString('it-IT', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function flagOffertaLabel(prezzi) {
+  if (!prezzi) return null
+  const vis = String(prezzi.flag_visibile || '').toUpperCase()
+  if (vis === 'S') return 'Accettata'
+  if (vis === 'P') return 'Prototipo'
+  if (prezzi.flag_prototipo === 'S' || prezzi.flag_prototipo === true) return 'Prototipo'
+  return vis || null
+}
+
+function PrezziCiclo({ prezzi, compact = false }) {
+  if (!prezzi) {
+    return compact ? null : <span className="pm-compat-empty">nessun prezzo</span>
+  }
+  const capo = formatPrezzo(prezzi.prezzo_capo)
+  const kg = formatPrezzo(prezzi.prezzo_kg)
+  const stato = flagOffertaLabel(prezzi)
+  const fasce = (prezzi.fasce || []).filter((f) => Number(f.prezzo) > 0)
+  const parts = []
+  if (capo != null && Number(prezzi.prezzo_capo) > 0) parts.push(`Capo ${capo}`)
+  if (kg != null && Number(prezzi.prezzo_kg) > 0) parts.push(`Kg ${kg}`)
+  if (!parts.length && fasce.length) {
+    const f0 = fasce[0]
+    parts.push(`Fascia ${f0.n}: ${formatPrezzo(f0.prezzo)}`)
+  }
+
+  if (compact) {
+    if (!parts.length) return null
+    return (
+      <span
+        className="pm-compat-card__prezzi"
+        title={[
+          prezzi.codice_univoco ? `Cod. univoco ${prezzi.codice_univoco}` : null,
+          stato,
+          ...parts,
+        ]
+          .filter(Boolean)
+          .join(' · ')}
+      >
+        {parts.join(' · ')}
+      </span>
+    )
+  }
+
+  return (
+    <div className="pm-prezzi-detail">
+      <div className="pm-prezzi-detail__main">
+        {prezzi.codice_univoco != null ? (
+          <span>
+            <em>Cod. univoco</em> {prezzi.codice_univoco}
+          </span>
+        ) : null}
+        {stato ? (
+          <span className={`pm-prezzi-flag pm-prezzi-flag--${String(stato).toLowerCase()}`}>
+            {stato}
+          </span>
+        ) : null}
+        {capo != null ? (
+          <span>
+            <em>Capo</em> {capo}
+          </span>
+        ) : null}
+        {kg != null ? (
+          <span>
+            <em>Kg</em> {kg}
+          </span>
+        ) : null}
+        {prezzi.valuta ? (
+          <span>
+            <em>Valuta</em> {prezzi.valuta}
+          </span>
+        ) : null}
+      </div>
+      {fasce.length ? (
+        <ul className="pm-prezzi-fasce">
+          {fasce.map((f) => (
+            <li key={String(f.n)}>
+              Fascia {f.n}
+              {f.qta != null ? ` (≥${formatQty(f.qta)}${f.tq || ''})` : ''}
+              {': '}
+              <strong>{formatPrezzo(f.prezzo)}</strong>
+              {f.tp ? ` (${f.tp})` : ''}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
 function DiffList({ items }) {
   if (!items?.length) return <span className="pm-compat-empty">nessuna</span>
   return (
@@ -204,6 +303,7 @@ function CicliCompatibiliPanel({
         <div className="pm-compat__list">
           {compatibili.map((item, i) => {
             const c = item.ciclo || {}
+            const prezzi = item.prezzi || c.prezzi || null
             const label = [
               c.codice_ciclo,
               c.ds_ciclo || c.ds_articolo,
@@ -218,6 +318,7 @@ function CicliCompatibiliPanel({
                   <span className="pm-compat-card__label" title={label}>
                     {label || 'Ciclo'}
                   </span>
+                  <PrezziCiclo prezzi={prezzi} compact />
                   <span className="pm-compat-card__keys">
                     {[c.codice_articolo, c.codice_linea, c.codice_composizione]
                       .filter(Boolean)
@@ -225,6 +326,10 @@ function CicliCompatibiliPanel({
                   </span>
                 </summary>
                 <div className="pm-compat-card__body">
+                  <div className="pm-compat-card__block">
+                    <h4>Prezzi offerta</h4>
+                    <PrezziCiclo prezzi={prezzi} />
+                  </div>
                   <div className="pm-compat-card__block">
                     <h4>Differenze</h4>
                     <DiffList items={item.differenze} />
