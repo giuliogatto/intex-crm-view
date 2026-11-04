@@ -258,6 +258,8 @@ export default function PrezziMancantiPage() {
   const [dataAFilter, setDataAFilter] = useState(todayISO())
   const [dataDaApplied, setDataDaApplied] = useState('')
   const [dataAApplied, setDataAApplied] = useState('')
+  /** Default TRUE: solo cicli compatibili con offerta/prezzo associato. */
+  const [prezziPresenti, setPrezziPresenti] = useState(true)
   const [rows, setRows] = useState([])
   const [page, setPage] = useState(1)
   const [pages, setPages] = useState(1)
@@ -272,8 +274,11 @@ export default function PrezziMancantiPage() {
   const [livelloByRow, setLivelloByRow] = useState({})
   /** Contatore per-riga: evita che una risposta stale sovrascriva uno slider più recente. */
   const rowReqRef = useRef({})
+  const prezziPresentiRef = useRef(prezziPresenti)
+  prezziPresentiRef.current = prezziPresenti
 
-  const fetchCompatibili = useCallback(async (righe, livello) => {
+  const fetchCompatibili = useCallback(async (righe, livello, prezziPresentiOpt) => {
+    const prezzi = prezziPresentiOpt ?? prezziPresentiRef.current
     const ids = righe.map((r) => r.id)
     const tokens = {}
     for (const id of ids) {
@@ -298,7 +303,11 @@ export default function PrezziMancantiPage() {
       const res = await authFetch('/api/admin/prezzi-mancanti/cicli-compatibili', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ livello, righe }),
+        body: JSON.stringify({
+          livello,
+          prezzi_presenti: prezzi !== false,
+          righe,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Errore cicli compatibili')
@@ -368,7 +377,7 @@ export default function PrezziMancantiPage() {
         })
         setLivelloByRow(livelli)
         if (payload.length) {
-          fetchCompatibili(payload, DEFAULT_LIVELLO)
+          fetchCompatibili(payload, DEFAULT_LIVELLO, prezziPresentiRef.current)
         }
       })
       .catch((err) => {
@@ -389,7 +398,23 @@ export default function PrezziMancantiPage() {
     setLivelloByRow((prev) => ({ ...prev, [id]: livello }))
     const idx = rows.findIndex((row, i) => rowKey(row, i) === id)
     if (idx < 0) return
-    fetchCompatibili([cicloPayload(rows[idx], id)], livello)
+    fetchCompatibili([cicloPayload(rows[idx], id)], livello, prezziPresenti)
+  }
+
+  const handlePrezziPresentiChange = (checked) => {
+    setPrezziPresenti(checked)
+    if (!searched || !rows.length) return
+    // Ricalcola tutte le righe della pagina col nuovo filtro, rispettando il livello corrente.
+    const byLivello = new Map()
+    rows.forEach((row, idx) => {
+      const id = rowKey(row, idx)
+      const livello = livelloByRow[id] ?? DEFAULT_LIVELLO
+      if (!byLivello.has(livello)) byLivello.set(livello, [])
+      byLivello.get(livello).push(cicloPayload(row, id))
+    })
+    for (const [livello, payload] of byLivello) {
+      fetchCompatibili(payload, livello, checked)
+    }
   }
 
   const handleSearch = (e) => {
@@ -413,6 +438,7 @@ export default function PrezziMancantiPage() {
     setDataAFilter(todayISO())
     setDataDaApplied('')
     setDataAApplied('')
+    setPrezziPresenti(true)
     setSearched(false)
     setRows([])
     setTotal(0)
@@ -476,6 +502,21 @@ export default function PrezziMancantiPage() {
                   placeholder="Seleziona data fine…"
                 />
               </label>
+              <label
+                className="users-form__field pm-prezzi-presenti"
+                title="Se attivo, i cicli compatibili devono avere un'offerta con prezzo > 0"
+              >
+                <span>Prezzi presenti</span>
+                <span className="pm-prezzi-presenti__ctrl">
+                  <input
+                    type="checkbox"
+                    name="prezzi_presenti"
+                    checked={prezziPresenti}
+                    onChange={(e) => handlePrezziPresentiChange(e.target.checked)}
+                  />
+                  <span>Solo cicli con prezzo</span>
+                </span>
+              </label>
               <button type="submit" className="btn btn--primary btn--sm" style={{ alignSelf: 'flex-end' }}>
                 Cerca
               </button>
@@ -492,7 +533,8 @@ export default function PrezziMancantiPage() {
             <p className="sinonimi-hint">
               Mostra le spedizioni (DDT di uscita) nel periodo selezionato
               con ciclo senza prezzo associato in disposizione (come il report Wash).
-              Sotto ogni riga compaiono i cicli compatibili (livello {DEFAULT_LIVELLO} di default);
+              Sotto ogni riga compaiono i cicli compatibili (livello {DEFAULT_LIVELLO} di default
+              {prezziPresenti ? ', solo con prezzo' : ''});
               lo slider aggiorna solo quella riga.
               {range.da && range.a ? (
                 <>

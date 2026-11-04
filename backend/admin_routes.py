@@ -58,6 +58,22 @@ def _int_param(value: Any, default: int, lo: int, hi: int) -> int:
         return default
 
 
+def _bool_param(value: Any, default: bool = True) -> bool:
+    """True di default; False solo se esplicitamente falso (false/0/no/off)."""
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    s = str(value).strip().lower()
+    if s in ("0", "false", "no", "off", "n"):
+        return False
+    if s in ("1", "true", "yes", "on", "s", "y"):
+        return True
+    return default
+
+
 def _normalize_termine(value: Any) -> str:
     return " ".join(str(value or "").strip().upper().split())
 
@@ -706,8 +722,9 @@ def register_admin_routes(app, db_pool):
         Body JSON::
 
             {
-              "livello": 4,          # 1..5, default 4
-              "limite": 30,          # max risultati per riga
+              "livello": 4,              # 1..5, default 4
+              "limite": 30,              # max risultati per riga
+              "prezzi_presenti": true,   # default True: solo cicli con offerta C37 > 0
               "righe": [
                 {
                   "id": "row-0",
@@ -731,6 +748,7 @@ def register_admin_routes(app, db_pool):
         body = request.json or {}
         livello = _int_param(body.get("livello"), 4, 1, 5)
         limite = _int_param(body.get("limite"), 30, 1, 100)
+        prezzi_presenti = _bool_param(body.get("prezzi_presenti"), True)
         righe_raw = body.get("righe")
         if not isinstance(righe_raw, list) or not righe_raw:
             raise _json_error(400, "Parametro righe obbligatorio (lista non vuota)")
@@ -760,6 +778,7 @@ def register_admin_routes(app, db_pool):
                 cicli_input,
                 livello=livello,
                 limite=limite,
+                prezzi_presenti=prezzi_presenti,
             )
             cursor.close()
 
@@ -771,11 +790,13 @@ def register_admin_routes(app, db_pool):
                     "compatibili": esito.get("compatibili") or [],
                     "livello": livello,
                     "soglia": LIVELLI_SOGLIA.get(livello),
+                    "prezzi_presenti": prezzi_presenti,
                 }
 
             return {
                 "livello": livello,
                 "soglia": LIVELLI_SOGLIA.get(livello),
+                "prezzi_presenti": prezzi_presenti,
                 "livelli": {str(k): v for k, v in LIVELLI_SOGLIA.items()},
                 "results": results,
             }
