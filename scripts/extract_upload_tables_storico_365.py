@@ -32,9 +32,12 @@ LOOKBACK_DAYS = 365  # None = nessun filtro data (full dump)
 # Non filtrare su data_ins: altrimenti i cicli "vecchi" spariscono dal DB.
 EXPORT_CICLI = True
 
-# DDT in uscita (D02/D03) + clienti: servono al report "listino prezzi mancanti"
-# (join disposizioni senza prezzo ↔ bolle di spedizione).
+# DDT in uscita (D02/D03) + clienti: join disposizioni ↔ bolle di spedizione.
 EXPORT_DDT = True
+
+# Snapshot completo view Oracle DDT_PREZZI_003W (~4k DDT non fatturati).
+# GetPrezzo* risolti in Oracle; filtro "prezzi mancanti" solo lato API/Postgres.
+EXPORT_DDT_PREZZI_003W = True
 
 
 def _lookback_predicate(alias: str = "t") -> str:
@@ -48,7 +51,6 @@ def _ddt_lookback_predicate(alias: str = "t") -> str:
     if LOOKBACK_DAYS is None:
         return "1=1"
     return f"{alias}.D02_DT_BOLLA >= TRUNC(SYSDATE) - {LOOKBACK_DAYS}"
-
 
 def _cell(value):
     """Normalizza celle per CSV Postgres (date ISO, None → vuoto)."""
@@ -207,6 +209,15 @@ DDT_QUERIES = {
     """,
 }
 
+# Snapshot FULL della view (già limitata a D02_FLAG_FATTURATA = 'N' + disposizione).
+# Non materializzata: Oracle ricalcola GetPrezzo* per riga (può richiedere minuti).
+DDT_PREZZI_003W_QUERIES = {
+    "ddt_prezzi_003w.csv": """
+        SELECT v.*
+        FROM INTEX2.DDT_PREZZI_003W v
+    """,
+}
+
 # Cicli di lavorazione → Postgres (create-cicli-tables.sql).
 # Header = nomi colonna Postgres (come export_cicli_tables.txt).
 CICLI_QUERIES = {
@@ -353,6 +364,8 @@ def export_and_send():
     queries = dict(QUERIES)
     if EXPORT_DDT:
         queries.update(DDT_QUERIES)
+    if EXPORT_DDT_PREZZI_003W:
+        queries.update(DDT_PREZZI_003W_QUERIES)
     if EXPORT_CICLI:
         queries.update(CICLI_QUERIES)
 
@@ -400,6 +413,8 @@ def export_and_send():
     parts = ["storico", "c37"]
     if EXPORT_DDT:
         parts.append("ddt")
+    if EXPORT_DDT_PREZZI_003W:
+        parts.append("ddt_prezzi_003w")
     parts.append("cicli" if EXPORT_CICLI else "senza cicli")
     print(f"Sincronizzazione completata ({' + '.join(parts)}, timestamp={timestamp})")
 

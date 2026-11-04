@@ -10,6 +10,7 @@
 #   /var/data_imports/intex/{timestamp}_ddt_testate.csv           (opz. → set DDT uscita)
 #   /var/data_imports/intex/{timestamp}_ddt_righe.csv
 #   /var/data_imports/intex/{timestamp}_clienti_anagrafica.csv    (opz., consigliato con DDT)
+#   /var/data_imports/intex/{timestamp}_ddt_prezzi_003w.csv       (opz. → snapshot DDT_PREZZI_003W)
 #   /var/data_imports/intex/{timestamp}_z09_cicli_testate.csv     (opz. → set cicli)
 #   /var/data_imports/intex/{timestamp}_z08_cicli_fasi.csv
 #   /var/data_imports/intex/{timestamp}_z02_fasi.csv
@@ -83,6 +84,13 @@ if [[ -f "$CLIENTI_ANAG" ]]; then
   LOAD_CLIENTI=1
 fi
 
+# Snapshot full view Oracle DDT_PREZZI_003W
+DDT_PREZZI_003W="$IMPORT_DIR/${TS}_ddt_prezzi_003w.csv"
+LOAD_DDT_PREZZI_003W=0
+if [[ -f "$DDT_PREZZI_003W" ]]; then
+  LOAD_DDT_PREZZI_003W=1
+fi
+
 # Cicli: se c'è z09, richiedi l'intero set (stesso timestamp)
 CICLI_Z09="$IMPORT_DIR/${TS}_z09_cicli_testate.csv"
 CICLI_Z08="$IMPORT_DIR/${TS}_z08_cicli_fasi.csv"
@@ -133,6 +141,11 @@ if [[ "$LOAD_CLIENTI" -eq 1 ]]; then
 else
   log "  CLIENTI=assente (skip)"
 fi
+if [[ "$LOAD_DDT_PREZZI_003W" -eq 1 ]]; then
+  log "  DDT_PREZZI_003W=$DDT_PREZZI_003W"
+else
+  log "  DDT_PREZZI_003W=assente (skip)"
+fi
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
   log "  CICLI=z09+z08+z02+r07+z11+cw4+cwa+cw0"
 else
@@ -155,6 +168,9 @@ fi
 if [[ "$LOAD_CLIENTI" -eq 1 ]]; then
   wait_stable "$CLIENTI_ANAG" || die "file non stabile o vuoto: $CLIENTI_ANAG"
 fi
+if [[ "$LOAD_DDT_PREZZI_003W" -eq 1 ]]; then
+  wait_stable "$DDT_PREZZI_003W" || die "file non stabile o vuoto: $DDT_PREZZI_003W"
+fi
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
   for f in "$CICLI_Z09" "$CICLI_Z08" "$CICLI_Z02" "$CICLI_R07" "$CICLI_Z11" "$CICLI_CW4" "$CICLI_CWA" "$CICLI_CW0"; do
     wait_stable "$f" || die "file non stabile o vuoto: $f"
@@ -174,10 +190,27 @@ fi
 if [[ "$LOAD_CLIENTI" -eq 1 ]]; then
   head -1 "$CLIENTI_ANAG" | grep -qi 'codice' || die "header clienti_anagrafica inatteso"
 fi
+if [[ "$LOAD_DDT_PREZZI_003W" -eq 1 ]]; then
+  head -1 "$DDT_PREZZI_003W" | grep -qi 'd02_dt_bolla' || die "header ddt_prezzi_003w inatteso (manca d02_dt_bolla)"
+  head -1 "$DDT_PREZZI_003W" | grep -qi 'd03_prezzo_capo' || die "header ddt_prezzi_003w inatteso (manca d03_prezzo_capo)"
+fi
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
   head -1 "$CICLI_Z09" | grep -qi 'codice_ciclo' || die "header z09 cicli inatteso"
   head -1 "$CICLI_Z08" | grep -qi 'sequenza' || die "header z08 cicli inatteso"
 fi
+
+# DDL ddt_prezzi_003w anche se il CSV manca (conteggi finali / API).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DDT_PREZZI_DDL="${DDT_PREZZI_DDL:-$SCRIPT_DIR/../data/migrations/create-ddt-prezzi-003w.sql}"
+ensure_ddt_prezzi_003w_ddl() {
+  if [[ -f "$DDT_PREZZI_DDL" ]]; then
+    "${PSQL[@]}" < "$DDT_PREZZI_DDL"
+  else
+    die "DDL assente: $DDT_PREZZI_DDL (serve create-ddt-prezzi-003w.sql)"
+  fi
+}
+
+ensure_ddt_prezzi_003w_ddl
 
 copy_csv() {
   local table="$1" file="$2"
@@ -331,6 +364,14 @@ if [[ "$LOAD_DDT" -eq 1 ]]; then
   [[ "${LOADED_RIGHE:-0}" -gt 0 ]] || die "ddt_righe ancora vuota dopo INSERT (FK/chiavi non allineate a ddt_testate?)"
 fi
 
+if [[ "$LOAD_DDT_PREZZI_003W" -eq 1 ]]; then
+  log "TRUNCATE ddt_prezzi_003w…"
+  "${PSQL[@]}" -c "TRUNCATE ddt_prezzi_003w;"
+  copy_csv_nulls ddt_prezzi_003w "$DDT_PREZZI_003W"
+  LOADED_DP=$("${PSQL[@]}" -Atqc "SELECT COUNT(*) FROM ddt_prezzi_003w;")
+  log "ddt_prezzi_003w caricate: $LOADED_DP"
+fi
+
 if [[ "$LOAD_CICLI" -eq 1 ]]; then
   log "TRUNCATE cicli…"
   # Nessuna FK tra queste tabelle; cicli_search va svuotata prima del refresh
@@ -368,6 +409,7 @@ UNION ALL SELECT 'storico_disposizioni', COUNT(*) FROM storico_disposizioni
 UNION ALL SELECT 'c37_testata_listini', COUNT(*) FROM c37_testata_listini
 UNION ALL SELECT 'ddt_testate', COUNT(*) FROM ddt_testate
 UNION ALL SELECT 'ddt_righe', COUNT(*) FROM ddt_righe
+UNION ALL SELECT 'ddt_prezzi_003w', COUNT(*) FROM ddt_prezzi_003w
 UNION ALL SELECT 'clienti', COUNT(*) FROM clienti
 UNION ALL SELECT 'cicli_testate', COUNT(*) FROM cicli_testate
 UNION ALL SELECT 'cicli_fasi', COUNT(*) FROM cicli_fasi
@@ -381,4 +423,4 @@ UNION ALL SELECT 'cicli_search', COUNT(*) FROM cicli_search
 ORDER BY 1;
 "
 
-log "Import completato (timestamp=$TS, storico=$LOAD_STORICO, c37=$LOAD_C37, ddt=$LOAD_DDT, clienti=$LOAD_CLIENTI, cicli=$LOAD_CICLI)"
+log "Import completato (timestamp=$TS, storico=$LOAD_STORICO, c37=$LOAD_C37, ddt=$LOAD_DDT, clienti=$LOAD_CLIENTI, ddt_prezzi_003w=$LOAD_DDT_PREZZI_003W, cicli=$LOAD_CICLI)"
