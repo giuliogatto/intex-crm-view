@@ -258,6 +258,16 @@ html {
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-tab__icon {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  display: block;
 }
 
 .nav-tab:hover {

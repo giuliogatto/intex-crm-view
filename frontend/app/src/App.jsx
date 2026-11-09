@@ -7,6 +7,7 @@ import CicliPage from './pages/CicliPage'
 import ChatPanel from './components/ChatPanel'
 import UserMenu from './components/UserMenu'
 import AdminNav from './components/AdminNav'
+import PrezziMancantiIcon from './components/PrezziMancantiIcon'
 import Pagination from './components/Pagination'
 import LoadingOverlay from './components/LoadingOverlay'
 import DdtAssistPanel from './components/DdtAssistPanel'
@@ -699,7 +700,7 @@ function App() {
               📄 Upload bolla
             </button>
             <a href="/prezzi-mancanti" className="nav-tab">
-              💶 Prezzi mancanti
+              <PrezziMancantiIcon /> Prezzi mancanti
             </a>
           </>
         ) : (
@@ -748,7 +749,7 @@ function App() {
             </button>
             {user?.role === 'admin' && (
               <a href="/prezzi-mancanti" className="nav-tab">
-                💶 Prezzi mancanti
+                <PrezziMancantiIcon /> Prezzi mancanti
               </a>
             )}
           </>

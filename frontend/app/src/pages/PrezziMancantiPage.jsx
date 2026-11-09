@@ -3,6 +3,7 @@ import { authFetch } from '../utils/auth'
 import { useAuth } from '../context/AuthContext'
 import UserMenu from '../components/UserMenu'
 import AdminNav from '../components/AdminNav'
+import PrezziMancantiIcon from '../components/PrezziMancantiIcon'
 import DateInput from '../components/DateInput'
 import Pagination from '../components/Pagination'
 
@@ -584,7 +585,7 @@ export default function PrezziMancantiPage() {
                 📄 Upload bolla
               </a>
               <a href="/prezzi-mancanti" className="nav-tab is-active" aria-current="page">
-                💶 Prezzi mancanti
+                <PrezziMancantiIcon /> Prezzi mancanti
               </a>
             </>
           ) : (
@@ -611,7 +612,7 @@ export default function PrezziMancantiPage() {
                 📊 Analisi
               </a>
               <a href="/prezzi-mancanti" className="nav-tab is-active" aria-current="page">
-                💶 Prezzi mancanti
+                <PrezziMancantiIcon /> Prezzi mancanti
               </a>
             </>
           )}
