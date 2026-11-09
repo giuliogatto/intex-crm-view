@@ -38,13 +38,15 @@ const ANALISI_QUESTION_SHORTCUTS = [
 ]
 
 function cicliUrl(mode = 'ricerca') {
-  return mode === 'upload' ? '/cicli?mode=upload' : '/cicli'
+  if (mode === 'upload') return '/cicli?mode=upload'
+  if (mode === 'compatibili') return '/cicli?mode=compatibili'
+  return '/cicli'
 }
 
 function readCicliModeFromUrl() {
-  return new URLSearchParams(window.location.search).get('mode') === 'upload'
-    ? 'upload'
-    : 'ricerca'
+  const mode = new URLSearchParams(window.location.search).get('mode')
+  if (mode === 'upload' || mode === 'compatibili') return mode
+  return 'ricerca'
 }
 
 function App() {
@@ -54,7 +56,9 @@ function App() {
   const [activeTab, setActiveTab] = useState(() => {
     if (user?.role === 'cicli') {
       const mode = readCicliModeFromUrl()
-      if (window.location.pathname !== '/cicli' || window.location.search !== (mode === 'upload' ? '?mode=upload' : '')) {
+      const expectedSearch =
+        mode === 'upload' ? '?mode=upload' : mode === 'compatibili' ? '?mode=compatibili' : ''
+      if (window.location.pathname !== '/cicli' || window.location.search !== expectedSearch) {
         window.history.replaceState({}, document.title, cicliUrl(mode))
       }
       return 'cicli'
@@ -698,6 +702,12 @@ function App() {
               onClick={() => handleTabChange('cicli', 'upload')}
             >
               📄 Upload bolla
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'cicli' && cicliMode === 'compatibili' ? 'is-active' : ''}`}
+              onClick={() => handleTabChange('cicli', 'compatibili')}
+            >
+              🔎 Cicli compatibili
             </button>
             <a href="/prezzi-mancanti" className="nav-tab">
               <PrezziMancantiIcon /> Prezzi mancanti

@@ -8,6 +8,11 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from bottle import request, response
 
 from audit import log_search
+from cicli_compatibili import (
+    KEY_FIELDS,
+    LIVELLI_SOGLIA,
+    trova_cicli_compatibili,
+)
 
 # ---------------------------------------------------------------------------
 # Fallback sinonimi (usati se tabella ricerca_sinonimi assente / vuota)
@@ -2312,3 +2317,292 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
         except Exception as e:
             response.status = 500
             return {"error": str(e)}
+
+    def _bool_body(value, default=False):
+        if value is None:
+            return default
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value)
+        s = str(value).strip().lower()
+        if s in ("0", "false", "no", "off", "n"):
+            return False
+        if s in ("1", "true", "yes", "on", "s", "y"):
+            return True
+        return default
+
+    def _int_body(value, default, lo, hi):
+        try:
+            return max(lo, min(hi, int(value)))
+        except (TypeError, ValueError):
+            return default
+
+    def _ciclo_key_payload(item):
+        return {f: str(item.get(f) or "").strip() for f in KEY_FIELDS}
+
+    def _ciclo_candidato_summary(row):
+        (
+            codice_cliente,
+            ragione_sociale,
+            codice_articolo,
+            ds_articolo,
+            codice_ciclo,
+            codice_ciclo_cli,
+            ds_ciclo,
+            codice_linea,
+            ds_linea,
+            codice_stagione,
+            ds_stagione,
+            codice_composizione,
+            ds_composizione,
+            data_ins,
+        ) = row
+        return {
+            "codice_cliente": codice_cliente,
+            "ragione_sociale": ragione_sociale,
+            "codice_articolo": codice_articolo,
+            "ds_articolo": ds_articolo,
+            "codice_ciclo": codice_ciclo,
+            "codice_ciclo_cli": codice_ciclo_cli,
+            "ds_ciclo": ds_ciclo,
+            "codice_linea": codice_linea,
+            "ds_linea": ds_linea,
+            "codice_stagione": codice_stagione,
+            "ds_stagione": ds_stagione,
+            "codice_composizione": codice_composizione,
+            "ds_composizione": ds_composizione,
+            "data_ins": data_ins.isoformat() if data_ins else None,
+        }
+
+    def _lookup_cicli_by_codice(cursor, codice_ciclo, codice_cliente=None, limite=50):
+        """Candidati per codice ciclo (interno o cliente), filtro cliente opzionale."""
+        codice = str(codice_ciclo or "").strip()
+        if not codice:
+            return []
+        params = {"codice": codice, "limite": limite}
+        cli_sql = ""
+        if codice_cliente:
+            params["cli"] = str(codice_cliente).strip()
+            cli_sql = "AND t.codice_cliente = %(cli)s"
+        cursor.execute(
+            f"""
+            SELECT
+              t.codice_cliente,
+              cl.ragione_sociale,
+              t.codice_articolo,
+              ar.ds_articolo,
+              t.codice_ciclo,
+              t.codice_ciclo_cli,
+              t.ds_ciclo,
+              t.codice_linea,
+              li.ds_linea,
+              t.codice_stagione,
+              st.ds_stagione,
+              t.codice_composizione,
+              co.ds_composizione,
+              t.data_ins
+            FROM cicli_testate t
+            LEFT JOIN cicli_clienti cl ON cl.codice_cliente = t.codice_cliente
+            LEFT JOIN articoli_cliente ar
+              ON ar.codice_cliente = t.codice_cliente AND ar.codice_articolo = t.codice_articolo
+            LEFT JOIN cicli_stagioni st ON st.codice_stagione = t.codice_stagione
+            LEFT JOIN composizioni co ON co.codice_composizione = t.codice_composizione
+            LEFT JOIN linee_tintoria li
+              ON li.codice_cliente = t.codice_cliente AND li.codice_linea = t.codice_linea
+            WHERE (
+              UPPER(BTRIM(t.codice_ciclo)) = UPPER(BTRIM(%(codice)s))
+              OR UPPER(BTRIM(COALESCE(t.codice_ciclo_cli, ''))) = UPPER(BTRIM(%(codice)s))
+            )
+            {cli_sql}
+            ORDER BY t.data_ins DESC NULLS LAST, t.codice_ciclo, t.codice_articolo
+            LIMIT %(limite)s
+            """,
+            params,
+        )
+        return [_ciclo_candidato_summary(r) for r in cursor.fetchall()]
+
+    @app.route("/api/cicli/compatibili", method="POST")
+    def post_cicli_compatibili():
+        """Ricerca cicli compatibili a partire da codice ciclo e/o fasi.
+
+        Body JSON::
+
+            {
+              "codice_cliente": "...",          # opzionale se si risolve da codice_ciclo
+              "codice_ciclo": "...",             # opzionale
+              "fasi": ["stone wash", "..."],    # chip testuali → ds_fase
+              "ciclo": { ...chiave a 6 campi }, # se l'utente ha già scelto un candidato
+              "livello": 4,
+              "prezzi_presenti": false,
+              "limite": 50
+            }
+
+        Se ``codice_ciclo`` matcha più testate, risponde con
+        ``needs_selection: true`` e la lista ``candidati`` (senza chiamare
+        la funzione di compatibilità). Altrimenti ritorna i compatibili.
+        """
+        body = request.json or {}
+        if not isinstance(body, dict):
+            response.status = 400
+            return {"error": "Body JSON non valido"}
+
+        livello = _int_body(body.get("livello"), 4, 1, 5)
+        limite = _int_body(body.get("limite"), 50, 1, 100)
+        prezzi_presenti = _bool_body(body.get("prezzi_presenti"), False)
+        codice_cliente = str(body.get("codice_cliente") or "").strip()
+        codice_ciclo = str(body.get("codice_ciclo") or "").strip()
+        fasi_raw = body.get("fasi") or []
+        if not isinstance(fasi_raw, list):
+            response.status = 400
+            return {"error": "Parametro fasi deve essere una lista"}
+        fasi = [str(f).strip() for f in fasi_raw if str(f or "").strip()]
+        ciclo_sel = body.get("ciclo") if isinstance(body.get("ciclo"), dict) else None
+
+        if not ciclo_sel and not codice_ciclo and not fasi:
+            response.status = 400
+            return {
+                "error": "Indicare un codice ciclo, oppure una o più fasi "
+                "(con cliente), oppure un ciclo selezionato."
+            }
+        if not ciclo_sel and not codice_ciclo and fasi and not codice_cliente:
+            response.status = 400
+            return {
+                "error": "Per la ricerca per sole fasi è obbligatorio il cliente "
+                "(la funzione di compatibilità opera sullo stesso cliente)."
+            }
+
+        conn = None
+        try:
+            conn = db_pool.get_conn()
+            cursor = conn.cursor()
+            if not _cicli_table_exists(cursor, "cicli_testate"):
+                cursor.close()
+                response.status = 503
+                return {"error": "Tabella cicli_testate non presente."}
+
+            meta = {
+                "livello": livello,
+                "soglia": LIVELLI_SOGLIA.get(livello),
+                "prezzi_presenti": prezzi_presenti,
+                "livelli": {str(k): v for k, v in LIVELLI_SOGLIA.items()},
+            }
+
+            # 1) Ciclo già scelto dall'utente → chiama direttamente la funzione.
+            if ciclo_sel:
+                ciclo_in = _ciclo_key_payload(ciclo_sel)
+                mancanti = [f for f in KEY_FIELDS if not ciclo_in.get(f)]
+                if mancanti:
+                    cursor.close()
+                    response.status = 400
+                    return {"error": f"Ciclo selezionato incompleto: {', '.join(mancanti)}"}
+                try:
+                    compatibili = trova_cicli_compatibili(
+                        cursor,
+                        ciclo_in,
+                        cliente=ciclo_in.get("codice_cliente"),
+                        livello=livello,
+                        limite=limite,
+                        prezzi_presenti=prezzi_presenti,
+                    )
+                except (ValueError, LookupError) as exc:
+                    cursor.close()
+                    response.status = 404
+                    return {"error": str(exc), **meta}
+                cursor.close()
+                return {
+                    "needs_selection": False,
+                    "input_mode": "ciclo",
+                    "input": ciclo_in,
+                    "compatibili": compatibili,
+                    **meta,
+                }
+
+            # 2) Codice ciclo → risolvi candidati; se >1 chiedi selezione.
+            if codice_ciclo:
+                candidati = _lookup_cicli_by_codice(
+                    cursor, codice_ciclo, codice_cliente or None
+                )
+                if not candidati:
+                    cursor.close()
+                    response.status = 404
+                    return {
+                        "error": (
+                            f"Nessun ciclo trovato per codice «{codice_ciclo}»"
+                            + (f" e cliente «{codice_cliente}»" if codice_cliente else "")
+                        ),
+                        **meta,
+                    }
+                if len(candidati) > 1:
+                    cursor.close()
+                    return {
+                        "needs_selection": True,
+                        "input_mode": "codice_ciclo",
+                        "codice_ciclo": codice_ciclo,
+                        "codice_cliente": codice_cliente or None,
+                        "candidati": candidati,
+                        "total": len(candidati),
+                        **meta,
+                    }
+
+                ciclo_in = _ciclo_key_payload(candidati[0])
+                try:
+                    compatibili = trova_cicli_compatibili(
+                        cursor,
+                        ciclo_in,
+                        cliente=ciclo_in.get("codice_cliente"),
+                        livello=livello,
+                        limite=limite,
+                        prezzi_presenti=prezzi_presenti,
+                    )
+                except (ValueError, LookupError) as exc:
+                    cursor.close()
+                    response.status = 404
+                    return {"error": str(exc), **meta}
+                cursor.close()
+                return {
+                    "needs_selection": False,
+                    "input_mode": "codice_ciclo",
+                    "input": candidati[0],
+                    "compatibili": compatibili,
+                    **meta,
+                }
+
+            # 3) Solo fasi (+ cliente obbligatorio) → input sintetico.
+            ciclo_sintetico = {
+                "codice_cliente": codice_cliente,
+                "fasi": [{"ds_fase": f} for f in fasi],
+            }
+            try:
+                compatibili = trova_cicli_compatibili(
+                    cursor,
+                    ciclo_sintetico,
+                    cliente=codice_cliente,
+                    livello=livello,
+                    limite=limite,
+                    prezzi_presenti=prezzi_presenti,
+                )
+            except (ValueError, LookupError) as exc:
+                cursor.close()
+                response.status = 400
+                return {"error": str(exc), **meta}
+            cursor.close()
+            return {
+                "needs_selection": False,
+                "input_mode": "fasi",
+                "input": {
+                    "codice_cliente": codice_cliente,
+                    "fasi": fasi,
+                },
+                "compatibili": compatibili,
+                **meta,
+            }
+        except Exception as e:
+            response.status = 500
+            return {"error": str(e)}
+        finally:
+            if conn is not None:
+                try:
+                    db_pool.release_conn(conn)
+                except Exception:
+                    pass

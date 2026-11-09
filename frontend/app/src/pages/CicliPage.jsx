@@ -6,6 +6,7 @@ import FasiChipInput from '../components/FasiChipInput'
 import Pagination from '../components/Pagination'
 import LoadingOverlay from '../components/LoadingOverlay'
 import BollaUploadPanel from '../components/BollaUploadPanel'
+import CicliCompatibiliSearchPanel from '../components/CicliCompatibiliSearchPanel'
 import { authFetch } from '../utils/auth'
 
 const PAGE_SIZE = 50
@@ -13,6 +14,7 @@ const PAGE_SIZE = 50
 const MODES = [
   { id: 'ricerca', label: 'Ricerca' },
   { id: 'upload', label: 'Upload bolla' },
+  { id: 'compatibili', label: 'Ricerca cicli compatibili' },
 ]
 
 /** Dizionario fisso reparti (valore inviato all'API; Tutti = nessun filtro). */
@@ -314,6 +316,10 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
 
       <div hidden={mode !== 'upload'}>
         <BollaUploadPanel onOpenInRicerca={openInRicerca} />
+      </div>
+
+      <div hidden={mode !== 'compatibili'}>
+        <CicliCompatibiliSearchPanel />
       </div>
 
       <div hidden={mode !== 'ricerca'}>
