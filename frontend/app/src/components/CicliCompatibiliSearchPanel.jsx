@@ -5,6 +5,8 @@ import FasiChipInput from './FasiChipInput'
 import CicliCompatibiliResults from './CicliCompatibiliResults'
 import LoadingOverlay from './LoadingOverlay'
 import { authFetch } from '../utils/auth'
+import { printCicliCompatibili } from '../utils/printReports'
+import { LIVELLO_HINT } from './CicliCompatibiliResults'
 
 const DEFAULT_LIVELLO = 4
 
@@ -364,12 +366,37 @@ export default function CicliCompatibiliSearchPanel() {
       {searched && !needsSelection ? (
         <div className="panel" style={{ marginTop: '1rem' }}>
           <div className="panel__head">
-            Risultati
-            {inputSummary?.codice_ciclo
-              ? ` · riferimento ${inputSummary.codice_ciclo}`
-              : inputSummary?.fasi?.length
-                ? ` · fasi: ${inputSummary.fasi.join(', ')}`
-                : ''}
+            <span>
+              Risultati
+              {inputSummary?.codice_ciclo
+                ? ` · riferimento ${inputSummary.codice_ciclo}`
+                : inputSummary?.fasi?.length
+                  ? ` · fasi: ${inputSummary.fasi.join(', ')}`
+                  : ''}
+            </span>
+            {compatibili.length > 0 && !loading && !error ? (
+              <button
+                type="button"
+                className="btn btn--sm"
+                title="Stampa i risultati con tutti i dettagli espansi"
+                onClick={() => {
+                  try {
+                    printCicliCompatibili({
+                      compatibili,
+                      livello,
+                      soglia,
+                      livelloHint: LIVELLO_HINT,
+                      inputSummary,
+                    })
+                  } catch (err) {
+                    console.error(err)
+                    window.alert(err.message || 'Impossibile aprire la stampa.')
+                  }
+                }}
+              >
+                Stampa
+              </button>
+            ) : null}
           </div>
           <div className="panel__body">
             <CicliCompatibiliResults

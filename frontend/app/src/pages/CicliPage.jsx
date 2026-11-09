@@ -8,6 +8,11 @@ import LoadingOverlay from '../components/LoadingOverlay'
 import BollaUploadPanel from '../components/BollaUploadPanel'
 import CicliCompatibiliSearchPanel from '../components/CicliCompatibiliSearchPanel'
 import { authFetch } from '../utils/auth'
+import {
+  prefetchCicliNested,
+  printCicliVistaCicli,
+  printCicliVistaUtilizzi,
+} from '../utils/printReports'
 
 const PAGE_SIZE = 50
 
@@ -123,6 +128,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
   const [total, setTotal] = useState(0)
   const [fasiEspanse, setFasiEspanse] = useState({})
   const [storicoDisponibile, setStoricoDisponibile] = useState(null)
+  const [printing, setPrinting] = useState(false)
   const [expandedKey, setExpandedKey] = useState(null)
   const [expandedKind, setExpandedKind] = useState(null) // 'fasi' | 'utilizzi'
   const [fasiByKey, setFasiByKey] = useState({})
@@ -288,6 +294,43 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
           setUtilizziByKey((prev) => ({ ...prev, [key]: [] }))
         })
         .finally(() => setDetailLoading(null))
+    }
+  }
+
+  const handlePrintResults = async () => {
+    if (!data.length || printing) return
+    if (appliedFilters.vista === 'utilizzi') {
+      try {
+        printCicliVistaUtilizzi({ items: data, page, pages, total })
+      } catch (err) {
+        console.error(err)
+        window.alert(err.message || 'Impossibile aprire la stampa.')
+      }
+      return
+    }
+    setPrinting(true)
+    try {
+      const nested = await prefetchCicliNested(
+        data,
+        fasiByKey,
+        utilizziByKey,
+        appliedFilters
+      )
+      setFasiByKey(nested.fasiByKey)
+      setUtilizziByKey(nested.utilizziByKey)
+      printCicliVistaCicli({
+        items: data,
+        fasiByKey: nested.fasiByKey,
+        utilizziByKey: nested.utilizziByKey,
+        page,
+        pages,
+        total,
+      })
+    } catch (err) {
+      console.error(err)
+      window.alert(err.message || 'Impossibile aprire la stampa.')
+    } finally {
+      setPrinting(false)
     }
   }
 
@@ -627,6 +670,21 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
             {isUtilizziVista ? 'Utilizzi storico' : 'Risultati cicli'}
             {total ? ` (${total})` : ''}
           </span>
+          {data.length > 0 ? (
+            <button
+              type="button"
+              className="btn btn--sm"
+              onClick={handlePrintResults}
+              disabled={loading || printing}
+              title={
+                isUtilizziVista
+                  ? 'Stampa la pagina corrente'
+                  : 'Stampa la pagina corrente con fasi e utilizzi espansi'
+              }
+            >
+              {printing ? 'Preparazione stampa…' : 'Stampa'}
+            </button>
+          ) : null}
         </div>
         <div className="panel__body">
           {data.length === 0 && !loading ? (

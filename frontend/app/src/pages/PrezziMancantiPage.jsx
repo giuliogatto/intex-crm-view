@@ -6,6 +6,7 @@ import AdminNav from '../components/AdminNav'
 import PrezziMancantiIcon from '../components/PrezziMancantiIcon'
 import DateInput from '../components/DateInput'
 import Pagination from '../components/Pagination'
+import { printPrezziMancanti } from '../utils/printReports'
 
 const PAGE_SIZE = 100
 const DEFAULT_LIVELLO = 4
@@ -626,6 +627,36 @@ export default function PrezziMancantiPage() {
               Lista controllo prezzi mancanti
               {searched ? ` (${total})` : ''}
             </span>
+            {searched && rows.length > 0 ? (
+              <button
+                type="button"
+                className="btn btn--sm"
+                disabled={loading}
+                title="Stampa la pagina corrente con tutti i cicli compatibili espansi"
+                onClick={() => {
+                  try {
+                    printPrezziMancanti({
+                      rows,
+                      compatByRow,
+                      livelloByRow,
+                      defaultLivello: DEFAULT_LIVELLO,
+                      page,
+                      pages,
+                      total,
+                      range,
+                      prezziPresenti,
+                      rowKeyFn: rowKey,
+                      livelloHint: LIVELLO_HINT,
+                    })
+                  } catch (err) {
+                    console.error(err)
+                    window.alert(err.message || 'Impossibile aprire la stampa.')
+                  }
+                }}
+              >
+                Stampa
+              </button>
+            ) : null}
           </div>
           <div className="panel__body panel__body--compact">
             <form className="sinonimi-filters" onSubmit={handleSearch}>
