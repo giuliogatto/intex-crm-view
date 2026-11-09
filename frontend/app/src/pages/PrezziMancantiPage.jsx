@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { authFetch } from '../utils/auth'
 import UserMenu from '../components/UserMenu'
+import AdminNav from '../components/AdminNav'
 import DateInput from '../components/DateInput'
 import Pagination from '../components/Pagination'
 
@@ -566,12 +567,31 @@ export default function PrezziMancantiPage() {
           </div>
           <div className="app-header__actions">
             <UserMenu />
+            <AdminNav />
           </div>
         </header>
 
         <nav className="nav-primary" aria-label="Navigazione principale">
-          <a href="/" className="nav-tab">
-            📦 Consultazione
+          <a href="/?tab=bolle" className="nav-tab">
+            📦 Bolle / DDT
+          </a>
+          <a href="/?tab=fatture" className="nav-tab">
+            🧾 Fatture
+          </a>
+          <a href="/?tab=offerte" className="nav-tab">
+            📋 Ordini / Cartellino
+          </a>
+          <a href="/?tab=discrepanze" className="nav-tab">
+            ⚖️ Auditing Confronto
+          </a>
+          <a href="/?tab=assistente" className="nav-tab">
+            🤖 Assistente DDT
+          </a>
+          <a href="/cicli" className="nav-tab">
+            🧵 Cicli
+          </a>
+          <a href="/analisi" className="nav-tab">
+            📊 Analisi
           </a>
           <a href="/prezzi-mancanti" className="nav-tab is-active" aria-current="page">
             💶 Prezzi mancanti

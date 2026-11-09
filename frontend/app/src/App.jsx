@@ -61,6 +61,20 @@ function App() {
     const pathname = window.location.pathname
     if (pathname === '/analisi') return 'analisi'
     if (pathname === '/cicli') return 'cicli'
+    const tabParam = new URLSearchParams(window.location.search).get('tab')
+    const allowedTabs = new Set(['bolle', 'fatture', 'offerte', 'discrepanze', 'assistente', 'cicli', 'analisi'])
+    if (tabParam && allowedTabs.has(tabParam)) {
+      if (tabParam === 'analisi') {
+        window.history.replaceState({}, document.title, '/analisi')
+        return 'analisi'
+      }
+      if (tabParam === 'cicli') {
+        window.history.replaceState({}, document.title, cicliUrl('ricerca'))
+        return 'cicli'
+      }
+      window.history.replaceState({}, document.title, '/')
+      return tabParam
+    }
     return 'bolle'
   })
   const [analisiSubTab, setAnalisiSubTab] = useState(null)
