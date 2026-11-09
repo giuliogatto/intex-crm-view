@@ -51,6 +51,14 @@ def _require_admin() -> Tuple[Optional[Dict[str, Any]], Optional[HTTPResponse]]:
     return user, None
 
 
+def _require_admin_or_cicli() -> Tuple[Optional[Dict[str, Any]], Optional[HTTPResponse]]:
+    """Admin o Operatore Cicli (pagina Prezzi mancanti)."""
+    user = request.environ.get("intex.user") or {}
+    if not isinstance(user, dict) or user.get("role") not in ("admin", "cicli"):
+        return None, _json_error(403, "Access denied")
+    return user, None
+
+
 def _int_param(value: Any, default: int, lo: int, hi: int) -> int:
     try:
         return max(lo, min(hi, int(value)))
@@ -500,7 +508,7 @@ def register_admin_routes(app, db_pool):
             db_pool.release_conn(conn)
 
     # ------------------------------------------------------------------
-    # Prezzi mancanti (controllo listino vs DDT uscita) — solo admin
+    # Prezzi mancanti (controllo listino vs DDT uscita) — admin + operatore cicli
     # ------------------------------------------------------------------
 
     @app.route("/api/admin/prezzi-mancanti", method="GET")
@@ -512,7 +520,7 @@ def register_admin_routes(app, db_pool):
         ``data_da`` / ``data_a`` (ISO YYYY-MM-DD) sul range di
         ``d02_dt_bolla`` (inclusivo).
         """
-        denied = _require_admin()
+        denied = _require_admin_or_cicli()
         if denied[0] is None:
             raise denied[1]
 
@@ -741,7 +749,7 @@ def register_admin_routes(app, db_pool):
         Con una sola riga (slider) la chiamata è leggera; con tutte le righe
         della pagina (caricamento report) riusa i candidati per cliente.
         """
-        denied = _require_admin()
+        denied = _require_admin_or_cicli()
         if denied[0] is None:
             raise denied[1]
 

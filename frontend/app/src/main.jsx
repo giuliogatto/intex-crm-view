@@ -76,7 +76,7 @@ function AppRoot() {
 
   if (adminPage === 'prezzi-mancanti') {
     return (
-      <AdminGuard>
+      <AdminGuard roles={['admin', 'cicli']}>
         <PrezziMancantiPage />
       </AdminGuard>
     )

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { authFetch } from '../utils/auth'
+import { useAuth } from '../context/AuthContext'
 import UserMenu from '../components/UserMenu'
 import AdminNav from '../components/AdminNav'
 import DateInput from '../components/DateInput'
@@ -360,6 +361,8 @@ function CicliCompatibiliPanel({
 }
 
 export default function PrezziMancantiPage() {
+  const { user } = useAuth()
+  const isCicliOnly = user?.role === 'cicli'
   const [dataDaFilter, setDataDaFilter] = useState(monthStartISO())
   const [dataAFilter, setDataAFilter] = useState(todayISO())
   const [dataDaApplied, setDataDaApplied] = useState('')
@@ -561,41 +564,57 @@ export default function PrezziMancantiPage() {
       <div className="app-sticky-top">
         <header className="app-header">
           <div className="app-title-group">
-            <a href="/" className="app-logo-link">
+            <a href={isCicliOnly ? '/cicli' : '/'} className="app-logo-link">
               <img src="/logo.webp" alt="Intex" className="app-logo" />
             </a>
           </div>
           <div className="app-header__actions">
             <UserMenu />
-            <AdminNav />
+            {!isCicliOnly && <AdminNav />}
           </div>
         </header>
 
         <nav className="nav-primary" aria-label="Navigazione principale">
-          <a href="/?tab=bolle" className="nav-tab">
-            📦 Bolle / DDT
-          </a>
-          <a href="/?tab=fatture" className="nav-tab">
-            🧾 Fatture
-          </a>
-          <a href="/?tab=offerte" className="nav-tab">
-            📋 Ordini / Cartellino
-          </a>
-          <a href="/?tab=discrepanze" className="nav-tab">
-            ⚖️ Auditing Confronto
-          </a>
-          <a href="/?tab=assistente" className="nav-tab">
-            🤖 Assistente DDT
-          </a>
-          <a href="/cicli" className="nav-tab">
-            🧵 Cicli
-          </a>
-          <a href="/analisi" className="nav-tab">
-            📊 Analisi
-          </a>
-          <a href="/prezzi-mancanti" className="nav-tab is-active" aria-current="page">
-            💶 Prezzi mancanti
-          </a>
+          {isCicliOnly ? (
+            <>
+              <a href="/cicli" className="nav-tab">
+                🧵 Cicli
+              </a>
+              <a href="/cicli?mode=upload" className="nav-tab">
+                📄 Upload bolla
+              </a>
+              <a href="/prezzi-mancanti" className="nav-tab is-active" aria-current="page">
+                💶 Prezzi mancanti
+              </a>
+            </>
+          ) : (
+            <>
+              <a href="/?tab=bolle" className="nav-tab">
+                📦 Bolle / DDT
+              </a>
+              <a href="/?tab=fatture" className="nav-tab">
+                🧾 Fatture
+              </a>
+              <a href="/?tab=offerte" className="nav-tab">
+                📋 Ordini / Cartellino
+              </a>
+              <a href="/?tab=discrepanze" className="nav-tab">
+                ⚖️ Auditing Confronto
+              </a>
+              <a href="/?tab=assistente" className="nav-tab">
+                🤖 Assistente DDT
+              </a>
+              <a href="/cicli" className="nav-tab">
+                🧵 Cicli
+              </a>
+              <a href="/analisi" className="nav-tab">
+                📊 Analisi
+              </a>
+              <a href="/prezzi-mancanti" className="nav-tab is-active" aria-current="page">
+                💶 Prezzi mancanti
+              </a>
+            </>
+          )}
         </nav>
       </div>
 

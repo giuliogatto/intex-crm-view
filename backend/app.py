@@ -121,8 +121,9 @@ OFFERTE_TOTAL_FIELDS = {
 
 PUBLIC_PATHS = {'/health', '/api/auth/login'}
 
-# Ruolo "cicli": solo auth + API cicli (il resto della UI non è accessibile).
+# Ruolo "cicli": auth + API cicli + prezzi mancanti (il resto della UI non è accessibile).
 CICLI_ROLE_ALLOWED_PREFIXES = ('/api/auth/', '/api/cicli')
+CICLI_ROLE_ALLOWED_EXACT = ('/api/admin/prezzi-mancanti',)
 
 
 def _json_error_response(status, message):
@@ -142,7 +143,12 @@ def _json_error_response(status, message):
 
 
 def _cicli_role_may_access(path):
-    return any(path.startswith(prefix) for prefix in CICLI_ROLE_ALLOWED_PREFIXES)
+    if any(path.startswith(prefix) for prefix in CICLI_ROLE_ALLOWED_PREFIXES):
+        return True
+    return any(
+        path == exact or path.startswith(exact + '/')
+        for exact in CICLI_ROLE_ALLOWED_EXACT
+    )
 
 
 # CORS Headers Hooks

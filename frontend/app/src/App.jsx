@@ -698,6 +698,9 @@ function App() {
             >
               📄 Upload bolla
             </button>
+            <a href="/prezzi-mancanti" className="nav-tab">
+              💶 Prezzi mancanti
+            </a>
           </>
         ) : (
           <>
