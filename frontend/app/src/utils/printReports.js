@@ -159,14 +159,20 @@ function compatItemHtml(item, i) {
   const c = item.ciclo || {}
   const prezzi = item.prezzi || c.prezzi || null
   const pct = Number(item.compatibilita) || 0
+  const univoco =
+    prezzi?.codice_univoco != null && prezzi.codice_univoco !== ''
+      ? String(prezzi.codice_univoco)
+      : null
   const label = [
     c.codice_ciclo,
+    univoco ? `#${univoco}` : null,
     c.ds_ciclo || c.ds_articolo,
     c.codice_stagione || c.ds_stagione,
   ]
     .filter(Boolean)
     .join(' · ')
   const keys = [
+    univoco ? `Cod. univoco ${univoco}` : null,
     c.ragione_sociale || c.codice_cliente,
     c.codice_articolo,
     c.codice_linea,

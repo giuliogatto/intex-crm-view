@@ -2389,6 +2389,12 @@ table.data tfoot .table-totals-row:hover td {
   word-break: break-word;
 }
 
+.pm-compat-card__univoco-inline {
+  font-weight: 600;
+  color: #1f4f3a;
+  font-variant-numeric: tabular-nums;
+}
+
 .pm-compat-card__desc {
   font-size: 0.78rem;
   color: #4a5a50;
