@@ -6,7 +6,7 @@ import CicliCompatibiliResults from './CicliCompatibiliResults'
 import LoadingOverlay from './LoadingOverlay'
 import { authFetch } from '../utils/auth'
 import { printCicliCompatibili } from '../utils/printReports'
-import { LIVELLO_HINT } from './CicliCompatibiliResults'
+import { LIVELLO_HINT } from './cicliCompatibiliConstants'
 
 const DEFAULT_LIVELLO = 4
 
@@ -305,46 +305,44 @@ export default function CicliCompatibiliSearchPanel() {
             Più cicli trovati — scegli il riferimento ({candidati.length})
           </div>
           <div className="panel__body">
-            <div className="table-wrap">
-              <table className="data chats-table">
-                <thead>
-                  <tr>
-                    <th>Cliente</th>
-                    <th>Cod. ciclo</th>
-                    <th>Articolo</th>
-                    <th>Stagione</th>
-                    <th>Linea</th>
-                    <th>Composizione</th>
-                    <th>Descrizione</th>
-                    <th>Data</th>
-                    <th />
-                  </tr>
-                </thead>
-                <tbody>
-                  {candidati.map((c) => (
-                    <tr key={cicloKey(c)} className="chats-table__row">
-                      <td>
-                        <div>{c.ragione_sociale || c.codice_cliente}</div>
-                        <div className="field-hint">{c.codice_cliente}</div>
-                      </td>
-                      <td>
-                        <div>{c.codice_ciclo}</div>
-                        {c.codice_ciclo_cli ? (
-                          <div className="field-hint">{c.codice_ciclo_cli}</div>
-                        ) : null}
-                      </td>
-                      <td>
-                        <div>{c.codice_articolo}</div>
-                        {c.ds_articolo ? (
-                          <div className="field-hint">{c.ds_articolo}</div>
-                        ) : null}
-                      </td>
-                      <td>{c.codice_stagione || c.ds_stagione || '—'}</td>
-                      <td>{c.codice_linea || c.ds_linea || '—'}</td>
-                      <td>{c.codice_composizione || c.ds_composizione || '—'}</td>
-                      <td>{c.ds_ciclo || '—'}</td>
-                      <td>{formatDateIso(c.data_ins)}</td>
-                      <td>
+            <div className="pm-compat__list">
+              {candidati.map((c) => {
+                const metaFields = [
+                  {
+                    label: 'Cliente',
+                    value: c.ragione_sociale || c.codice_cliente,
+                    hint: c.ragione_sociale ? c.codice_cliente : null,
+                  },
+                  {
+                    label: 'Articolo',
+                    value: c.codice_articolo,
+                    hint: c.ds_articolo || null,
+                  },
+                  { label: 'Stagione', value: c.codice_stagione || c.ds_stagione },
+                  { label: 'Linea', value: c.codice_linea || c.ds_linea },
+                  {
+                    label: 'Composizione',
+                    value: c.codice_composizione || c.ds_composizione,
+                  },
+                  { label: 'Data', value: formatDateIso(c.data_ins) },
+                ].filter((f) => f.value && f.value !== '—')
+                return (
+                  <div key={cicloKey(c)} className="pm-compat-card pm-compat-card--static">
+                    <div className="pm-compat-card__summary-inner">
+                      <div className="pm-compat-card__row pm-compat-card__row--primary">
+                        <div className="pm-compat-card__identity">
+                          <span className="pm-compat-card__ciclo">
+                            {c.codice_ciclo || 'Ciclo'}
+                            {c.codice_ciclo_cli ? (
+                              <span className="pm-compat-card__ciclo-cli"> · {c.codice_ciclo_cli}</span>
+                            ) : null}
+                          </span>
+                          {c.ds_ciclo ? (
+                            <span className="pm-compat-card__desc" title={c.ds_ciclo}>
+                              {c.ds_ciclo}
+                            </span>
+                          ) : null}
+                        </div>
                         <button
                           type="button"
                           className="btn btn--sm btn--primary"
@@ -353,11 +351,24 @@ export default function CicliCompatibiliSearchPanel() {
                         >
                           Usa questo
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      {metaFields.length ? (
+                        <div className="pm-compat-card__row pm-compat-card__row--meta">
+                          {metaFields.map((f) => (
+                            <span key={f.label} className="pm-compat-card__meta-item">
+                              <em>{f.label}</em>
+                              <strong title={String(f.value)}>{f.value}</strong>
+                              {f.hint ? (
+                                <span className="pm-compat-card__meta-hint">{f.hint}</span>
+                              ) : null}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>

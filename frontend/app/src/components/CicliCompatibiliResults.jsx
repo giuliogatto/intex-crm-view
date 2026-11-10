@@ -1,12 +1,5 @@
 import React from 'react'
-
-const LIVELLO_HINT = {
-  1: 'ampio (≥30%)',
-  2: 'medio (≥50%)',
-  3: 'alto (≥70%)',
-  4: 'molto alto (≥90%)',
-  5: 'equivalenti (100%)',
-}
+import { LIVELLO_HINT } from './cicliCompatibiliConstants'
 
 const CAMPO_LABELS = {
   codice_articolo: 'Articolo',
@@ -100,7 +93,7 @@ function PrezziCiclo({ prezzi, compact = false }) {
       <span
         className="pm-compat-card__prezzi"
         title={[
-          prezzi.codice_univoco ? `Cod. univoco ${prezzi.codice_univoco}` : null,
+          prezzi.codice_univoco != null ? `Cod. univoco ${prezzi.codice_univoco}` : null,
           stato,
           ...parts,
         ]
@@ -249,34 +242,58 @@ export default function CicliCompatibiliResults({
           {compatibili.map((item, i) => {
             const c = item.ciclo || {}
             const prezzi = item.prezzi || c.prezzi || null
-            const label = [
-              c.codice_ciclo,
-              c.ds_ciclo || c.ds_articolo,
-              c.codice_stagione || c.ds_stagione,
-            ]
-              .filter(Boolean)
-              .join(' · ')
+            const desc = c.ds_ciclo || c.ds_articolo || ''
+            const codiceUnivoco =
+              prezzi?.codice_univoco != null && prezzi.codice_univoco !== ''
+                ? String(prezzi.codice_univoco)
+                : null
+            const metaFields = [
+              { label: 'Cod. univoco', value: codiceUnivoco },
+              { label: 'Cliente', value: c.ragione_sociale || c.codice_cliente },
+              { label: 'Articolo', value: c.codice_articolo },
+              { label: 'Stagione', value: c.codice_stagione || c.ds_stagione },
+              { label: 'Linea', value: c.codice_linea },
+              { label: 'Composizione', value: c.codice_composizione },
+            ].filter((f) => f.value)
             return (
               <details
                 key={`${c.codice_cliente}-${c.codice_ciclo}-${c.codice_articolo}-${i}`}
                 className="pm-compat-card"
               >
-                <summary>
-                  <CompatPct value={item.compatibilita} />
-                  <span className="pm-compat-card__label" title={label}>
-                    {label || 'Ciclo'}
-                  </span>
-                  <PrezziCiclo prezzi={prezzi} compact />
-                  <span className="pm-compat-card__keys">
-                    {[
-                      c.ragione_sociale || c.codice_cliente,
-                      c.codice_articolo,
-                      c.codice_linea,
-                      c.codice_composizione,
-                    ]
-                      .filter(Boolean)
-                      .join(' / ')}
-                  </span>
+                <summary className="pm-compat-card__summary">
+                  {/* Wrapper: flex su <summary> è inaffidabile nei browser */}
+                  <div className="pm-compat-card__summary-inner">
+                    <div className="pm-compat-card__row pm-compat-card__row--primary">
+                      <CompatPct value={item.compatibilita} />
+                      <div className="pm-compat-card__identity">
+                        <span className="pm-compat-card__ciclo" title={c.codice_ciclo || ''}>
+                          {c.codice_ciclo || 'Ciclo'}
+                          {codiceUnivoco ? (
+                            <span className="pm-compat-card__univoco-inline" title={`Cod. univoco ${codiceUnivoco}`}>
+                              {' '}
+                              · #{codiceUnivoco}
+                            </span>
+                          ) : null}
+                        </span>
+                        {desc ? (
+                          <span className="pm-compat-card__desc" title={desc}>
+                            {desc}
+                          </span>
+                        ) : null}
+                      </div>
+                      <PrezziCiclo prezzi={prezzi} compact />
+                    </div>
+                    {metaFields.length ? (
+                      <div className="pm-compat-card__row pm-compat-card__row--meta">
+                        {metaFields.map((f) => (
+                          <span key={f.label} className="pm-compat-card__meta-item">
+                            <em>{f.label}</em>
+                            <strong title={String(f.value)}>{f.value}</strong>
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 </summary>
                 <div className="pm-compat-card__body">
                   <div className="pm-compat-card__block">
@@ -311,4 +328,3 @@ export default function CicliCompatibiliResults({
   )
 }
 
-export { LIVELLO_HINT }
