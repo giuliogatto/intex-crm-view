@@ -2279,6 +2279,18 @@ table.data tfoot .table-totals-row:hover td {
   color: #5a6a60;
 }
 
+.pm-compat__hint {
+  flex: 1 1 100%;
+  margin: 0.1rem 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1f4f3a;
+  background: #e7f3ec;
+  border: 1px dashed #8bb89a;
+  border-radius: 4px;
+  padding: 0.28rem 0.55rem;
+}
+
 .pm-compat__slider {
   display: flex;
   align-items: center;
@@ -2327,10 +2339,21 @@ table.data tfoot .table-totals-row:hover td {
   border-radius: 6px;
   background: #fff;
   box-shadow: 0 1px 0 rgba(30, 42, 34, 0.04);
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
 }
 
 .pm-compat-card + .pm-compat-card {
   border-top-width: 1px;
+}
+
+.pm-compat-card:hover {
+  border-color: #8bb89a;
+  box-shadow: 0 1px 0 rgba(30, 42, 34, 0.06), 0 0 0 1px rgba(47, 107, 79, 0.12);
+}
+
+.pm-compat-card[open] {
+  border-color: #2f6b4f;
+  box-shadow: 0 1px 0 rgba(30, 42, 34, 0.05), 0 0 0 1px rgba(47, 107, 79, 0.18);
 }
 
 .pm-compat-card__summary,
@@ -2367,6 +2390,51 @@ table.data tfoot .table-totals-row:hover td {
 
 .pm-compat-card__row--primary {
   background: #fff;
+}
+
+.pm-compat-card__toggle {
+  flex: 0 0 auto;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid #2f6b4f;
+  border-bottom: 2px solid #2f6b4f;
+  transform: rotate(-45deg);
+  margin: 0 0.15rem 0 0.05rem;
+  transition: transform 0.12s ease;
+}
+
+.pm-compat-card[open] .pm-compat-card__toggle {
+  transform: rotate(45deg);
+  margin-top: -0.1rem;
+}
+
+.pm-compat-card__expand-label {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #1f4f3a;
+  background: #e7f3ec;
+  border: 1px solid #b7d4c3;
+  border-radius: 3px;
+  padding: 0.12rem 0.4rem;
+  white-space: nowrap;
+}
+
+.pm-compat-card[open] .pm-compat-card__expand-label {
+  background: #2f6b4f;
+  border-color: #2f6b4f;
+  color: #fff;
+}
+
+.pm-compat-card[open] .pm-compat-card__expand-label::after {
+  content: ' ▴';
+}
+
+.pm-compat-card:not([open]) .pm-compat-card__expand-label::after {
+  content: ' ▾';
 }
 
 .pm-compat-card__row--meta {
@@ -2525,10 +2593,23 @@ table.data tfoot .table-totals-row:hover td {
 
 .pm-compat-card__body {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 0.65rem 1rem;
-  padding: 0 0.65rem 0.65rem;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 0.65rem 0.85rem;
+  padding: 0.55rem 0.65rem 0.65rem;
   border-top: 1px solid #e6ebe7;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .pm-compat-card__body {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .pm-compat-card__body {
+    grid-template-columns: 1fr;
+  }
 }
 
 .pm-compat-card__block h4 {
@@ -2537,6 +2618,25 @@ table.data tfoot .table-totals-row:hover td {
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: #5a6a60;
+}
+
+.pm-compat-card__block {
+  min-width: 0;
+}
+
+.pm-compat-card__block--diff {
+  background: #fff1f0;
+  border: 2px solid #c62828;
+  border-radius: 6px;
+  padding: 0.45rem 0.65rem 0.65rem;
+}
+
+.pm-compat-card__block--diff h4 {
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #b71c1c;
 }
 
 .pm-compat-pct {
@@ -2588,7 +2688,14 @@ table.data tfoot .table-totals-row:hover td {
 }
 
 .pm-compat-chips--diff li {
-  background: #f8eee8;
+  background: #ffe3e0;
+  border: 1px solid #e57373;
+  border-left: 4px solid #c62828;
+  padding: 0.45rem 0.55rem;
+  font-size: 1.52rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: #8e0000;
 }
 
 .pm-compat-chips--simili li {
@@ -2600,6 +2707,11 @@ table.data tfoot .table-totals-row:hover td {
   color: #2a3830;
 }
 
+.pm-compat-chips--diff .pm-compat-chip__field {
+  font-weight: 800;
+  color: #b71c1c;
+}
+
 .pm-compat-chip__tipo {
   font-size: 0.68rem;
   text-transform: uppercase;
@@ -2609,9 +2721,22 @@ table.data tfoot .table-totals-row:hover td {
   border-radius: 2px;
 }
 
+.pm-compat-chips--diff .pm-compat-chip__tipo {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  background: #c62828;
+  padding: 0.05rem 0.4rem;
+}
+
 .pm-compat-chip__vals {
   color: #3a4740;
   word-break: break-word;
+}
+
+.pm-compat-chips--diff .pm-compat-chip__vals {
+  color: #7f0000;
+  font-weight: 700;
 }
 
 .pm-compat-chip__pen {
@@ -2619,6 +2744,15 @@ table.data tfoot .table-totals-row:hover td {
   font-variant-numeric: tabular-nums;
   color: #9a3a2a;
   font-weight: 600;
+}
+
+.pm-compat-chips--diff .pm-compat-chip__pen {
+  color: #b71c1c;
+  font-weight: 800;
+  font-size: 1.1em;
+  background: #ffcdd2;
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
 }
 
 .pm-compat-chip__note {
@@ -2629,6 +2763,12 @@ table.data tfoot .table-totals-row:hover td {
 .pm-compat-empty {
   font-size: 0.76rem;
   color: #809086;
+}
+
+.pm-compat-card__block--diff .pm-compat-empty {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c62828;
 }
 
 .pm-compat-fasi {

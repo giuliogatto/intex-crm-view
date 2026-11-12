@@ -209,6 +209,11 @@ export default function CicliCompatibiliResults({
             {soglia != null ? ` · soglia ${soglia}%` : ''}
             {!loading && !error ? ` · ${compatibili.length} risultati` : ''}
           </span>
+          {!loading && !error && compatibili.length > 0 ? (
+            <span className="pm-compat__hint">
+              Clicca una riga per espandere o chiudere dettagli (differenze e similarità)
+            </span>
+          ) : null}
         </div>
         <label className="pm-compat__slider">
           <span>Livello ricerca</span>
@@ -260,10 +265,14 @@ export default function CicliCompatibiliResults({
                 key={`${c.codice_cliente}-${c.codice_ciclo}-${c.codice_articolo}-${i}`}
                 className="pm-compat-card"
               >
-                <summary className="pm-compat-card__summary">
+                <summary
+                  className="pm-compat-card__summary"
+                  title="Clicca per espandere o chiudere i dettagli"
+                >
                   {/* Wrapper: flex su <summary> è inaffidabile nei browser */}
                   <div className="pm-compat-card__summary-inner">
                     <div className="pm-compat-card__row pm-compat-card__row--primary">
+                      <span className="pm-compat-card__toggle" aria-hidden="true" />
                       <CompatPct value={item.compatibilita} />
                       <div className="pm-compat-card__identity">
                         <span className="pm-compat-card__ciclo" title={c.codice_ciclo || ''}>
@@ -282,6 +291,7 @@ export default function CicliCompatibiliResults({
                         ) : null}
                       </div>
                       <PrezziCiclo prezzi={prezzi} compact />
+                      <span className="pm-compat-card__expand-label">Dettagli</span>
                     </div>
                     {metaFields.length ? (
                       <div className="pm-compat-card__row pm-compat-card__row--meta">
@@ -296,11 +306,7 @@ export default function CicliCompatibiliResults({
                   </div>
                 </summary>
                 <div className="pm-compat-card__body">
-                  <div className="pm-compat-card__block">
-                    <h4>Prezzi offerta</h4>
-                    <PrezziCiclo prezzi={prezzi} />
-                  </div>
-                  <div className="pm-compat-card__block">
+                  <div className="pm-compat-card__block pm-compat-card__block--diff">
                     <h4>Differenze</h4>
                     <DiffList items={item.differenze} />
                   </div>
@@ -308,16 +314,22 @@ export default function CicliCompatibiliResults({
                     <h4>Similarità</h4>
                     <SimiliList items={item.simili} />
                   </div>
-                  {c.fasi?.length ? (
-                    <div className="pm-compat-card__block">
-                      <h4>Fasi candidato</h4>
+                  <div className="pm-compat-card__block">
+                    <h4>Prezzi offerta</h4>
+                    <PrezziCiclo prezzi={prezzi} />
+                  </div>
+                  <div className="pm-compat-card__block">
+                    <h4>Fasi candidato</h4>
+                    {c.fasi?.length ? (
                       <ol className="pm-compat-fasi">
                         {c.fasi.map((f, fi) => (
                           <li key={fi}>{f}</li>
                         ))}
                       </ol>
-                    </div>
-                  ) : null}
+                    ) : (
+                      <span className="pm-compat-empty">nessuna</span>
+                    )}
+                  </div>
                 </div>
               </details>
             )

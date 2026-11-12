@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import CustomerAutocomplete from '../components/CustomerAutocomplete'
 import SeasonAutocomplete from '../components/SeasonAutocomplete'
 import FilterSuggest from '../components/FilterSuggest'
@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination'
 import LoadingOverlay from '../components/LoadingOverlay'
 import BollaUploadPanel from '../components/BollaUploadPanel'
 import CicliCompatibiliSearchPanel from '../components/CicliCompatibiliSearchPanel'
+import CicliCompatibiliResults from '../components/CicliCompatibiliResults'
 import { authFetch } from '../utils/auth'
 import {
   prefetchCicliNested,
@@ -15,8 +16,20 @@ import {
 } from '../utils/printReports'
 
 const PAGE_SIZE = 50
+const DEFAULT_COMPAT_LIVELLO = 4
 
 const DEFAULT_SORT = { by: 'data_ins', dir: 'desc' }
+
+function cicloCompatPayload(item) {
+  return {
+    codice_cliente: item.codice_cliente || '',
+    codice_articolo: item.codice_articolo || '',
+    codice_ciclo: item.codice_ciclo || '',
+    codice_linea: item.codice_linea || '',
+    codice_stagione: item.codice_stagione || '',
+    codice_composizione: item.codice_composizione || '',
+  }
+}
 
 const MODES = [
   { id: 'ricerca', label: 'Ricerca' },
@@ -135,10 +148,66 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
   const [storicoDisponibile, setStoricoDisponibile] = useState(null)
   const [printing, setPrinting] = useState(false)
   const [expandedKey, setExpandedKey] = useState(null)
-  const [expandedKind, setExpandedKind] = useState(null) // 'fasi' | 'utilizzi'
+  const [expandedKind, setExpandedKind] = useState(null) // 'fasi' | 'utilizzi' | 'compatibili'
   const [fasiByKey, setFasiByKey] = useState({})
   const [utilizziByKey, setUtilizziByKey] = useState({})
   const [detailLoading, setDetailLoading] = useState(null)
+  /** @type {[Record<string, {loading:boolean, error?:string, compatibili:any[], livello:number, soglia?:number}>, Function]} */
+  const [compatByKey, setCompatByKey] = useState({})
+  const [livelloByKey, setLivelloByKey] = useState({})
+  const compatReqRef = useRef({})
+
+  const fetchCompatibiliForRow = useCallback(async (item, key, livello) => {
+    const token = (compatReqRef.current[key] || 0) + 1
+    compatReqRef.current[key] = token
+    setCompatByKey((prev) => ({
+      ...prev,
+      [key]: {
+        ...(prev[key] || {}),
+        loading: true,
+        error: undefined,
+        livello,
+      },
+    }))
+    try {
+      const res = await authFetch('/api/cicli/compatibili', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ciclo: cicloCompatPayload(item),
+          livello,
+          prezzi_presenti: false,
+        }),
+      })
+      const data = await res.json()
+      if (compatReqRef.current[key] !== token) return
+      if (!res.ok) throw new Error(data.error || 'Errore cicli compatibili')
+      setCompatByKey((prev) => ({
+        ...prev,
+        [key]: {
+          loading: false,
+          ok: true,
+          error: undefined,
+          compatibili: data.compatibili || [],
+          livello: data.livello ?? livello,
+          soglia: data.soglia,
+        },
+      }))
+    } catch (err) {
+      if (compatReqRef.current[key] !== token) return
+      console.error(err)
+      setCompatByKey((prev) => ({
+        ...prev,
+        [key]: {
+          ...(prev[key] || {}),
+          loading: false,
+          error: err.message || 'Errore cicli compatibili',
+          compatibili: prev[key]?.compatibili || [],
+          livello,
+        },
+      }))
+    }
+  }, [])
 
   const fetchCicli = useCallback((nextFilters, nextPage = 1, nextSort = DEFAULT_SORT) => {
     setLoading(true)
@@ -155,6 +224,9 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
         setStoricoDisponibile(resData.storico_disponibile || null)
         setExpandedKey(null)
         setExpandedKind(null)
+        setCompatByKey({})
+        setLivelloByKey({})
+        compatReqRef.current = {}
       })
       .catch((err) => {
         console.error('Error fetching cicli:', err)
@@ -309,7 +381,22 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
           setUtilizziByKey((prev) => ({ ...prev, [key]: [] }))
         })
         .finally(() => setDetailLoading(null))
+      return
     }
+
+    if (kind === 'compatibili') {
+      const livello = livelloByKey[key] ?? DEFAULT_COMPAT_LIVELLO
+      if (livelloByKey[key] == null) {
+        setLivelloByKey((prev) => ({ ...prev, [key]: livello }))
+      }
+      // Calcolo on-demand a ogni apertura: non carica i compatibili con la lista.
+      fetchCompatibiliForRow(item, key, livello)
+    }
+  }
+
+  const handleCompatLivelloChange = (item, key, livello) => {
+    setLivelloByKey((prev) => ({ ...prev, [key]: livello }))
+    fetchCompatibiliForRow(item, key, livello)
   }
 
   const handlePrintResults = async () => {
@@ -828,9 +915,13 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                       const key = cicloKey(item)
                       const isFasiOpen = expandedKey === key && expandedKind === 'fasi'
                       const isUtilizziOpen = expandedKey === key && expandedKind === 'utilizzi'
-                      const isSelected = isFasiOpen || isUtilizziOpen
+                      const isCompatibiliOpen =
+                        expandedKey === key && expandedKind === 'compatibili'
+                      const isSelected = isFasiOpen || isUtilizziOpen || isCompatibiliOpen
                       const fasi = fasiByKey[key] || []
                       const utilizzi = utilizziByKey[key] || []
+                      const compatStato = compatByKey[key]
+                      const compatLivello = livelloByKey[key] ?? DEFAULT_COMPAT_LIVELLO
                       const rowClass = [
                         'cicli-row',
                         idx % 2 === 1 ? 'cicli-row--alt' : '',
@@ -886,6 +977,13 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                                 onClick={() => toggleExpand(item, 'utilizzi')}
                               >
                                 {isUtilizziOpen ? 'Nascondi utilizzi' : 'Utilizzi'}
+                              </span>
+                              {' · '}
+                              <span
+                                className="table-link"
+                                onClick={() => toggleExpand(item, 'compatibili')}
+                              >
+                                {isCompatibiliOpen ? 'Nascondi compatibili' : 'Compatibili'}
                               </span>
                             </td>
                           </tr>
@@ -975,6 +1073,22 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                                     </tbody>
                                   </table>
                                 )}
+                              </td>
+                            </tr>
+                          )}
+                          {isCompatibiliOpen && (
+                            <tr className="cicli-row cicli-row--detail cicli-row--selected">
+                              <td colSpan={9}>
+                                <CicliCompatibiliResults
+                                  loading={!compatStato || compatStato.loading}
+                                  error={compatStato?.error}
+                                  compatibili={compatStato?.compatibili || []}
+                                  livello={compatLivello}
+                                  soglia={compatStato?.soglia}
+                                  onLivelloChange={(next) =>
+                                    handleCompatLivelloChange(item, key, next)
+                                  }
+                                />
                               </td>
                             </tr>
                           )}
