@@ -1,6 +1,6 @@
 # Intex Consultazione - ERP Dashboard & Cache Layer
 
-This project provides a high-performance local caching dashboard for Intex ERP documents. It caches slow remote Oracle REST Data Services (ORDS) endpoints into a local TimescaleDB/PostgreSQL instance, enabling sub-millisecond querying on the frontend.
+This project provides a high-performance local caching dashboard for Intex ERP documents. Oracle data is exported to CSV, imported into a local TimescaleDB/PostgreSQL cache, and served to the frontend with sub-millisecond querying.
 
 ---
 
@@ -30,82 +30,47 @@ The dashboard will be accessible on your host machine at **[http://localhost:544
 
 ## 2. Synchronizing Data from Oracle
 
-A synchronization script (`oracle-sync.py`) runs inside the `intex-api` backend container to pull records from the remote Oracle REST server and upsert them into the local TimescaleDB cache.
+Data sync uses a two-step pipeline: export from Oracle to CSV over SFTP, then import into TimescaleDB.
 
-### 2.1. Incremental Sync (Recommended for regular updates)
-Incremental mode only fetches records created or modified since the beginning of the current year. This reduces network payload sizes and speeds up the execution significantly.
-
-To run an incremental sync, execute the following command from your host terminal:
-```bash
-docker exec -it intex-api python /app/oracle-sync.py --mode incremental
-```
-
-### 2.2. Syncing with a Custom Date Range
-When date filtering is active (incremental mode, or whenever `--start-date` is set), records are fetched within a date window. Use `--start-date` and optionally `--end-date`, both in `YYYY-MM-DD` format.
-
-- **`--start-date`**: fetch records from this date onward. In incremental mode without `--start-date`, the default start is January 1 of the current year.
-- **`--end-date`**: fetch records up to and including this date. If omitted, it defaults to **today**.
-
-Examples:
-
-```bash
-# Incremental sync from Jan 1 through today (default end date)
-docker exec -it intex-api python /app/oracle-sync.py --mode incremental
-
-# Sync from a specific start date through today
-docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01
-
-# Sync an explicit date range
-docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01 --end-date 2026-03-31
-```
+1. **`scripts/extract_upload_tables_storico_365.py`** — connects directly to Oracle, exports CSV files, and uploads them via SFTP to `/var/data_imports/intex/` on the Debian host.
+2. **`scripts/import_storico_disposizioni.sh`** — on the server, loads the latest matching CSV set into TimescaleDB (`TRUNCATE` + `\copy`).
 
 > [!NOTE]
-> Querying the remote server using date filters (`--start-date` / `--end-date`) triggers a full table scan on the unindexed remote Oracle view. This operation can take between **20 to 50 seconds** per page. To prevent script failures, the internal HTTP client timeout has been increased to **60 seconds**.
+> `backend/oracle-sync.py` (ORDS REST sync inside `intex-api`) is **obsolete**. It remains in the repo for reference only; do not use it to keep the cache up to date.
 
-### 2.3. Full Sync (Rebuild Cache)
-Full mode pulls the entire historical log from the remote views page-by-page. Use this during initial setup or weekly maintenance.
-```bash
-docker exec -it intex-api python /app/oracle-sync.py --mode full
-```
+### 2.1. Export + upload (Windows / Oracle side)
 
-### 2.4. Batch Size Limit Tuning
-If the remote Oracle server is under heavy load or if pagination takes too long and encounters a gateway/read timeout, you can lower the page batch size (default is 100) using the `--limit` parameter (e.g., to 50 or 20). This reduces the query execution time of each page on the Oracle database:
-```bash
-docker exec -it intex-api python /app/oracle-sync.py --start-date 2026-01-01 --end-date 2026-03-31 --limit 50
-```
-
-### 2.5. Selective Sync (`--only`)
-By default, the script syncs all five data sets. Use `--only` to run a subset:
-
-| Target | Data synced |
-|--------|-------------|
-| `clienti` | Customers |
-| `articoli` | Articles |
-| `fatture` | Invoices and seasons |
-| `bolle` | Delivery notes (DDTs) |
-| `offerte` | Offers |
-
-Examples:
+Run the extract script where it can reach Oracle and the SFTP host (typically a scheduled Windows task):
 
 ```bash
-# Sync only delivery notes (bolle) for calendar year 2026
-docker exec -it intex-api python /app/oracle-sync.py \
-  --only bolle \
-  --start-date 2026-01-01 \
-  --end-date 2026-12-31
-
-# Incremental sync of invoices and offers only
-docker exec -it intex-api python /app/oracle-sync.py --mode incremental --only fatture offerte
-
-# Full sync of customers and articles only
-docker exec -it intex-api python /app/oracle-sync.py --mode full --only clienti articoli
+python scripts/extract_upload_tables_storico_365.py
 ```
 
-### 2.6. Analytics layer (materialized views)
+Default window: `LOOKBACK_DAYS = 365` on bolla cliente / DDT uscita dates. Set `LOOKBACK_DAYS = None` for a full dump (much larger files). Anagrafica cicli and C37 offerte are always exported in full.
 
-After transactional sync, `oracle-sync.py` refreshes the `analytics` schema (fatturato mensile, snapshot clienti, lead time, anomalie). Skip with `--skip-analytics`.
+| Flag / area | CSV produced (prefix `{timestamp}_`) |
+|-------------|--------------------------------------|
+| Storico disposizioni | `ew1_testata_disposizioni`, `ew2_righe_disposizioni`, `storico_disposizioni` |
+| Offerte (C37) | `c37_testata_listini` |
+| DDT uscita (`EXPORT_DDT`) | `ddt_testate`, `ddt_righe`, `clienti_anagrafica` |
+| Prezzi mancanti (`EXPORT_DDT_PREZZI_003W`) | `ddt_prezzi_003w` |
+| Cicli (`EXPORT_CICLI`) | `z09_cicli_testate`, `z08_cicli_fasi`, `z02_fasi`, `r07_clienti`, `z11_stagioni`, `cw4_composizioni`, `cwa_articoli_cliente`, `cw0_linee` |
 
-**Existing local database** (Docker volume already created — init scripts do not re-run):
+### 2.2. Import into TimescaleDB (Debian side)
+
+After the CSV files land under `/var/data_imports/intex/`:
+
+```bash
+./scripts/import_storico_disposizioni.sh
+```
+
+Optional overrides: `IMPORT_DIR=/path/to/csv` and `CONTAINER=<timescale-container-name>`.
+
+The importer picks the newest complete EW1+EW2 timestamp pair and loads optional sets (storico, C37, DDT, prezzi 003W, cicli) when present for that same timestamp.
+
+### 2.3. Analytics layer (materialized views)
+
+The `analytics` schema (fatturato mensile, snapshot clienti, lead time, anomalie) is independent of the CSV pipeline. Apply the migration once on an existing volume, then refresh manually when needed.
 
 ```bash
 cd backend
@@ -118,7 +83,7 @@ Or from the API container:
 docker exec -it intex-api python /app/apply_migrations.py create-analytics.sql
 ```
 
-Then refresh aggregates (runs automatically at end of sync, or manually):
+Refresh aggregates:
 
 ```bash
 docker exec -it intex-api python -c "from analytics import refresh_analytics_layer; from database import DatabasePool; refresh_analytics_layer(DatabasePool())"
