@@ -703,12 +703,6 @@ function App() {
             >
               📄 Upload bolla
             </button>
-            <button
-              className={`nav-tab ${activeTab === 'cicli' && cicliMode === 'compatibili' ? 'is-active' : ''}`}
-              onClick={() => handleTabChange('cicli', 'compatibili')}
-            >
-              🔎 Cicli compatibili
-            </button>
             <a href="/prezzi-mancanti" className="nav-tab">
               <PrezziMancantiIcon /> Prezzi mancanti
             </a>
