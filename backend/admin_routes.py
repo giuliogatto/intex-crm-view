@@ -9,6 +9,7 @@ from typing import Any, Dict, Optional, Tuple
 
 from bottle import HTTPResponse, request, response
 
+from audit import log_prezzi_mancanti
 from bolla_routes import resolve_bolla_image
 from cicli_compatibili import KEY_FIELDS, LIVELLI_SOGLIA, trova_cicli_compatibili_batch
 from cicli_routes import _cicli_table_exists
@@ -418,7 +419,7 @@ def register_admin_routes(app, db_pool):
         )
 
     # ------------------------------------------------------------------
-    # Logs di accesso (login + ricerche)
+    # Logs di accesso (login + ricerche + prezzi mancanti)
     # ------------------------------------------------------------------
 
     @app.route("/api/admin/logs", method="GET")
@@ -432,8 +433,10 @@ def register_admin_routes(app, db_pool):
         offset = (page - 1) * limit
         q = (request.query.get("q") or "").strip()
         event_type = (request.query.get("event_type") or "").strip().lower()
-        if event_type and event_type not in ("login", "search"):
-            raise _json_error(400, "event_type deve essere login o search")
+        if event_type and event_type not in ("login", "search", "prezzi_mancanti"):
+            raise _json_error(
+                400, "event_type deve essere login, search o prezzi_mancanti"
+            )
 
         conn = db_pool.get_conn()
         try:
@@ -520,9 +523,9 @@ def register_admin_routes(app, db_pool):
         ``data_da`` / ``data_a`` (ISO YYYY-MM-DD) sul range di
         ``d02_dt_bolla`` (inclusivo).
         """
-        denied = _require_admin_or_cicli()
-        if denied[0] is None:
-            raise denied[1]
+        user, denied = _require_admin_or_cicli()
+        if user is None:
+            raise denied
 
         data_da = _parse_iso_date(request.query.get("data_da"))
         data_a = _parse_iso_date(request.query.get("data_a"))
@@ -668,6 +671,8 @@ def register_admin_routes(app, db_pool):
             )
             rows = cursor.fetchall()
             cursor.close()
+            db_pool.release_conn(conn)
+            conn = None
 
             def _num(v: Any) -> float:
                 try:
@@ -706,6 +711,16 @@ def register_admin_routes(app, db_pool):
                 )
 
             pages = max((total + limit - 1) // limit, 1) if total else 1
+            log_prezzi_mancanti(
+                db_pool,
+                user_id=user.get("id"),
+                username=user.get("username"),
+                data_da=data_da.isoformat(),
+                data_a=data_a.isoformat(),
+                page=page,
+                limit=limit,
+                result_total=total,
+            )
             return {
                 "data_da": data_da.isoformat(),
                 "data_a": data_a.isoformat(),
@@ -721,7 +736,8 @@ def register_admin_routes(app, db_pool):
             response.status = 500
             return {"error": str(e)}
         finally:
-            db_pool.release_conn(conn)
+            if conn is not None:
+                db_pool.release_conn(conn)
 
     @app.route("/api/admin/prezzi-mancanti/cicli-compatibili", method="POST")
     def prezzi_mancanti_cicli_compatibili():

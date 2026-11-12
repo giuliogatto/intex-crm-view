@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 EVENT_LOGIN = "login"
 EVENT_SEARCH = "search"
+EVENT_PREZZI_MANCANTI = "prezzi_mancanti"
 
 
 def _client_ip() -> Optional[str]:
@@ -128,6 +129,34 @@ def log_search(
     write_log(
         db_pool,
         EVENT_SEARCH,
+        user_id=user_id,
+        username=username,
+        details=details,
+    )
+
+
+def log_prezzi_mancanti(
+    db_pool,
+    *,
+    user_id: Optional[int],
+    username: Optional[str],
+    data_da: str,
+    data_a: str,
+    page: int,
+    limit: int,
+    result_total: Optional[int] = None,
+) -> None:
+    details: Dict[str, Any] = {
+        "endpoint": "/api/admin/prezzi-mancanti",
+        "filters": {"data_da": data_da, "data_a": data_a},
+        "page": page,
+        "limit": limit,
+    }
+    if result_total is not None:
+        details["result_total"] = result_total
+    write_log(
+        db_pool,
+        EVENT_PREZZI_MANCANTI,
         user_id=user_id,
         username=username,
         details=details,

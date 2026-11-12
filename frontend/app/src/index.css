@@ -2096,6 +2096,11 @@ table.data tfoot .table-totals-row:hover td {
   color: #1f6b3a;
 }
 
+.logs-badge--prezzi_mancanti {
+  background: #fff4e5;
+  color: #8a5a00;
+}
+
 .pm-rows {
   display: flex;
   flex-direction: column;

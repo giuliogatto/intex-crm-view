@@ -9,6 +9,20 @@ const PAGE_SIZE = 100
 const EVENT_LABELS = {
   login: 'Login',
   search: 'Ricerca',
+  prezzi_mancanti: 'Prezzi mancanti',
+}
+
+function formatFilterDetails(details) {
+  const filters = details.filters || {}
+  const parts = Object.entries(filters)
+    .filter(([, v]) => v != null && v !== '' && !(Array.isArray(v) && v.length === 0))
+    .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join(',') : v}`)
+  const total =
+    details.result_total != null ? ` · ${details.result_total} risultati` : ''
+  const pageInfo =
+    details.page != null ? ` · p.${details.page}` : ''
+  if (parts.length === 0) return `(nessun filtro)${total}${pageInfo}`
+  return `${parts.join(' · ')}${total}${pageInfo}`
 }
 
 function formatDetails(eventType, details) {
@@ -20,17 +34,8 @@ function formatDetails(eventType, details) {
     return `${ok}${role}`
   }
 
-  if (eventType === 'search') {
-    const filters = details.filters || {}
-    const parts = Object.entries(filters)
-      .filter(([, v]) => v != null && v !== '' && !(Array.isArray(v) && v.length === 0))
-      .map(([k, v]) => `${k}=${Array.isArray(v) ? v.join(',') : v}`)
-    const total =
-      details.result_total != null ? ` · ${details.result_total} risultati` : ''
-    const pageInfo =
-      details.page != null ? ` · p.${details.page}` : ''
-    if (parts.length === 0) return `(nessun filtro)${total}${pageInfo}`
-    return `${parts.join(' · ')}${total}${pageInfo}`
+  if (eventType === 'search' || eventType === 'prezzi_mancanti') {
+    return formatFilterDetails(details)
   }
 
   try {
@@ -136,6 +141,7 @@ export default function LogsPage() {
                   <option value="">Tutti</option>
                   <option value="login">Login</option>
                   <option value="search">Ricerca</option>
+                  <option value="prezzi_mancanti">Prezzi mancanti</option>
                 </select>
               </label>
               <button type="submit" className="btn btn--primary btn--sm" style={{ alignSelf: 'flex-end' }}>
