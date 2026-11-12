@@ -16,6 +16,8 @@ import {
 
 const PAGE_SIZE = 50
 
+const DEFAULT_SORT = { by: 'data_ins', dir: 'desc' }
+
 const MODES = [
   { id: 'ricerca', label: 'Ricerca' },
   { id: 'upload', label: 'Upload bolla' },
@@ -86,7 +88,7 @@ function formatNrDisposizione(item) {
     : String(item.nr_disposizione)
 }
 
-function buildQueryParams(nextFilters, nextPage) {
+function buildQueryParams(nextFilters, nextPage, nextSort = DEFAULT_SORT) {
   const params = new URLSearchParams()
   if (nextFilters.q) params.append('q', nextFilters.q)
   if (nextFilters.codice_cliente) params.append('codice_cliente', nextFilters.codice_cliente)
@@ -110,6 +112,8 @@ function buildQueryParams(nextFilters, nextPage) {
   if (nextFilters.data_bolla_da) params.append('data_bolla_da', nextFilters.data_bolla_da)
   if (nextFilters.data_bolla_a) params.append('data_bolla_a', nextFilters.data_bolla_a)
   if (nextFilters.vista) params.append('vista', nextFilters.vista)
+  if (nextSort?.by) params.append('sort', nextSort.by)
+  if (nextSort?.dir) params.append('sort_dir', nextSort.dir)
   params.append('page', String(nextPage))
   params.append('limit', String(PAGE_SIZE))
   return params
@@ -120,6 +124,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
   const mode = modeProp ?? modeState
   const [filters, setFilters] = useState({ ...EMPTY_FILTERS })
   const [appliedFilters, setAppliedFilters] = useState({ ...EMPTY_FILTERS })
+  const [sort, setSort] = useState({ ...DEFAULT_SORT })
   const [faseInput, setFaseInput] = useState('')
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -135,9 +140,9 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
   const [utilizziByKey, setUtilizziByKey] = useState({})
   const [detailLoading, setDetailLoading] = useState(null)
 
-  const fetchCicli = useCallback((nextFilters, nextPage = 1) => {
+  const fetchCicli = useCallback((nextFilters, nextPage = 1, nextSort = DEFAULT_SORT) => {
     setLoading(true)
-    const params = buildQueryParams(nextFilters, nextPage)
+    const params = buildQueryParams(nextFilters, nextPage, nextSort)
 
     authFetch(`/api/cicli?${params.toString()}`)
       .then((res) => res.json())
@@ -162,7 +167,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
   }, [])
 
   useEffect(() => {
-    fetchCicli(EMPTY_FILTERS, 1)
+    fetchCicli(EMPTY_FILTERS, 1, DEFAULT_SORT)
   }, [fetchCicli])
 
   const handleChange = (e) => {
@@ -187,18 +192,28 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
       setFilters(next)
     }
     setAppliedFilters(next)
-    fetchCicli(next, 1)
+    fetchCicli(next, 1, sort)
   }
 
   const handleReset = () => {
     setFilters({ ...EMPTY_FILTERS })
     setAppliedFilters({ ...EMPTY_FILTERS })
+    setSort({ ...DEFAULT_SORT })
     setFaseInput('')
-    fetchCicli(EMPTY_FILTERS, 1)
+    fetchCicli(EMPTY_FILTERS, 1, DEFAULT_SORT)
   }
 
   const handlePageChange = (nextPage) => {
-    fetchCicli(appliedFilters, nextPage)
+    fetchCicli(appliedFilters, nextPage, sort)
+  }
+
+  const handleSortBy = (by) => {
+    const next =
+      sort.by === by
+        ? { by, dir: sort.dir === 'desc' ? 'asc' : 'desc' }
+        : { by, dir: 'desc' }
+    setSort(next)
+    fetchCicli(appliedFilters, 1, next)
   }
 
   const setMode = (next) => {
@@ -218,7 +233,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
     setFilters(next)
     setAppliedFilters(next)
     setFaseInput('')
-    fetchCicli(next, 1)
+    fetchCicli(next, 1, sort)
     setMode('ricerca')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -227,7 +242,7 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
     const next = { ...filters, vista }
     setFilters(next)
     setAppliedFilters(next)
-    fetchCicli(next, 1)
+    fetchCicli(next, 1, sort)
   }
 
   const toggleExpand = (item, kind) => {
@@ -765,8 +780,40 @@ export default function CicliPage({ mode: modeProp, onModeChange } = {}) {
                 <table className="data">
                   <thead>
                     <tr>
-                      <th>Inserito il</th>
-                      <th>Ultimo utilizzo</th>
+                      <th
+                        className={`th-sortable${sort.by === 'data_ins' ? ' th-sortable--active' : ''}`}
+                        aria-sort={
+                          sort.by === 'data_ins'
+                            ? sort.dir === 'asc'
+                              ? 'ascending'
+                              : 'descending'
+                            : 'none'
+                        }
+                        onClick={() => handleSortBy('data_ins')}
+                        title="Ordina per data inserimento"
+                      >
+                        Inserito il
+                        <span className="th-sortable__indicator" aria-hidden="true">
+                          {sort.by === 'data_ins' ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ' ↕'}
+                        </span>
+                      </th>
+                      <th
+                        className={`th-sortable${sort.by === 'ultima_bolla' ? ' th-sortable--active' : ''}`}
+                        aria-sort={
+                          sort.by === 'ultima_bolla'
+                            ? sort.dir === 'asc'
+                              ? 'ascending'
+                              : 'descending'
+                            : 'none'
+                        }
+                        onClick={() => handleSortBy('ultima_bolla')}
+                        title="Ordina per ultimo utilizzo"
+                      >
+                        Ultimo utilizzo
+                        <span className="th-sortable__indicator" aria-hidden="true">
+                          {sort.by === 'ultima_bolla' ? (sort.dir === 'asc' ? ' ▲' : ' ▼') : ' ↕'}
+                        </span>
+                      </th>
                       <th>Ciclo</th>
                       <th>Descrizione</th>
                       <th>Cliente</th>

@@ -216,7 +216,67 @@ def _cicli_filters() -> Dict[str, Any]:
         "data_bolla_a": _parse_date(request.query.get("data_bolla_a")),
         "vista": ((request.query.get("vista") or "cicli").strip().lower() or "cicli"),
         "q": _normalize_global_q(request.query.get("q")),
+        "sort": _normalize_cicli_sort(request.query.get("sort")),
+        "sort_dir": _normalize_cicli_sort_dir(request.query.get("sort_dir")),
     }
+
+
+_CICLI_SORT_FIELDS = frozenset({"data_ins", "ultima_bolla"})
+
+
+def _normalize_cicli_sort(raw: Optional[str]) -> str:
+    value = (raw or "").strip().lower()
+    return value if value in _CICLI_SORT_FIELDS else "data_ins"
+
+
+def _normalize_cicli_sort_dir(raw: Optional[str]) -> str:
+    value = (raw or "").strip().lower()
+    return value if value in ("asc", "desc") else "desc"
+
+
+_ULTIMA_BOLLA_JOIN = """
+        LEFT JOIN (
+          SELECT
+            r.ew2_cd_cliente AS codice_cliente,
+            r.ew2_cd_articolo_fattura AS codice_articolo,
+            r.ew2_cd_ciclo AS codice_ciclo,
+            r.ew2_cd_linea AS codice_linea,
+            r.ew2_cd_stagione AS codice_stagione,
+            r.ew2_cd_composizione AS codice_composizione,
+            MAX(t1.ew1_data_bolla_cli) AS ultima_bolla
+          FROM ew2_righe_disposizioni r
+          JOIN ew1_testata_disposizioni t1
+            ON t1.ew1_anno_disposizione = r.ew2_anno_disposizione
+           AND t1.ew1_nr_disposizione = r.ew2_nr_disposizione
+          GROUP BY 1, 2, 3, 4, 5, 6
+        ) ub
+          ON ub.codice_cliente = t.codice_cliente
+         AND ub.codice_articolo = t.codice_articolo
+         AND ub.codice_ciclo = t.codice_ciclo
+         AND ub.codice_linea = t.codice_linea
+         AND ub.codice_stagione = t.codice_stagione
+         AND ub.codice_composizione = t.codice_composizione
+"""
+
+
+def _cicli_order_sql(sort: str, sort_dir: str, *, storico_ok: bool) -> Tuple[str, bool]:
+    """Ritorna (ORDER BY sql senza prefisso, serve_join_ultima_bolla)."""
+    direction = "ASC" if sort_dir == "asc" else "DESC"
+    if sort == "ultima_bolla" and storico_ok:
+        return (
+            f"ub.ultima_bolla {direction} NULLS LAST, "
+            f"t.data_ins DESC NULLS LAST, t.codice_ciclo",
+            True,
+        )
+    return (
+        f"t.data_ins {direction} NULLS LAST, "
+        f"t.nr_revisione DESC NULLS LAST, t.codice_ciclo",
+        False,
+    )
+
+
+def _with_ultima_bolla_join(from_where: str) -> str:
+    return from_where.replace(" WHERE 1=1", f"{_ULTIMA_BOLLA_JOIN}\n WHERE 1=1", 1)
 
 
 def _has_storico_filters(filters: Dict[str, Any]) -> bool:
@@ -1615,6 +1675,13 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
             params_page["limit"] = limit
             params_page["offset"] = offset
 
+            order_sql, need_ultima_join = _cicli_order_sql(
+                filters.get("sort") or "data_ins",
+                filters.get("sort_dir") or "desc",
+                storico_ok=storico_ok,
+            )
+            select_from = _with_ultima_bolla_join(from_where) if need_ultima_join else from_where
+
             cursor.execute(
                 f"""
                 SELECT
@@ -1638,8 +1705,8 @@ def register_cicli_routes(app, db_pool, parse_pagination=None, paginated_list_re
                   t.nr_revisione,
                   t.data_ins
                   {', cs.search_doc' if need_search else ', NULL AS search_doc'}
-                {from_where}
-                ORDER BY t.data_ins DESC NULLS LAST, t.nr_revisione DESC NULLS LAST, t.codice_ciclo
+                {select_from}
+                ORDER BY {order_sql}
                 LIMIT %(limit)s OFFSET %(offset)s
                 """,
                 params_page,

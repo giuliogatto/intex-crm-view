@@ -2995,6 +2995,33 @@ div.bolla-cliente__option {
   box-shadow: var(--shadow-sm);
 }
 
+/* Cicli: header ordinabili */
+table.data th.th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+table.data th.th-sortable:hover {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+table.data th.th-sortable--active {
+  color: var(--accent);
+}
+
+table.data th.th-sortable .th-sortable__indicator {
+  font-size: 0.7em;
+  margin-left: 0.25rem;
+  opacity: 0.55;
+}
+
+table.data th.th-sortable--active .th-sortable__indicator {
+  opacity: 1;
+}
+
 /* Cicli: righe risultati alternate + selezione fasi/utilizzi */
 table.data tr.cicli-row--alt > td {
   background: var(--bg-muted);
