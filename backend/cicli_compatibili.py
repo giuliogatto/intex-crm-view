@@ -52,7 +52,6 @@ PENALITA: Dict[str, float] = {
     "composizione": 5,
     "linea": 1,
     "ds_ciclo": 8,
-    "ds_ciclo_bolle_fat": 4,
     "note": 1,
     "ds_applicazione": 4,
     "ds_ricamo": 4,
@@ -62,7 +61,13 @@ PENALITA: Dict[str, float] = {
 }
 
 # Differenze riportate ma senza impatto sul punteggio.
-CAMPI_NEUTRI = ("codice_articolo", "codice_stagione", "codice_ciclo", "codice_ciclo_cli")
+CAMPI_NEUTRI = (
+    "codice_articolo",
+    "codice_stagione",
+    "codice_ciclo",
+    "codice_ciclo_cli",
+    "ds_ciclo_bolle_fat",  # desc. bolle/fatture: solo informativa
+)
 
 # Senza nemmeno una fase in comune il ciclo non è davvero compatibile,
 # anche se il resto della testata coincide.
@@ -71,7 +76,7 @@ MAX_SENZA_FASI_COMUNI = 40.0
 # livello -> compatibilità minima (%). 1 = molto ampio, 5 = solo cicli equivalenti.
 LIVELLI_SOGLIA: Dict[int, float] = {1: 30.0, 2: 50.0, 3: 70.0, 4: 90.0, 5: 100.0}
 
-_TESTI_TESTATA = ("ds_ciclo", "ds_ciclo_bolle_fat", "note")
+_TESTI_TESTATA = ("ds_ciclo", "note")
 _CODICI_TESTATA = ("ds_applicazione", "ds_ricamo", "ds_stampa", "codice_reparto", "codice_gruppo")
 _VALORI_VUOTI = {"", ".", "*", "-"}
 
