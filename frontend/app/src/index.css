@@ -2771,6 +2771,47 @@ table.data tfoot .table-totals-row:hover td {
   color: #c62828;
 }
 
+.pm-compat-diff {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pm-compat-diff__toggle {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid #c9a7a4;
+  border-radius: 4px;
+  background: #fff8f7;
+  color: #8a3a36;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pm-compat-diff__toggle:hover {
+  background: #ffe9e6;
+  border-color: #c62828;
+}
+
+.pm-compat-diff__toggle-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #8a3a36;
+  transition: transform 0.15s ease;
+}
+
+.pm-compat-diff__toggle.is-open .pm-compat-diff__toggle-arrow {
+  transform: rotate(180deg);
+}
+
 .pm-compat-fasi {
   margin: 0;
   padding-left: 1.1rem;

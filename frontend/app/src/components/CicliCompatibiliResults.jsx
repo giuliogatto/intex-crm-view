@@ -1,5 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { LIVELLO_HINT } from './cicliCompatibiliConstants'
+
+/** Campi differenza nascosti di default (poco rilevanti per ranking). */
+const DIFF_SECONDARIE = new Set(['note', 'codice_reparto', 'codice_linea'])
 
 const CAMPO_LABELS = {
   codice_articolo: 'Articolo',
@@ -151,12 +154,11 @@ function PrezziCiclo({ prezzi, compact = false }) {
   )
 }
 
-function DiffList({ items }) {
-  if (!items?.length) return <span className="pm-compat-empty">nessuna</span>
+function DiffItems({ items, keyPrefix = '' }) {
   return (
     <ul className="pm-compat-chips pm-compat-chips--diff">
       {items.map((d, i) => (
-        <li key={`${d.campo}-${i}`}>
+        <li key={`${keyPrefix}${d.campo}-${i}`}>
           <span className="pm-compat-chip__field">{campoLabel(d.campo)}</span>
           {d.tipo ? <span className="pm-compat-chip__tipo">{d.tipo}</span> : null}
           <span className="pm-compat-chip__vals">
@@ -170,6 +172,50 @@ function DiffList({ items }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+function DiffList({ items }) {
+  const [showMinor, setShowMinor] = useState(false)
+  if (!items?.length) return <span className="pm-compat-empty">nessuna</span>
+
+  const primary = []
+  const secondary = []
+  for (const d of items) {
+    if (DIFF_SECONDARIE.has(d.campo)) secondary.push(d)
+    else primary.push(d)
+  }
+
+  return (
+    <div className="pm-compat-diff">
+      {primary.length ? (
+        <DiffItems items={primary} />
+      ) : (
+        <span className="pm-compat-empty">
+          {secondary.length ? 'nessuna differenza rilevante' : 'nessuna'}
+        </span>
+      )}
+      {secondary.length ? (
+        <>
+          <button
+            type="button"
+            className={`pm-compat-diff__toggle${showMinor ? ' is-open' : ''}`}
+            aria-expanded={showMinor}
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setShowMinor((v) => !v)
+            }}
+          >
+            <span className="pm-compat-diff__toggle-arrow" aria-hidden="true" />
+            {showMinor
+              ? 'Nascondi info meno rilevanti'
+              : `Mostra altre info meno rilevanti (${secondary.length})`}
+          </button>
+          {showMinor ? <DiffItems items={secondary} keyPrefix="sec-" /> : null}
+        </>
+      ) : null}
+    </div>
   )
 }
 
