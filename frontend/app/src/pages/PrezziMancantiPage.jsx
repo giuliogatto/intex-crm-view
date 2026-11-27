@@ -43,6 +43,28 @@ function formatQty(n) {
   })
 }
 
+/** Nome anagrafica + descrizione bolla + codice (se diverso dal nome). */
+function formatArticoloDisplay(row) {
+  const codice = String(row.codice_articolo || '').trim()
+  const nome = String(row.nome_articolo || '').trim()
+  const desc = String(row.ds_articolo || row.articolo || '').trim()
+  const primary = nome || codice
+  const parts = []
+  if (primary) parts.push(primary)
+  if (desc && desc.toLocaleUpperCase('it-IT') !== primary.toLocaleUpperCase('it-IT')) {
+    parts.push(desc)
+  }
+  let label = parts.join(' — ')
+  if (
+    codice &&
+    nome &&
+    codice.toLocaleUpperCase('it-IT') !== nome.toLocaleUpperCase('it-IT')
+  ) {
+    label = label ? `${label} (${codice})` : codice
+  }
+  return label || null
+}
+
 function rowKey(row, idx) {
   return [
     row.ns_ddt,
@@ -592,7 +614,7 @@ export default function PrezziMancantiPage() {
                           const id = rowKey(row, idx)
                           const livello = livelloByRow[id] ?? DEFAULT_LIVELLO
                           const metaFields = [
-                            { label: 'Articolo', value: row.articolo },
+                            { label: 'Articolo', value: formatArticoloDisplay(row) },
                             { label: 'Linea', value: row.linea },
                             { label: 'Stag. listino', value: row.stagione_listino },
                             { label: 'Stag. prod.', value: row.stagione_produzione },

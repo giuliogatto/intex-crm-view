@@ -607,6 +607,14 @@ def register_admin_routes(app, db_pool):
                       ''
                     )
                   ) AS articolo,
+                  TRIM(COALESCE(NULLIF(p.cwa_ds_articolo_cliente, ''), '')) AS nome_articolo,
+                  TRIM(
+                    COALESCE(
+                      NULLIF(p.ew2_ds_articolo, ''),
+                      NULLIF(p.d03_ds_articolo, ''),
+                      ''
+                    )
+                  ) AS ds_articolo,
                   TRIM(
                     CONCAT_WS(
                       ' ',
@@ -683,7 +691,8 @@ def register_admin_routes(app, db_pool):
 
             data = []
             for r in rows:
-                codice_ciclo = r[11] or ""
+                # 0-7 anagrafica/testata, 8-14 meta, 15-16 qty, 17-21 chiavi ciclo.
+                codice_ciclo = r[13] or ""
                 data.append(
                     {
                         "cliente_codice": r[0] or "",
@@ -693,21 +702,23 @@ def register_admin_routes(app, db_pool):
                         "data_ddt": r[3] or "",
                         "tipo": r[4] or "",
                         "articolo": r[5] or "",
-                        "linea": r[6] or "",
-                        "stagione_listino": r[7] or "",
-                        "stagione_produzione": r[8] or "",
-                        "composizione": r[9] or "",
-                        "ns_disposiz": r[10] or "",
+                        "nome_articolo": r[6] or "",
+                        "ds_articolo": r[7] or "",
+                        "linea": r[8] or "",
+                        "stagione_listino": r[9] or "",
+                        "stagione_produzione": r[10] or "",
+                        "composizione": r[11] or "",
+                        "ns_disposiz": r[12] or "",
                         "ciclo": codice_ciclo,
-                        "ciclo_lavoro": r[12] or "",
-                        "capi_sped": _num(r[13]),
-                        "kg_sped": _num(r[14]),
-                        "codice_cliente": r[15] or "",
-                        "codice_articolo": r[16] or "",
+                        "ciclo_lavoro": r[14] or "",
+                        "capi_sped": _num(r[15]),
+                        "kg_sped": _num(r[16]),
+                        "codice_cliente": r[17] or "",
+                        "codice_articolo": r[18] or "",
                         "codice_ciclo": codice_ciclo,
-                        "codice_linea": r[17] or "",
-                        "codice_stagione": r[18] or "",
-                        "codice_composizione": r[19] or "",
+                        "codice_linea": r[19] or "",
+                        "codice_stagione": r[20] or "",
+                        "codice_composizione": r[21] or "",
                     }
                 )
 

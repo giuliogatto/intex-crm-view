@@ -23,6 +23,28 @@ function formatQty(n) {
   })
 }
 
+/** Nome anagrafica + descrizione bolla + codice (se diverso dal nome). */
+function formatArticoloDisplay(row) {
+  const codice = String(row.codice_articolo || '').trim()
+  const nome = String(row.nome_articolo || '').trim()
+  const desc = String(row.ds_articolo || row.articolo || '').trim()
+  const primary = nome || codice
+  const parts = []
+  if (primary) parts.push(primary)
+  if (desc && desc.toLocaleUpperCase('it-IT') !== primary.toLocaleUpperCase('it-IT')) {
+    parts.push(desc)
+  }
+  let label = parts.join(' — ')
+  if (
+    codice &&
+    nome &&
+    codice.toLocaleUpperCase('it-IT') !== nome.toLocaleUpperCase('it-IT')
+  ) {
+    label = label ? `${label} (${codice})` : codice
+  }
+  return label || '—'
+}
+
 function formatPrezzo(n) {
   if (n == null || n === '') return null
   const v = Number(n)
@@ -476,7 +498,7 @@ export function printPrezziMancanti({
         <div class="kv">
           ${kv('Data DDT', row.data_ddt)}
           ${kv('Tipo', row.tipo)}
-          ${kv('Articolo', row.articolo)}
+          ${kv('Articolo', formatArticoloDisplay(row))}
           ${kv('Linea', row.linea || '—')}
           ${kv('Stag. listino', row.stagione_listino || '—')}
           ${kv('Stag. prod.', row.stagione_produzione || '—')}
