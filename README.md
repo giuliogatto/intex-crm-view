@@ -179,3 +179,35 @@ docker compose up -d
 The `awk` step strips any TimescaleDB catalog `COPY` blocks that may still be present in older backups. `session_replication_role = replica` disables foreign-key checks during load so parent/child tables can be restored in any order.
 
 You should see many `COPY` lines with large counts (e.g. `COPY 1799`, `COPY 4765`). If the restore prints only a few `SET` lines, the backup file is empty or corrupt — re-create it using the commands in §3.1 and check `ls -lh` before uploading.
+
+### 3.3. Import from production server
+
+To refresh the local DB from a dump already present on the production host (`/home/debian`), use:
+
+```bash
+./scripts/import-db-from-production-server.sh backup-prod-YYYY-MM-DD.sql.gz
+```
+
+The script:
+
+1. Downloads the file via `scp` (`debian@57.131.22.138`, key `~/github_deploy_key`)
+2. Drops and recreates the local `postgres` database in container `intexdata`
+3. Imports the dump (filters TimescaleDB internals and `\restrict` meta-commands)
+4. Prints row counts for the main tables
+
+Create the dump on the server first (use `docker exec`, **not** `-T` / `-it`):
+
+```bash
+ssh -i ~/github_deploy_key debian@57.131.22.138
+docker exec data-timescaledb-intex-1 pg_dump -U postgres \
+  --exclude-schema=_timescaledb_catalog \
+  --exclude-schema=_timescaledb_config \
+  --exclude-schema=_timescaledb_internal \
+  postgres | gzip > ~/backup-prod-$(date +%Y-%m-%d).sql.gz
+ls -lh ~/backup-prod-*.sql.gz   # must be MB, not ~20 bytes
+```
+
+Optional overrides: `CONTAINER`, `SSH_KEY`, `SSH_HOST`, `REMOTE_DIR`, `LOCAL_DIR`.
+
+> [!WARNING]
+> The import **replaces** the entire local database. Stop the backend if it holds open connections.
