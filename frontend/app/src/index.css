@@ -39,9 +39,11 @@
   --danger: #e73827;
   --danger-bg: rgba(231, 56, 39, 0.08);
 
-  /* Sticky header + main nav height (logo, spacing, tab bar, small gap) */
+  /* Sticky header + main nav height (logo, spacing, tab bar) */
   --app-header-sticky-offset: calc(48px + 1rem + 0.75rem);
-  --app-sticky-top-offset: calc(48px + 1rem + 2rem + 2.9rem + 0.7rem + 0.75rem);
+  --app-sticky-top-height: calc(48px + 1rem + 2rem + 2.9rem + 0.7rem);
+  /* +0.75rem: aria scroll / sticky secondari con piccolo respiro sotto la nav */
+  --app-sticky-top-offset: calc(var(--app-sticky-top-height) + 0.75rem);
 
   font-family: 'Roboto', sans-serif;
   color-scheme: light;
@@ -2109,12 +2111,14 @@ table.data tfoot .table-totals-row:hover td {
 
 .prezzi-mancanti-page .pm-sticky-controls {
   position: sticky;
-  top: var(--app-sticky-top-offset);
+  /* A filo con la nav sticky (senza il respiro di --app-sticky-top-offset). */
+  top: var(--app-sticky-top-height);
   z-index: 90;
   background: #f7f9f8;
   border: 1px solid var(--border-color);
+  border-top: none;
   border-bottom: 1px solid #c9d4cd;
-  border-radius: 12px 12px 0 0;
+  border-radius: 0;
   box-shadow: 0 6px 14px -10px rgba(30, 42, 34, 0.35);
 }
 
