@@ -80,6 +80,14 @@ function clienteGroupLabel(row) {
   return row.cliente || code || name || 'Cliente sconosciuto'
 }
 
+/** Etichetta corta per le chip (nome, o codice). */
+function clienteChipLabel(row) {
+  const name = String(row.cliente_nome || '').trim()
+  const code = String(row.cliente_codice || '').trim()
+  if (name) return name
+  return code || row.cliente || '—'
+}
+
 /** Raggruppa le righe consecutive per cliente (ordine già per cliente lato API). */
 function groupRowsByCliente(rows) {
   const groups = []
@@ -93,6 +101,7 @@ function groupRowsByCliente(rows) {
       groups.push({
         key,
         label: clienteGroupLabel(row),
+        chipLabel: clienteChipLabel(row),
         items: [{ row, idx }],
       })
     }
@@ -134,6 +143,8 @@ export default function PrezziMancantiPage() {
   /** @type {[Record<string, {loading:boolean, error?:string, compatibili:any[], livello:number, soglia?:number}>, Function]} */
   const [compatByRow, setCompatByRow] = useState({})
   const [livelloByRow, setLivelloByRow] = useState({})
+  /** Visibilità gruppi cliente (solo UI): key → true/false. Default true. */
+  const [clienteVisible, setClienteVisible] = useState({})
   /** Contatore per-riga: evita che una risposta stale sovrascriva uno slider più recente. */
   const rowReqRef = useRef({})
   const prezziPresentiRef = useRef(prezziPresenti)
@@ -310,9 +321,48 @@ export default function PrezziMancantiPage() {
     setRange({ da: '', a: '' })
     setCompatByRow({})
     setLivelloByRow({})
+    setClienteVisible({})
   }
 
   const clienteGroups = useMemo(() => groupRowsByCliente(rows), [rows])
+
+  useEffect(() => {
+    setClienteVisible((prev) => {
+      const next = {}
+      for (const g of clienteGroups) {
+        next[g.key] = prev[g.key] !== false
+      }
+      const prevKeys = Object.keys(prev)
+      const nextKeys = Object.keys(next)
+      if (
+        prevKeys.length === nextKeys.length &&
+        nextKeys.every((k) => k in prev && prev[k] === next[k])
+      ) {
+        return prev
+      }
+      return next
+    })
+  }, [clienteGroups])
+
+  const visibleClienteGroups = useMemo(
+    () => clienteGroups.filter((g) => clienteVisible[g.key] !== false),
+    [clienteGroups, clienteVisible],
+  )
+
+  const toggleClienteVisible = (key) => {
+    setClienteVisible((prev) => ({
+      ...prev,
+      [key]: prev[key] === false,
+    }))
+  }
+
+  const setAllClientiVisible = (visible) => {
+    setClienteVisible((prev) => {
+      const next = { ...prev }
+      for (const g of clienteGroups) next[g.key] = visible
+      return next
+    })
+  }
 
   return (
     <div className="app-container">
@@ -375,104 +425,136 @@ export default function PrezziMancantiPage() {
 
       <div className="logs-page prezzi-mancanti-page">
         <div className="panel logs-list-panel">
-          <div className="panel__head">
-            <span>
-              Lista controllo prezzi mancanti
-              {searched ? ` (${total})` : ''}
-            </span>
-            {searched && rows.length > 0 ? (
-              <button
-                type="button"
-                className="btn btn--sm"
-                disabled={loading}
-                title="Stampa la pagina corrente con tutti i cicli compatibili espansi"
-                onClick={() => {
-                  try {
-                    printPrezziMancanti({
-                      rows,
-                      compatByRow,
-                      livelloByRow,
-                      defaultLivello: DEFAULT_LIVELLO,
-                      page,
-                      pages,
-                      total,
-                      range,
-                      prezziPresenti,
-                      rowKeyFn: rowKey,
-                      livelloHint: LIVELLO_HINT,
-                    })
-                  } catch (err) {
-                    console.error(err)
-                    window.alert(err.message || 'Impossibile aprire la stampa.')
-                  }
-                }}
-              >
-                Stampa
-              </button>
-            ) : null}
-          </div>
-          <div className="panel__body panel__body--compact">
-            <form className="sinonimi-filters" onSubmit={handleSearch}>
-              <label className="users-form__field" style={{ minWidth: 200 }}>
-                <span>Data da</span>
-                <DateInput
-                  name="data_da"
-                  value={dataDaFilter}
-                  onChange={(e) => setDataDaFilter(e.target.value)}
-                  placeholder="Seleziona data inizio…"
-                />
-              </label>
-              <label className="users-form__field" style={{ minWidth: 200 }}>
-                <span>Data a</span>
-                <DateInput
-                  name="data_a"
-                  value={dataAFilter}
-                  onChange={(e) => setDataAFilter(e.target.value)}
-                  placeholder="Seleziona data fine…"
-                />
-              </label>
-              <label
-                className="users-form__field pm-prezzi-presenti"
-                title="Se attivo, i cicli compatibili devono avere un'offerta con prezzo > 0"
-              >
-                <span>Prezzi presenti</span>
-                <span className="pm-prezzi-presenti__ctrl">
+          <div className="pm-sticky-controls">
+            <div className="pm-sticky-controls__bar">
+              <div className="pm-sticky-controls__title">
+                <strong>
+                  Prezzi mancanti
+                  {searched ? ` (${total})` : ''}
+                </strong>
+                {range.da && range.a ? (
+                  <span className="pm-sticky-controls__period">
+                    {formatIt(range.da)} – {formatIt(range.a)}
+                  </span>
+                ) : null}
+              </div>
+
+              <form className="pm-filters pm-filters--compact" onSubmit={handleSearch}>
+                <label className="pm-field-inline">
+                  <span>Da</span>
+                  <DateInput
+                    name="data_da"
+                    value={dataDaFilter}
+                    onChange={(e) => setDataDaFilter(e.target.value)}
+                    placeholder="Data da…"
+                  />
+                </label>
+                <label className="pm-field-inline">
+                  <span>A</span>
+                  <DateInput
+                    name="data_a"
+                    value={dataAFilter}
+                    onChange={(e) => setDataAFilter(e.target.value)}
+                    placeholder="Data a…"
+                  />
+                </label>
+                <label
+                  className="pm-field-inline pm-prezzi-presenti--compact"
+                  title="Se attivo, i cicli compatibili devono avere un'offerta con prezzo > 0"
+                >
                   <input
                     type="checkbox"
                     name="prezzi_presenti"
                     checked={prezziPresenti}
                     onChange={(e) => handlePrezziPresentiChange(e.target.checked)}
                   />
-                  <span>Solo cicli con prezzo</span>
-                </span>
-              </label>
-              <button type="submit" className="btn btn--primary btn--sm" style={{ alignSelf: 'flex-end' }}>
-                Cerca
-              </button>
-              <button
-                type="button"
-                className="btn btn--sm"
-                style={{ alignSelf: 'flex-end' }}
-                onClick={handleReset}
-              >
-                Reset
-              </button>
-            </form>
+                  <span>Solo con prezzo</span>
+                </label>
+                <button type="submit" className="btn btn--primary btn--sm">
+                  Cerca
+                </button>
+                <button type="button" className="btn btn--sm" onClick={handleReset}>
+                  Reset
+                </button>
+                {searched && rows.length > 0 ? (
+                  <button
+                    type="button"
+                    className="btn btn--sm"
+                    disabled={loading}
+                    title="Stampa i clienti visibili della pagina corrente con i cicli compatibili espansi"
+                    onClick={() => {
+                      try {
+                        const items = visibleClienteGroups.flatMap((g) => g.items)
+                        printPrezziMancanti({
+                          rows: items.map(({ row }) => row),
+                          compatByRow,
+                          livelloByRow,
+                          defaultLivello: DEFAULT_LIVELLO,
+                          page,
+                          pages,
+                          total,
+                          range,
+                          prezziPresenti,
+                          rowKeyFn: (row, i) => rowKey(row, items[i].idx),
+                          livelloHint: LIVELLO_HINT,
+                        })
+                      } catch (err) {
+                        console.error(err)
+                        window.alert(err.message || 'Impossibile aprire la stampa.')
+                      }
+                    }}
+                  >
+                    Stampa
+                  </button>
+                ) : null}
+              </form>
+            </div>
 
-            <p className="sinonimi-hint">
-              Mostra le spedizioni (DDT di uscita) nel periodo selezionato
-              con ciclo senza prezzo associato in disposizione (come il report Wash).
-              Sotto ogni riga compaiono i cicli compatibili (livello {DEFAULT_LIVELLO} di default
-              {prezziPresenti ? ', solo con prezzo' : ''});
-              lo slider aggiorna solo quella riga.
-              {range.da && range.a ? (
-                <>
-                  {' '}
-                  Periodo: <strong>{formatIt(range.da)}</strong> – <strong>{formatIt(range.a)}</strong>.
-                </>
-              ) : null}
-            </p>
+            {!loading && searched && clienteGroups.length > 0 ? (
+              <div className="pm-cliente-filter" role="group" aria-label="Filtra clienti nei risultati">
+                <div className="pm-cliente-filter__chips">
+                  <span className="pm-cliente-filter__label">Clienti</span>
+                  <button
+                    type="button"
+                    className="pm-cliente-filter__bulk"
+                    onClick={() => setAllClientiVisible(true)}
+                  >
+                    Tutti
+                  </button>
+                  <button
+                    type="button"
+                    className="pm-cliente-filter__bulk"
+                    onClick={() => setAllClientiVisible(false)}
+                  >
+                    Nessuno
+                  </button>
+                  <span className="pm-cliente-filter__meta">
+                    {visibleClienteGroups.length}/{clienteGroups.length}
+                  </span>
+                  {clienteGroups.map((group) => {
+                    const checked = clienteVisible[group.key] !== false
+                    return (
+                      <label
+                        key={group.key}
+                        className={`pm-cliente-chip${checked ? '' : ' is-off'}`}
+                        title={group.label}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleClienteVisible(group.key)}
+                        />
+                        <span className="pm-cliente-chip__name">{group.chipLabel}</span>
+                        <span className="pm-cliente-chip__count">{group.items.length}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
 
+          <div className="panel__body panel__body--compact pm-results-body">
             {loading ? (
               <div className="loading-indicator">
                 <div className="spinner" />
@@ -484,10 +566,14 @@ export default function PrezziMancantiPage() {
               <p className="users-empty">Seleziona il periodo e premi Cerca.</p>
             ) : rows.length === 0 ? (
               <p className="users-empty">Nessuna riga senza prezzo nel periodo.</p>
+            ) : visibleClienteGroups.length === 0 ? (
+              <p className="users-empty">
+                Nessun cliente selezionato. Usa le spunte sopra per mostrare i risultati.
+              </p>
             ) : (
               <>
                 <div className="pm-cliente-groups">
-                  {clienteGroups.map((group) => (
+                  {visibleClienteGroups.map((group) => (
                     <section key={group.key} className="pm-cliente-group">
                       <header className="pm-cliente-group__head">
                         <div className="pm-cliente-group__title">

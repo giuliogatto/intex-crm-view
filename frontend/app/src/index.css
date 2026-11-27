@@ -2101,6 +2101,232 @@ table.data tfoot .table-totals-row:hover td {
   color: #8a5a00;
 }
 
+/* Sticky filtri + chip clienti (sotto header/nav app).
+   Il .panel globale ha overflow:hidden che spezza sticky → override. */
+.prezzi-mancanti-page .logs-list-panel {
+  overflow: visible;
+}
+
+.prezzi-mancanti-page .pm-sticky-controls {
+  position: sticky;
+  top: var(--app-sticky-top-offset);
+  z-index: 90;
+  background: #f7f9f8;
+  border: 1px solid var(--border-color);
+  border-bottom: 1px solid #c9d4cd;
+  border-radius: 12px 12px 0 0;
+  box-shadow: 0 6px 14px -10px rgba(30, 42, 34, 0.35);
+}
+
+.prezzi-mancanti-page .pm-sticky-controls__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--bg-panel, #fff);
+  border-bottom: 1px solid #e2e8e4;
+}
+
+.prezzi-mancanti-page .pm-sticky-controls__title {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.55rem;
+  min-width: 0;
+  flex: 0 1 auto;
+  font-size: 0.92rem;
+  color: #1e2a22;
+}
+
+.prezzi-mancanti-page .pm-sticky-controls__period {
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: #6a7a70;
+}
+
+.prezzi-mancanti-page .pm-filters--compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  margin: 0;
+  flex: 1 1 28rem;
+  min-width: 0;
+}
+
+.prezzi-mancanti-page .pm-field-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #5a6a60;
+}
+
+.prezzi-mancanti-page .pm-field-inline > span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.prezzi-mancanti-page .pm-field-inline .date-input {
+  width: 8.6rem;
+}
+
+.prezzi-mancanti-page .pm-field-inline .date-input__control {
+  border-radius: 6px;
+  min-height: 1.85rem;
+}
+
+.prezzi-mancanti-page .pm-field-inline .date-input__field {
+  padding: 0.28rem 0.45rem;
+  font-size: 0.8rem;
+}
+
+.prezzi-mancanti-page .pm-field-inline .date-input__clear,
+.prezzi-mancanti-page .pm-field-inline .date-input__trigger {
+  padding: 0 0.35rem;
+}
+
+.prezzi-mancanti-page .pm-field-inline .date-input__trigger svg {
+  width: 14px;
+  height: 14px;
+}
+
+.prezzi-mancanti-page .pm-prezzi-presenti--compact {
+  font-weight: 500;
+  color: #2a3830;
+  white-space: nowrap;
+}
+
+.prezzi-mancanti-page .pm-prezzi-presenti--compact input {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin: 0;
+  accent-color: var(--accent, #0062af);
+  cursor: pointer;
+}
+
+.prezzi-mancanti-page .pm-filters--compact .btn {
+  padding: 0.28rem 0.65rem;
+  min-height: 1.85rem;
+  font-size: 0.78rem;
+}
+
+.prezzi-mancanti-page .pm-results-body {
+  padding-top: 0.7rem;
+}
+
+.pm-cliente-filter {
+  padding: 0.3rem 0.55rem 0.4rem;
+  border-top: 1px solid #e2e8e4;
+}
+
+.pm-cliente-filter__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.28rem;
+  width: 100%;
+  max-height: 3.35rem; /* ~2 righe di chip + scroll se ce ne sono di più */
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.pm-cliente-filter__label {
+  flex: 0 0 auto;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #5a6a60;
+}
+
+.pm-cliente-filter__bulk {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent, #0062af);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.pm-cliente-filter__bulk:hover {
+  color: #004a85;
+}
+
+.pm-cliente-filter__meta {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  color: #6a7a70;
+  margin-right: 0.15rem;
+}
+
+.pm-cliente-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 12rem;
+  min-height: 1.3rem;
+  padding: 0.05rem 0.3rem 0.05rem 0.2rem;
+  border: 1px solid #b7c6bc;
+  border-radius: 999px;
+  background: #fff;
+  color: #1e2a22;
+  font-size: 0.68rem;
+  line-height: 1.15;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pm-cliente-chip input {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin: 0;
+  accent-color: var(--accent, #0062af);
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.pm-cliente-chip__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.pm-cliente-chip__count {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: #5a6a60;
+  background: #e8eee9;
+  border-radius: 999px;
+  padding: 0 0.28rem;
+  font-size: 0.62rem;
+}
+
+.pm-cliente-chip.is-off {
+  background: #eef1ef;
+  border-color: #cfd8d2;
+  color: #809086;
+  opacity: 0.72;
+}
+
+.pm-cliente-chip.is-off .pm-cliente-chip__count {
+  background: #dde3df;
+  color: #809086;
+}
+
 .pm-cliente-groups {
   display: flex;
   flex-direction: column;
