@@ -660,8 +660,9 @@ def register_admin_routes(app, db_pool):
                 FROM ddt_prezzi_003w p
                 WHERE {where_sql}
                 ORDER BY
-                  p.d02_dt_bolla,
+                  TRIM(COALESCE(p.r07_ragione_soc, '')),
                   TRIM(COALESCE(p.d02_cd_cliente_fatt, '')),
+                  p.d02_dt_bolla,
                   p.d02_nr_bolla,
                   p.d03_nr_disp_cli NULLS LAST,
                   p.d03_riga NULLS LAST

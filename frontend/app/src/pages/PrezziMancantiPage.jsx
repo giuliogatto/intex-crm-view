@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { authFetch } from '../utils/auth'
 import { useAuth } from '../context/AuthContext'
 import UserMenu from '../components/UserMenu'
@@ -67,6 +67,37 @@ function cicloPayload(row, id) {
     codice_stagione: row.codice_stagione || '',
     codice_composizione: row.codice_composizione || '',
   }
+}
+
+function clienteGroupKey(row) {
+  return String(row.cliente_codice || row.codice_cliente || row.cliente || '').trim() || '—'
+}
+
+function clienteGroupLabel(row) {
+  const code = String(row.cliente_codice || '').trim()
+  const name = String(row.cliente_nome || '').trim()
+  if (code && name) return `${code} — ${name}`
+  return row.cliente || code || name || 'Cliente sconosciuto'
+}
+
+/** Raggruppa le righe consecutive per cliente (ordine già per cliente lato API). */
+function groupRowsByCliente(rows) {
+  const groups = []
+  for (let idx = 0; idx < rows.length; idx += 1) {
+    const row = rows[idx]
+    const key = clienteGroupKey(row)
+    const last = groups[groups.length - 1]
+    if (last && last.key === key) {
+      last.items.push({ row, idx })
+    } else {
+      groups.push({
+        key,
+        label: clienteGroupLabel(row),
+        items: [{ row, idx }],
+      })
+    }
+  }
+  return groups
 }
 
 function CicliCompatibiliPanel({ rowId, stato, livello, onLivelloChange }) {
@@ -281,6 +312,8 @@ export default function PrezziMancantiPage() {
     setLivelloByRow({})
   }
 
+  const clienteGroups = useMemo(() => groupRowsByCliente(rows), [rows])
+
   return (
     <div className="app-container">
       <div className="app-sticky-top">
@@ -453,72 +486,87 @@ export default function PrezziMancantiPage() {
               <p className="users-empty">Nessuna riga senza prezzo nel periodo.</p>
             ) : (
               <>
-                <div className="pm-rows">
-                  {rows.map((row, idx) => {
-                    const id = rowKey(row, idx)
-                    const livello = livelloByRow[id] ?? DEFAULT_LIVELLO
-                    const metaFields = [
-                      { label: 'Articolo', value: row.articolo },
-                      { label: 'Linea', value: row.linea },
-                      { label: 'Stag. listino', value: row.stagione_listino },
-                      { label: 'Stag. prod.', value: row.stagione_produzione },
-                      { label: 'Composizione', value: row.composizione },
-                      { label: 'Ns. disposiz.', value: row.ns_disposiz },
-                      { label: 'Ciclo lavoro', value: row.ciclo_lavoro },
-                    ].filter((f) => f.value != null && String(f.value).trim() !== '')
-                    return (
-                      <article key={id} className="pm-row">
-                        <div className="pm-row__head">
-                          <div className="pm-row__primary">
-                            <div className="pm-row__identity">
-                              <span className="pm-row__cliente" title={row.cliente || ''}>
-                                {row.cliente || '—'}
-                              </span>
-                              <span className="pm-row__ddt">
-                                {[
-                                  row.ns_ddt ? `DDT ${row.ns_ddt}` : null,
-                                  row.data_ddt || null,
-                                  row.tipo || null,
-                                ]
-                                  .filter(Boolean)
-                                  .join(' · ') || '—'}
-                              </span>
-                            </div>
-                            <div className="pm-row__ciclo-block">
-                              <em>Ciclo</em>
-                              <strong title={row.ciclo || ''}>{row.ciclo || '—'}</strong>
-                            </div>
-                            <div className="pm-row__qty">
-                              <span>
-                                <em>Capi</em> {formatQty(row.capi_sped)}
-                              </span>
-                              <span>
-                                <em>Kg</em> {formatQty(row.kg_sped)}
-                              </span>
-                            </div>
-                          </div>
-                          {metaFields.length ? (
-                            <div className="pm-row__meta">
-                              {metaFields.map((f) => (
-                                <span key={f.label} className="pm-row__meta-item">
-                                  <em>{f.label}</em>
-                                  <strong title={String(f.value)}>{f.value}</strong>
-                                </span>
-                              ))}
-                            </div>
-                          ) : null}
+                <div className="pm-cliente-groups">
+                  {clienteGroups.map((group) => (
+                    <section key={group.key} className="pm-cliente-group">
+                      <header className="pm-cliente-group__head">
+                        <div className="pm-cliente-group__title">
+                          <span className="pm-cliente-group__badge">Cliente</span>
+                          <h3 className="pm-cliente-group__name" title={group.label}>
+                            {group.label}
+                          </h3>
                         </div>
-                        <div className="pm-row__compat">
-                          <CicliCompatibiliPanel
-                            rowId={id}
-                            stato={compatByRow[id]}
-                            livello={livello}
-                            onLivelloChange={handleLivelloChange}
-                          />
-                        </div>
-                      </article>
-                    )
-                  })}
+                        <span className="pm-cliente-group__count">
+                          {group.items.length}{' '}
+                          {group.items.length === 1 ? 'riga' : 'righe'}
+                        </span>
+                      </header>
+                      <div className="pm-rows pm-rows--grouped">
+                        {group.items.map(({ row, idx }) => {
+                          const id = rowKey(row, idx)
+                          const livello = livelloByRow[id] ?? DEFAULT_LIVELLO
+                          const metaFields = [
+                            { label: 'Articolo', value: row.articolo },
+                            { label: 'Linea', value: row.linea },
+                            { label: 'Stag. listino', value: row.stagione_listino },
+                            { label: 'Stag. prod.', value: row.stagione_produzione },
+                            { label: 'Composizione', value: row.composizione },
+                            { label: 'Ns. disposiz.', value: row.ns_disposiz },
+                            { label: 'Ciclo lavoro', value: row.ciclo_lavoro },
+                          ].filter((f) => f.value != null && String(f.value).trim() !== '')
+                          return (
+                            <article key={id} className="pm-row">
+                              <div className="pm-row__head">
+                                <div className="pm-row__primary">
+                                  <div className="pm-row__identity">
+                                    <span className="pm-row__ddt pm-row__ddt--primary">
+                                      {[
+                                        row.ns_ddt ? `DDT ${row.ns_ddt}` : null,
+                                        row.data_ddt || null,
+                                        row.tipo || null,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(' · ') || '—'}
+                                    </span>
+                                  </div>
+                                  <div className="pm-row__ciclo-block">
+                                    <em>Ciclo</em>
+                                    <strong title={row.ciclo || ''}>{row.ciclo || '—'}</strong>
+                                  </div>
+                                  <div className="pm-row__qty">
+                                    <span>
+                                      <em>Capi</em> {formatQty(row.capi_sped)}
+                                    </span>
+                                    <span>
+                                      <em>Kg</em> {formatQty(row.kg_sped)}
+                                    </span>
+                                  </div>
+                                </div>
+                                {metaFields.length ? (
+                                  <div className="pm-row__meta">
+                                    {metaFields.map((f) => (
+                                      <span key={f.label} className="pm-row__meta-item">
+                                        <em>{f.label}</em>
+                                        <strong title={String(f.value)}>{f.value}</strong>
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : null}
+                              </div>
+                              <div className="pm-row__compat">
+                                <CicliCompatibiliPanel
+                                  rowId={id}
+                                  stato={compatByRow[id]}
+                                  livello={livello}
+                                  onLivelloChange={handleLivelloChange}
+                                />
+                              </div>
+                            </article>
+                          )
+                        })}
+                      </div>
+                    </section>
+                  ))}
                 </div>
                 <Pagination
                   page={page}

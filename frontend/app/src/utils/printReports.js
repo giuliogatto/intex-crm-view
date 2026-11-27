@@ -438,29 +438,42 @@ export function printPrezziMancanti({
     range?.da && range?.a
       ? `Periodo ${formatDateIso(range.da)} – ${formatDateIso(range.a)}`
       : ''
-  const bodyHtml = rows
-    .map((row, idx) => {
-      const id = rowKeyFn(row, idx)
-      const stato = compatByRow[id] || {}
-      const livello = livelloByRow[id] ?? defaultLivello
-      const hint = livelloHint?.[livello] || ''
-      const compatibili = stato.compatibili || []
-      const loadingNote = stato.loading
-        ? '<p class="empty">Cicli compatibili ancora in caricamento al momento della stampa.</p>'
-        : ''
-      const errorNote = stato.error
-        ? `<p class="empty">Errore compatibili: ${escapeHtml(stato.error)}</p>`
-        : ''
-      const list =
-        !stato.loading && !stato.error
-          ? compatibili.length
-            ? compatibili.map((c, i) => compatItemHtml(c, i)).join('')
-            : '<p class="empty">Nessun ciclo compatibile a questo livello.</p>'
-          : ''
-      return `<section class="block">
+  const groups = []
+  rows.forEach((row, idx) => {
+    const key = String(row.cliente_codice || row.codice_cliente || row.cliente || '').trim() || '—'
+    const label =
+      row.cliente_codice && row.cliente_nome
+        ? `${row.cliente_codice} — ${row.cliente_nome}`
+        : row.cliente || key
+    const last = groups[groups.length - 1]
+    if (last && last.key === key) last.items.push({ row, idx })
+    else groups.push({ key, label, items: [{ row, idx }] })
+  })
+
+  const bodyHtml = groups
+    .map((group) => {
+      const rowsHtml = group.items
+        .map(({ row, idx }) => {
+          const id = rowKeyFn(row, idx)
+          const stato = compatByRow[id] || {}
+          const livello = livelloByRow[id] ?? defaultLivello
+          const hint = livelloHint?.[livello] || ''
+          const compatibili = stato.compatibili || []
+          const loadingNote = stato.loading
+            ? '<p class="empty">Cicli compatibili ancora in caricamento al momento della stampa.</p>'
+            : ''
+          const errorNote = stato.error
+            ? `<p class="empty">Errore compatibili: ${escapeHtml(stato.error)}</p>`
+            : ''
+          const list =
+            !stato.loading && !stato.error
+              ? compatibili.length
+                ? compatibili.map((c, i) => compatItemHtml(c, i)).join('')
+                : '<p class="empty">Nessun ciclo compatibile a questo livello.</p>'
+              : ''
+          return `<section class="block">
         <h2>DDT ${printCell(row.ns_ddt)} · ciclo ${printCell(row.ciclo)}</h2>
         <div class="kv">
-          ${kv('Cliente', row.cliente)}
           ${kv('Data DDT', row.data_ddt)}
           ${kv('Tipo', row.tipo)}
           ${kv('Articolo', row.articolo)}
@@ -477,6 +490,12 @@ export function printPrezziMancanti({
           hint ? ` (${escapeHtml(hint)})` : ''
         }${stato.soglia != null ? ` · soglia ${escapeHtml(stato.soglia)}%` : ''}</h3>
         ${loadingNote}${errorNote}${list}
+      </section>`
+        })
+        .join('')
+      return `<section class="block">
+        <h1>Cliente ${escapeHtml(group.label)} (${group.items.length})</h1>
+        ${rowsHtml}
       </section>`
     })
     .join('')
