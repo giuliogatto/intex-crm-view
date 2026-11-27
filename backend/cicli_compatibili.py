@@ -75,6 +75,9 @@ _TESTI_TESTATA = ("ds_ciclo", "ds_ciclo_bolle_fat", "note")
 _CODICI_TESTATA = ("ds_applicazione", "ds_ricamo", "ds_stampa", "codice_reparto", "codice_gruppo")
 _VALORI_VUOTI = {"", ".", "*", "-"}
 
+# Prima occorrenza di anno a 2 o 4 cifre nella stringa stagione (es. "AI 27", "AI 27/28").
+_ANNO_STAGIONE_RE = re.compile(r"(?<!\d)(\d{4}|\d{2})(?!\d)")
+
 _TESTATA_COLS = (
     "codice_cliente", "codice_articolo", "codice_ciclo", "codice_linea",
     "codice_stagione", "codice_composizione", "codice_ciclo_cli", "ds_ciclo",
@@ -520,6 +523,41 @@ def _livello_soglia(livello: int) -> float:
     return LIVELLI_SOGLIA[lv]
 
 
+def _anno_da_stagione(stagione: Any) -> Optional[int]:
+    """Estrae l'anno dalla stringa stagione (es. ``AI 27``, ``AI 27/28``, ``PE 2027``).
+
+    Usa la prima sequenza numerica a 2 o 4 cifre. Gli anni a 2 cifre diventano
+    2000–2069 (00–69) o 1970–1999 (70–99). Ritorna ``None`` se non c'è anno
+    (es. ``*``, ``pe/ai``, stringa vuota).
+    """
+    text = str(stagione or "").strip()
+    if not text:
+        return None
+    m = _ANNO_STAGIONE_RE.search(text)
+    if not m:
+        return None
+    raw = int(m.group(1))
+    if raw < 100:
+        return 2000 + raw if raw < 70 else 1900 + raw
+    return raw
+
+
+def _chiave_ordinamento_compatibile(r: Dict[str, Any]) -> Tuple:
+    """Stagione più recente prima; ranking (compatibilità) solo come tie-break.
+
+    Senza anno nella stringa stagione → in fondo (``has_anno`` falso).
+    """
+    ciclo = r.get("ciclo") or {}
+    stagione = ciclo.get("codice_stagione") or ciclo.get("ds_stagione") or ""
+    anno = _anno_da_stagione(stagione)
+    return (
+        anno is not None,
+        anno or 0,
+        float(r.get("compatibilita") or 0.0),
+        ciclo.get("data_ins") or "",
+    )
+
+
 def _ciclo_summary(
     ciclo: Dict[str, Any],
     prezzi: Optional[Dict[str, Any]] = None,
@@ -560,10 +598,7 @@ def _filtra_compatibili(
             **esito,
         })
 
-    risultati.sort(
-        key=lambda r: (r["compatibilita"], r["ciclo"].get("data_ins") or ""),
-        reverse=True,
-    )
+    risultati.sort(key=_chiave_ordinamento_compatibile, reverse=True)
     return risultati[:limite] if limite else risultati
 
 
@@ -577,7 +612,10 @@ def trova_cicli_compatibili(
     soglia_minima: Optional[float] = None,
     prezzi_presenti: bool = True,
 ) -> List[Dict[str, Any]]:
-    """Cicli del `cliente` compatibili con `ciclo`, ordinati per compatibilità decrescente.
+    """Cicli del `cliente` compatibili con `ciclo`.
+
+    Ordinamento: anno stagione (più recente prima; senza anno in fondo), poi
+    compatibilità decrescente.
 
     ciclo: dict con la chiave a 6 campi (caricato da DB), oppure dict già completo con
            chiave "fasi" (lista di dict codice_fase/ds_fase/note/...), oppure tupla in

@@ -4,6 +4,8 @@ import copy
 
 from cicli_compatibili import (
     MAX_SENZA_FASI_COMUNI,
+    _anno_da_stagione,
+    _chiave_ordinamento_compatibile,
     _livello_soglia,
     confronta_cicli,
 )
@@ -117,3 +119,43 @@ def test_livelli_crescenti_restringono():
     assert soglie == sorted(soglie)
     assert _livello_soglia(0) == soglie[0]
     assert _livello_soglia(99) == soglie[-1] == 100.0
+
+
+def test_anno_da_stagione():
+    assert _anno_da_stagione("AI 27") == 2027
+    assert _anno_da_stagione("AI 27/28") == 2027
+    assert _anno_da_stagione("PE 26") == 2026
+    assert _anno_da_stagione("PE 2027") == 2027
+    assert _anno_da_stagione("AI 99") == 1999
+    assert _anno_da_stagione("*") is None
+    assert _anno_da_stagione("pe/ai") is None
+    assert _anno_da_stagione("") is None
+    assert _anno_da_stagione(None) is None
+
+
+def test_ordinamento_stagione_poi_ranking():
+    """Anno stagione DESC, poi compatibilità; senza anno in fondo."""
+
+    def item(stagione, compat, data_ins=""):
+        return {
+            "compatibilita": compat,
+            "ciclo": {"codice_stagione": stagione, "data_ins": data_ins},
+        }
+
+    rows = [
+        item("AI 26/27", 100.0),
+        item("*", 100.0),
+        item("PE 27", 90.0),
+        item("AI 27/28", 90.0),
+        item("pe/ai", 95.0),
+        item("PE 27", 100.0),
+    ]
+    ordered = sorted(rows, key=_chiave_ordinamento_compatibile, reverse=True)
+    assert [(r["ciclo"]["codice_stagione"], r["compatibilita"]) for r in ordered] == [
+        ("PE 27", 100.0),     # 2027, ranking alto
+        ("PE 27", 90.0),      # 2027, ranking più basso (stabile rispetto ad AI 27/28)
+        ("AI 27/28", 90.0),   # 2027
+        ("AI 26/27", 100.0),  # 2026
+        ("*", 100.0),         # senza anno, ranking alto
+        ("pe/ai", 95.0),      # senza anno
+    ]
