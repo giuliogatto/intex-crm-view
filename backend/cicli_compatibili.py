@@ -50,14 +50,14 @@ PENALITA: Dict[str, float] = {
     "unita_misura_fase": 2,
     "macrofase": 2,
     "composizione": 5,
-    "linea": 3,
+    "linea": 1,
     "ds_ciclo": 8,
     "ds_ciclo_bolle_fat": 4,
-    "note": 5,
+    "note": 1,
     "ds_applicazione": 4,
     "ds_ricamo": 4,
     "ds_stampa": 4,
-    "codice_reparto": 3,
+    "codice_reparto": 1,
     "codice_gruppo": 2,
 }
 
