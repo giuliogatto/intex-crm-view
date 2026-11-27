@@ -71,24 +71,25 @@ function CompatPct({ value }) {
   )
 }
 
+function prezzoOrDash(n) {
+  return formatPrezzo(n) ?? '—'
+}
+
 function PrezziCiclo({ prezzi, compact = false }) {
   if (!prezzi) {
     return compact ? null : <span className="pm-compat-empty">nessun prezzo</span>
   }
-  const capo = formatPrezzo(prezzi.prezzo_capo)
-  const kg = formatPrezzo(prezzi.prezzo_kg)
+  const capo = prezzoOrDash(prezzi.prezzo_capo)
+  const kg = prezzoOrDash(prezzi.prezzo_kg)
   const stato = flagOffertaLabel(prezzi)
   const fasce = (prezzi.fasce || []).filter((f) => Number(f.prezzo) > 0)
-  const parts = []
-  if (capo != null && Number(prezzi.prezzo_capo) > 0) parts.push(`Capo ${capo}`)
-  if (kg != null && Number(prezzi.prezzo_kg) > 0) parts.push(`Kg ${kg}`)
-  if (!parts.length && fasce.length) {
-    const f0 = fasce[0]
-    parts.push(`Fascia ${f0.n}: ${formatPrezzo(f0.prezzo)}`)
+  // Capo e Kg sempre presenti (anche a 0/null → "—"); le fasce sono in aggiunta.
+  const parts = [`Capo ${capo}`, `Kg ${kg}`]
+  for (const f of fasce) {
+    parts.push(`Fascia ${f.n}: ${formatPrezzo(f.prezzo)}`)
   }
 
   if (compact) {
-    if (!parts.length) return null
     return (
       <span
         className="pm-compat-card__prezzi"
@@ -114,20 +115,19 @@ function PrezziCiclo({ prezzi, compact = false }) {
           </span>
         ) : null}
         {stato ? (
+          <>
+          <br/>
           <span className={`pm-prezzi-flag pm-prezzi-flag--${String(stato).toLowerCase()}`}>
-            {stato}
-          </span>
+              {stato}
+            </span>
+          </>
         ) : null}
-        {capo != null ? (
-          <span>
-            <em>Capo</em> {capo}
-          </span>
-        ) : null}
-        {kg != null ? (
-          <span>
-            <em>Kg</em> {kg}
-          </span>
-        ) : null}
+        <span>
+          <em>Capo</em> {capo}
+        </span>
+        <span>
+          <em>Kg</em> {kg}
+        </span>
         {prezzi.valuta ? (
           <span>
             <em>Valuta</em> {prezzi.valuta}

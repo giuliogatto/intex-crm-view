@@ -103,15 +103,15 @@ function tableHtml(headers, rows) {
 
 function prezziHtml(prezzi) {
   if (!prezzi) return '<p class="empty">nessun prezzo</p>'
-  const capo = formatPrezzo(prezzi.prezzo_capo)
-  const kg = formatPrezzo(prezzi.prezzo_kg)
+  const capo = formatPrezzo(prezzi.prezzo_capo) ?? '—'
+  const kg = formatPrezzo(prezzi.prezzo_kg) ?? '—'
   const stato = flagOffertaLabel(prezzi)
   const fasce = (prezzi.fasce || []).filter((f) => Number(f.prezzo) > 0)
   const bits = []
   if (prezzi.codice_univoco != null) bits.push(`Cod. univoco ${prezzi.codice_univoco}`)
   if (stato) bits.push(stato)
-  if (capo != null) bits.push(`Capo ${capo}`)
-  if (kg != null) bits.push(`Kg ${kg}`)
+  bits.push(`Capo ${capo}`)
+  bits.push(`Kg ${kg}`)
   if (prezzi.valuta) bits.push(`Valuta ${prezzi.valuta}`)
   const fasceHtml = fasce.length
     ? `<ul class="plain">${fasce
