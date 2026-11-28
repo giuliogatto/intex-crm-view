@@ -6,8 +6,10 @@ from cicli_compatibili import (
     MAX_SENZA_FASI_COMUNI,
     _anno_da_stagione,
     _chiave_ordinamento_compatibile,
+    _codice_fase_canonico,
     _livello_soglia,
     confronta_cicli,
+    fasi_ignorate_ranking,
 )
 
 
@@ -60,7 +62,8 @@ def test_cambio_solo_articolo_e_stagione_vale_100():
 
 def test_una_fase_sostituita_vale_90():
     cand = _variante()
-    cand["fasi"][1] = _fase(20, "001124", "ASCIUGATURA LANA E MISTE 50°X25'")
+    # 001130 non è in fasi-da-ignorare-in-ranking (001124 sì → non andrebbe in confronto)
+    cand["fasi"][1] = _fase(20, "001130", "ASCIUGATURA LANA E MISTE 50°X25'")
     esito = confronta_cicli(BASE, cand)
     assert esito["compatibilita"] == 90.0
     diff = [d for d in esito["differenze"] if d["campo"] == "fase"]
@@ -159,3 +162,55 @@ def test_ordinamento_stagione_poi_ranking():
         ("*", 100.0),         # senza anno, ranking alto
         ("pe/ai", 95.0),      # senza anno
     ]
+
+
+def test_fasi_ignorate_ranking_normalizza_leading_zero():
+    ignore = fasi_ignorate_ranking()
+    assert ignore  # file documentation caricato
+    assert _codice_fase_canonico("000068") == "68"
+    assert _codice_fase_canonico("69") == "69"
+    assert "68" in ignore and "69" in ignore
+    assert "1124" in ignore and "1148" in ignore
+
+
+def test_fasi_generiche_non_pesano_sul_ranking():
+    """Fasi in fasi-da-ignorare-in-ranking.txt non contano su input né candidato."""
+    assert "125" in fasi_ignorate_ranking()
+    assert "1124" in fasi_ignorate_ranking()
+
+    # Stesse fasi di lavorazione; sul candidato ci sono in più fasi generiche.
+    cand = _variante()
+    cand["fasi"] = list(cand["fasi"]) + [
+        _fase(40, "000125", "CONTROLLO GENERICO"),
+        _fase(50, "001124", "FASE SEMPRE PRESENTE"),
+    ]
+    assert confronta_cicli(BASE, cand)["compatibilita"] == 100.0
+
+    # Solo differenze su fasi ignorate → ancora 100%.
+    solo_ignore_in = _variante(fasi=[
+        _fase(10, "000069", "GENERICA A"),
+        _fase(20, "000103", "TINTO OLANDESE"),
+        _fase(30, "001127", "ASCIUGATURA SETA+MISTE 40°X15'"),
+        _fase(40, "001049", "CONTROLLO QUALITA'"),
+        _fase(50, "000207", "GENERICA B"),
+    ])
+    solo_ignore_cand = _variante(fasi=[
+        _fase(10, "000103", "TINTO OLANDESE"),
+        _fase(20, "001127", "ASCIUGATURA SETA+MISTE 40°X15'"),
+        _fase(30, "001049", "CONTROLLO QUALITA'"),
+        _fase(40, "001148", "ALTRA GENERICA"),
+    ])
+    assert confronta_cicli(solo_ignore_in, solo_ignore_cand)["compatibilita"] == 100.0
+
+    # Una fase di lavorazione diversa continua a pesare 10 punti.
+    cand_bad = _variante()
+    cand_bad["fasi"] = [
+        _fase(10, "000125", "IGNORATA"),
+        _fase(20, "000103", "TINTO OLANDESE"),
+        _fase(30, "009999", "ALTRO LAVAGGIO"),
+        _fase(40, "001049", "CONTROLLO QUALITA'"),
+        _fase(50, "001124", "IGNORATA 2"),
+    ]
+    esito = confronta_cicli(BASE, cand_bad)
+    assert esito["compatibilita"] == 90.0
+    assert any(d.get("tipo") == "sostituita" for d in esito["differenze"] if d["campo"] == "fase")

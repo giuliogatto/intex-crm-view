@@ -25,6 +25,8 @@ Ogni risultato è un dict JSON-serializzabile:
 Punteggio: si parte da 100 e si sottraggono le penalità di PENALITA.
 Articolo, stagione e codici ciclo non penalizzano (cambio solo articolo/stagione = 100%);
 ogni fase aggiunta / mancante / sostituita / scambiata costa 10 punti (una fase = 90%).
+Le fasi in documentation/fasi-da-ignorare-in-ranking/ (generiche, sempre presenti)
+sono escluse dal confronto su input e candidati.
 """
 
 from __future__ import annotations
@@ -32,6 +34,8 @@ from __future__ import annotations
 import re
 import unicodedata
 from difflib import SequenceMatcher
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
 
 KEY_FIELDS = (
@@ -123,6 +127,53 @@ def similarita_testo(a: Any, b: Any) -> float:
 # ---------------------------------------------------------------------------
 # Fasi
 # ---------------------------------------------------------------------------
+# Fasi generiche sempre presenti (controllo, imballo, …): non entrano nel ranking.
+# Elenco editabile: documentation/fasi-da-ignorare-in-ranking/fasi-da-ignorare-in-ranking.txt
+_FASI_IGNORATE_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "documentation"
+    / "fasi-da-ignorare-in-ranking"
+    / "fasi-da-ignorare-in-ranking.txt"
+)
+
+
+def _codice_fase_canonico(codice: Any) -> str:
+    """Normalizza un codice fase per confronto (strip, upper, senza leading zero)."""
+    raw = str(codice or "").strip().upper()
+    if not raw:
+        return ""
+    stripped = raw.lstrip("0")
+    return stripped if stripped else "0"
+
+
+@lru_cache(maxsize=1)
+def fasi_ignorate_ranking() -> frozenset:
+    """Codici fase da escludere dal ranking (forma canonica senza leading zero)."""
+    try:
+        text = _FASI_IGNORATE_PATH.read_text(encoding="utf-8")
+    except OSError:
+        return frozenset()
+    out: Set[str] = set()
+    for line in text.splitlines():
+        code = line.split("#", 1)[0].strip()
+        if not code:
+            continue
+        canon = _codice_fase_canonico(code)
+        if canon:
+            out.add(canon)
+    return frozenset(out)
+
+
+def _fase_da_ignorare(fase: Dict[str, Any]) -> bool:
+    canon = _codice_fase_canonico(fase.get("codice_fase"))
+    return bool(canon) and canon in fasi_ignorate_ranking()
+
+
+def _fasi_per_ranking(fasi: Optional[Sequence[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    """Fasi rilevanti per similarità: esclude quelle generiche della lista ignore."""
+    return [f for f in (fasi or []) if not _fase_da_ignorare(f)]
+
+
 def _fase_key(fase: Dict[str, Any]) -> str:
     return _norm(fase.get("codice_fase")) or _norm(fase.get("ds_fase")) or _norm(fase.get("note"))
 
@@ -300,8 +351,9 @@ def confronta_cicli(ciclo_input: Dict[str, Any], candidato: Dict[str, Any]) -> D
             penalita += PENALITA[campo]
             differenze.append({"campo": campo, "input": a, "candidato": b, "penalita": PENALITA[campo]})
 
-    fasi_in = list(ciclo_input.get("fasi") or [])
-    fasi_cand = list(candidato.get("fasi") or [])
+    # Solo fasi "di lavorazione": le generiche (lista ignore) non pesano sul ranking.
+    fasi_in = _fasi_per_ranking(ciclo_input.get("fasi"))
+    fasi_cand = _fasi_per_ranking(candidato.get("fasi"))
     pen_fasi, n_uguali = _confronta_fasi(fasi_in, fasi_cand, simili, differenze)
     penalita += pen_fasi
 
